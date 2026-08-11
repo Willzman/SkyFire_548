@@ -361,7 +361,7 @@ bool ExtractSingleWmo(std::string& fname)
     if(!froot.open())
     {
         printf("Couldn't open RootWmo!!!\n");
-        return true;
+        return false;
     }
     FILE *output = fopen(szLocalFile,"wb");
     if(!output)
@@ -401,7 +401,7 @@ bool ExtractSingleWmo(std::string& fname)
     // Delete the extracted file in the case of an error
     if (!file_ok)
         remove(szLocalFile);
-    return true;
+    return file_ok;
 }
 
 void ParsMapFiles()
@@ -474,7 +474,7 @@ bool processArgv(int argc, char ** argv, const char *versionString)
                 result = false;
             }
         }
-        else if(strcmp("-?",argv[1]) == 0)
+        else if(strcmp("-?",argv[i]) == 0)
         {
             result = false;
         }
