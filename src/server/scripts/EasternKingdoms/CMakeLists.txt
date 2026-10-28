@@ -210,6 +210,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ZulGurub/instance_zulgurub.cpp
   EasternKingdoms/ZulGurub/zulgurub.cpp
   EasternKingdoms/ZulGurub/zulgurub.h
+  EasternKingdoms/zone_twilight_highlands.cpp
 )
 
 message("  -> Prepared: Eastern Kingdoms")
