@@ -53,6 +53,7 @@ struct ConditionSourceInfo;
 struct Condition;
 struct ItemTemplate;
 struct MovementInfo;
+struct SceneTemplate;
 
 enum class PlayerMovementChange
 {
@@ -495,6 +496,27 @@ public:
     virtual IAreaTrigger* GetInterface() const { return NULL; }
 };
 
+class SceneScript : public ScriptObject
+{
+protected:
+    SceneScript(const char* name);
+
+public:
+    bool IsDatabaseBound() const FINAL { return true; }
+
+    // Called when a player start a scene
+    virtual void OnSceneStart(Player* /*player*/, uint32 /*sceneInstanceID*/, SceneTemplate const* /*sceneTemplate*/) { }
+
+    // Called when a player receive trigger from scene
+    virtual void OnSceneTriggerEvent(Player* /*player*/, uint32 /*sceneInstanceID*/, SceneTemplate const* /*sceneTemplate*/, std::string const& /*triggerName*/) { }
+
+    // Called when a scene is canceled
+    virtual void OnSceneCancel(Player* /*player*/, uint32 /*sceneInstanceID*/, SceneTemplate const* /*sceneTemplate*/) { }
+
+    // Called when a scene is completed
+    virtual void OnSceneComplete(Player* /*player*/, uint32 /*sceneInstanceID*/, SceneTemplate const* /*sceneTemplate*/) { }
+};
+
 class BattlegroundScript : public ScriptObject
 {
 protected:
@@ -933,6 +955,12 @@ public: /* Initialization */
 
     /* SpellAreaTriggerScript */
     IAreaTrigger* CreateAreaTriggerInterface(uint32 entry);
+
+    /* SceneScript */
+    void OnSceneStart(Player* player, uint32 sceneInstanceID, SceneTemplate const* sceneTemplate);
+    void OnSceneTrigger(Player* player, uint32 sceneInstanceID, SceneTemplate const* sceneTemplate, std::string const& triggerName);
+    void OnSceneCancel(Player* player, uint32 sceneInstanceID, SceneTemplate const* sceneTemplate);
+    void OnSceneComplete(Player* player, uint32 sceneInstanceID, SceneTemplate const* sceneTemplate);
 
     /* BattlegroundScript */
     Battleground* CreateBattleground(BattlegroundTypeId typeId);
