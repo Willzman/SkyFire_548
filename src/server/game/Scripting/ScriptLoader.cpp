@@ -345,6 +345,7 @@ void AddSC_boss_earthrager_ptah();
 void AddSC_boss_anraphet();
 void AddSC_instance_firelands();               //Firelands
 void AddSC_boss_alysrazor();
+void AddSC_mount_hyjal();
 
 void AddSC_ashenvale();
 void AddSC_darkshore();
@@ -1124,6 +1125,7 @@ void AddKalimdorScripts()
 
     AddSC_instance_firelands();               //Firelands
     AddSC_boss_alysrazor();
+    AddSC_mount_hyjal();
 #endif
 }
 
