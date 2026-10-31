@@ -671,6 +671,7 @@ void AddSC_boss_hoptallus();
 void AddSC_boss_ook_ook();
 void AddSC_instance_stormstout_brewery();
 void AddSC_stormstout_brewery();
+void AddSC_boss_protectors_of_the_endless();
 void AddSC_instance_terrace_of_endless_spring();
 void AddSC_terrace_of_endless_spring();
 // Valley of the four Winds
@@ -1437,6 +1438,7 @@ void AddPandariaScripts()
     AddSC_boss_ook_ook();
     AddSC_instance_stormstout_brewery();
     AddSC_stormstout_brewery();
+    AddSC_boss_protectors_of_the_endless();
     AddSC_instance_terrace_of_endless_spring();
     AddSC_terrace_of_endless_spring();
     // Valley of the four Winds
