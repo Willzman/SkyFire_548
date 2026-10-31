@@ -671,6 +671,8 @@ void AddSC_boss_hoptallus();
 void AddSC_boss_ook_ook();
 void AddSC_instance_stormstout_brewery();
 void AddSC_stormstout_brewery();
+void AddSC_instance_terrace_of_endless_spring();
+void AddSC_terrace_of_endless_spring();
 // Valley of the four Winds
 void AddSC_valley_of_the_four_winds();
 // Shado-Pan Monastery
@@ -1435,6 +1437,8 @@ void AddPandariaScripts()
     AddSC_boss_ook_ook();
     AddSC_instance_stormstout_brewery();
     AddSC_stormstout_brewery();
+    AddSC_instance_terrace_of_endless_spring();
+    AddSC_terrace_of_endless_spring();
     // Valley of the four Winds
     AddSC_valley_of_the_four_winds();
     // Shado-Pan Monastery
