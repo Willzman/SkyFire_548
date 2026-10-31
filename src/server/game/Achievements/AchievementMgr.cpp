@@ -2906,6 +2906,10 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(CriteriaEntry const* cri
     if (!list)
         return true;
 
+    // A tree lists several difficulties only as alternatives, so one of them has to match.
+    bool difficultyRequired = false;
+    bool difficultyMatched = false;
+
     for (ModifierTreeEntryList::const_iterator iter = list->begin(); iter != list->end(); ++iter)
     {
         ModifierTreeEntry const* tree = (*iter);
@@ -3047,6 +3051,11 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(CriteriaEntry const* cri
                 if (!referencePlayer->GetGroup() || !referencePlayer->GetGroup()->IsGuildGroup(referencePlayer->GetGuildId(), referencePlayer))
                     return false;
                 break;
+            case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_DIFFICULTY_ID: // 68
+                difficultyRequired = true;
+                if (uint32(referencePlayer->GetMap()->GetDifficulty()) == reqValue)
+                    difficultyMatched = true;
+                break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_BATTLE_PET_FAMILY: // 78
                 if (reqValue >= 32 || !(uint32(miscValue2) & (uint32(1) << reqValue)))
                     return false;
@@ -3083,7 +3092,7 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(CriteriaEntry const* cri
                 break;
         }
     }
-    return true;
+    return !difficultyRequired || difficultyMatched;
 }
 
 char const* AchievementGlobalMgr::GetCriteriaTypeString(uint32 type)
