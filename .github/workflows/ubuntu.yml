@@ -3,11 +3,11 @@ name: ubuntu-build
 on:
   workflow_dispatch:
   push:
-    branches: [ main, trunk ]
+    branches: [ main, trunk, Development, Stable ]
     paths-ignore:
       - 'sql/**'
   pull_request:
-    branches: [ main, trunk ]
+    branches: [ main, trunk, Development, Stable ]
     paths-ignore:
       - 'sql/**'
 
