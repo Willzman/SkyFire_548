@@ -9,6 +9,7 @@
 #include "Log.h"
 #include "Timer.h"
 #include <openssl/md5.h>
+#include <openssl/evp.h>
 
 namespace AddonMgr
 {
@@ -69,8 +70,8 @@ namespace AddonMgr
                 std::string name = fields[1].GetString();
                 std::string version = fields[2].GetString();
 
-                MD5(reinterpret_cast<uint8 const*>(name.c_str()), name.length(), addon.NameMD5);
-                MD5(reinterpret_cast<uint8 const*>(version.c_str()), version.length(), addon.VersionMD5);
+                EVP_Digest(name.c_str(), name.length(), addon.NameMD5, nullptr, EVP_md5(), nullptr);
+                EVP_Digest(version.c_str(), version.length(), addon.VersionMD5, nullptr, EVP_md5(), nullptr);
 
                 m_bannedAddons.push_back(addon);
 

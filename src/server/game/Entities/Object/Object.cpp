@@ -888,11 +888,9 @@ void Object::BuildDynamicValuesUpdate(uint8 updateType, ByteBuffer* data, Player
 
     // Dynamic Fields (5.0.5 MoP new fields)
     uint32 dynamicTabMask = 0;
-    std::vector<uint32> dynamicFieldsMask;
-    dynamicFieldsMask.resize(m_dynamicTab.size());
-
-    for (size_t i = 0; i < m_dynamicTab.size(); i++)
-        dynamicFieldsMask[i] = 0;
+    // Fill constructor instead of resize(): GCC 14 reports a false -Wstringop-overflow
+    // for vector<uint32>::resize() here.
+    std::vector<uint32> dynamicFieldsMask(m_dynamicTab.size(), 0u);
 
     for (size_t i = 0; i < m_dynamicChange.size(); i++)
     {
