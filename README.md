@@ -77,7 +77,9 @@ sudo ldconfig
 ```
 
 ### 4. Get the source and build
-Clone the branch you want; the folder name and `PREFIX` keep each realm apart.
+Each realm gets its own clone and install folder (`PREFIX`), so build both.
+
+**Development realm:**
 ```bash
 git clone -b Development https://github.com/Willzman/SkyFire_548 ~/skyfire/src-dev
 cd ~/skyfire/src-dev
@@ -89,8 +91,19 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
-For the Stable realm use `-b Stable`, `~/skyfire/src-stable` and
-`-DPREFIX=$HOME/skyfire/stable`.
+
+**Stable realm:**
+```bash
+git clone -b Stable https://github.com/Willzman/SkyFire_548 ~/skyfire/src-stable
+cd ~/skyfire/src-stable
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
+  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+  -DPREFIX=$HOME/skyfire/stable -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
+  -DBOOST_ROOT=$HOME/skyfire/deps/boost -DOPENSSL_ROOT_DIR=$HOME/skyfire/deps/openssl
+cmake --build build --parallel "$(nproc)"
+cmake --install build
+```
 
 The servers end up in `<PREFIX>/bin` and their configs in `<PREFIX>/etc`.
 Modules in `modules/` (such as mod-qol) are built in automatically.
@@ -124,15 +137,26 @@ cd ~/skyfire/dev/bin    && ./worldserver    # one worldserver per realm
 Use `tmux`/`screen`, or systemd units based on `<PREFIX>/etc/worldserverd.service.dist`.
 
 ### Updating
+**Development realm** (any time):
 ```bash
 cd ~/skyfire/src-dev && git pull
 cmake --build build --parallel "$(nproc)" && cmake --install build
 tools/realms/configure_realm.sh dev --prefix ~/skyfire/dev --sql ~/skyfire/src-dev/sql
 ```
-Then restart the worldserver; it applies new SQL updates on startup.
+Then restart the Development worldserver; it applies new SQL updates on startup.
+
+**Stable realm** (after the changes are merged into `Stable`):
+```bash
+mysqldump -u root -p --databases auth world_stable characters_stable \
+  > ~/skyfire/backup-stable-$(date +%F).sql
+cd ~/skyfire/src-stable && git pull
+cmake --build build --parallel "$(nproc)" && cmake --install build
+tools/realms/configure_realm.sh stable --prefix ~/skyfire/stable --sql ~/skyfire/src-stable/sql
+```
+Then restart the authserver and the Stable worldserver.
 
 Changes go `Development` → test on the Development realm → pull request into
-`Stable`. Back up the Stable databases before updating Stable.
+`Stable`.
 
 Upstream wiki guide: [Ubuntu 24.04](https://wiki.projectskyfire.org/index.php?title=Installation_(Ubuntu_24.04_LTS)).
 
