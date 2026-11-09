@@ -227,7 +227,7 @@ cd ~/skyfire/stable/bin && ./worldserver   # Stable realm
 cd ~/skyfire/dev/bin    && ./worldserver   # Development realm
 ```
 To start them automatically at boot, make systemd units from
-`<PREFIX>/etc/worldserverd.service.dist`.
+`~/skyfire/dev/etc/worldserverd.service.dist` (same file in `stable/etc`).
 
 ### Updating
 **Development realm** (any time):
