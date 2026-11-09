@@ -44,7 +44,20 @@ side, build each branch into its own folder (step 4) and then follow
 [tools/realms/README.md](tools/realms/README.md) for the databases and
 configuration.
 
-The examples install everything under `~/skyfire`.
+The examples put everything under `~/skyfire`. Each realm has **two** folders,
+and the commands below always use the right one:
+
+```
+~/skyfire/
+  src-dev/       Development source code (git clone): build here, run tools/realms/ and sql/ from here
+  src-stable/    Stable source code (git clone)
+  dev/           Development server, installed by the build: bin/ (programs) and etc/ (configs)
+  stable/        Stable server, installed by the build: bin/ and etc/
+  data/          client data (dbc, maps, vmaps, mmaps), shared by both realms
+  deps/          Boost and OpenSSL, shared by both realms
+```
+`src-…` folders are what you **build and update**; `dev`/`stable` are what you
+**run**. Don't create `dev`/`stable` yourself; `cmake --install` does that.
 
 ### 1. Packages
 ```bash
@@ -105,19 +118,25 @@ cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
 
-The servers end up in `<PREFIX>/bin` and their configs in `<PREFIX>/etc`.
+The programs end up in `~/skyfire/dev/bin` and `~/skyfire/stable/bin`, and
+their config files in `~/skyfire/dev/etc` and `~/skyfire/stable/etc`.
 Modules in `modules/` (such as mod-qol) are built in automatically.
 
 ### 5. Client data
-`-DTOOLS=ON` builds the extractors into `<PREFIX>/bin`. Run them from inside
+`-DTOOLS=ON` builds the extractors into `~/skyfire/dev/bin` (and
+`~/skyfire/stable/bin`; either copy works). Run them from inside
 your 5.4.8 client folder, in this order, then move the resulting `dbc`, `maps`,
 `vmaps` and `mmaps` folders to `~/skyfire/data`:
 ```bash
+mkdir -p ~/skyfire/data
 cd /path/to/wow-5.4.8
 ~/skyfire/dev/bin/mapextractor
 ~/skyfire/dev/bin/vmap4extractor
 mkdir -p vmaps && ~/skyfire/dev/bin/vmap4assembler Buildings vmaps
 mkdir -p mmaps && ~/skyfire/dev/bin/mmaps_generator
+```
+```bash
+mv dbc maps vmaps mmaps ~/skyfire/data/
 ```
 Extract once; both realms share `~/skyfire/data`.
 
