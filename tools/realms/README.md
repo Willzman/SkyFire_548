@@ -15,34 +15,57 @@ databases, its own source checkout and its own install folder.
    installed with `-DPREFIX=$HOME/skyfire/stable`, and `~/skyfire/src-dev`
    with `-DPREFIX=$HOME/skyfire/dev`.
 
-2. Create the databases and the `skyfire` MySQL user:
+2. Create the databases and the `skyfire` MySQL user (needs the MySQL root
+   account, once):
 
        mysql -u root -p < sql/create/create_mysql_realms.sql
 
-3. Import the base data:
+3. Get the world base dump (it is not stored in Git) as an uncompressed
+   `.sql` file, e.g. `~/skyfire/world_database.sql`.
 
-       mysql -u root -p auth              < sql/base/auth_database.sql
-       mysql -u root -p characters_stable < sql/base/characters_database.sql
-       mysql -u root -p characters_dev    < sql/base/characters_database.sql
+4. Configure each install with auto-setup. Re-run this after every install;
+   it only sets the realm-specific keys and keeps your other edits:
 
-   Import the world base dump (not stored in Git) into both `world_stable`
-   and `world_dev`, then `sql/base/stored_procs.sql` into each world database.
+       tools/realms/configure_realm.sh stable --prefix ~/skyfire/stable \
+           --sql ~/skyfire/src-stable/sql --data ~/skyfire/data \
+           --auto-setup --world-dump ~/skyfire/world_database.sql
+       tools/realms/configure_realm.sh dev    --prefix ~/skyfire/dev \
+           --sql ~/skyfire/src-dev/sql    --data ~/skyfire/data \
+           --auto-setup --world-dump ~/skyfire/world_database.sql
 
-4. Register both realms in the shared realm list:
+   Pass `--db-user` / `--db-pass` if you changed the MySQL password. The
+   script refuses a dump that contains `USE` or `CREATE DATABASE` lines (as
+   `mysqldump --databases` writes) and prints the command that removes them;
+   those lines would load the dump into `world` instead of this realm's
+   database.
+
+5. Start `authserver` from the Stable install. On first start it fills the
+   empty `auth` database and applies all auth updates.
+
+6. Register both realms in the shared realm list (the servers do not add
+   realms themselves):
 
        mysql -u root -p auth < sql/create/realmlist_realms.sql
 
-5. Configure each install. Re-run this after every install; it only sets the
-   realm-specific keys and keeps your other edits:
+7. Start both worldservers. On first start each one imports the base SQL into
+   its empty world and characters databases (the world dump plus
+   `sql/base/stored_procs.sql`, and `sql/base/characters_database.sql`), then
+   applies every update. Later starts skip the base import and only apply new
+   updates. The world import takes a while; watch the log.
 
-       tools/realms/configure_realm.sh stable --prefix ~/skyfire/stable \
-           --sql ~/skyfire/src-stable/sql --data ~/skyfire/data
-       tools/realms/configure_realm.sh dev    --prefix ~/skyfire/dev \
-           --sql ~/skyfire/src-dev/sql    --data ~/skyfire/data
+Leaving auto-setup on is safe: databases that already have tables are never
+re-imported. Turn it off with `--no-auto-setup` if you prefer.
 
-   Pass `--db-user` / `--db-pass` if you changed the MySQL password.
+### Importing by hand instead
 
-6. Run `authserver` from the Stable install only, plus both worldservers.
+Do not import `characters_database.sql` or the world dump by hand and then
+start the servers with `SqlPath` set: those files carry no update-tracking
+table, so the server stops with "update tracking table is missing on a
+non-empty schema". Let auto-setup import into empty databases, as above. If you
+already imported by hand, empty the database and let auto-setup redo it. Only
+set `WorldDatabase.AutoBaseline` / `CharacterDatabase.AutoBaseline` if you are
+sure the imported data already contains every file in `sql/updates`; it marks
+them all as applied without running them.
 
 ## Notes
 

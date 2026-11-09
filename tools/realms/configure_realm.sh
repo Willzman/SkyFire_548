@@ -17,6 +17,11 @@
 # keys below, so it is safe to re-run after every install. Other settings you
 # changed by hand are kept.
 #
+# With --auto-setup the servers create missing databases on first start and
+# import the base SQL into empty ones (auth_database.sql, characters_database.sql,
+# and for world the dump given with --world-dump plus stored_procs.sql), then
+# apply every update. Populated databases skip the base import.
+#
 # See tools/realms/README.md for the full setup.
 
 set -euo pipefail
@@ -35,6 +40,12 @@ Options:
   --db-port PORT   MySQL port      (default 3306)
   --db-user USER   MySQL user      (default skyfire)
   --db-pass PASS   MySQL password  (default skyfire)
+  --auto-setup     Let the servers create and fill empty databases on start
+  --no-auto-setup  Turn that off again (default: leave the setting as it is)
+  --world-dump FILE
+                   World base dump (.sql) imported into an empty world database
+                   by --auto-setup. Refused if it contains USE / CREATE DATABASE,
+                   which would load it into the wrong database.
   -h, --help       Show this help
 USAGE
 }
@@ -48,11 +59,15 @@ case "$1" in
     *) die "first argument must be 'stable' or 'dev', got '$1'" ;;
 esac
 
-PREFIX="" SQL_DIR="" DATA_DIR=""
+PREFIX="" SQL_DIR="" DATA_DIR="" AUTO_SETUP="" WORLD_DUMP=""
 DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=skyfire DB_PASS=skyfire
 
 while [[ $# -gt 0 ]]; do
-    [[ $1 == -h || $1 == --help ]] && { usage; exit 0; }
+    case "$1" in
+        -h|--help)       usage; exit 0 ;;
+        --auto-setup)    AUTO_SETUP=1; shift; continue ;;
+        --no-auto-setup) AUTO_SETUP=0; shift; continue ;;
+    esac
     [[ $# -ge 2 ]] || die "missing value for $1"
     case "$1" in
         --prefix)  PREFIX=$2 ;;
@@ -62,6 +77,7 @@ while [[ $# -gt 0 ]]; do
         --db-port) DB_PORT=$2 ;;
         --db-user) DB_USER=$2 ;;
         --db-pass) DB_PASS=$2 ;;
+        --world-dump) WORLD_DUMP=$2 ;;
         *) die "unknown option '$1'" ;;
     esac
     shift 2
@@ -76,6 +92,19 @@ SQL_DIR=$(cd "$SQL_DIR" && pwd)
 if [[ -n $DATA_DIR ]]; then
     [[ -d $DATA_DIR ]] || die "data directory '$DATA_DIR' not found"
     DATA_DIR=$(cd "$DATA_DIR" && pwd)
+fi
+if [[ -n $WORLD_DUMP ]]; then
+    [[ -f $WORLD_DUMP && -r $WORLD_DUMP ]] || die "world dump '$WORLD_DUMP' not found or not readable"
+    case "$WORLD_DUMP" in
+        *.sql|*.SQL) ;;
+        *) die "world dump must be an uncompressed .sql file; extract '$WORLD_DUMP' first" ;;
+    esac
+    WORLD_DUMP="$(cd "$(dirname "$WORLD_DUMP")" && pwd)/$(basename "$WORLD_DUMP")"
+    # mysqldump --databases adds these; they would load the dump into `world`
+    # (or create it) instead of this realm's world database.
+    if bad=$(grep -m1 -niE '^[[:space:]]*(USE[[:space:]`]|CREATE[[:space:]]+(DATABASE|SCHEMA)[[:space:]])' "$WORLD_DUMP"); then
+        die "world dump line ${bad%%:*} switches database: '${bad#*:}'. Remove its USE / CREATE DATABASE lines first, e.g.: sed -i -E '/^[[:space:]]*(USE[[:space:]\`]|CREATE[[:space:]]+(DATABASE|SCHEMA)[[:space:]])/Id' '$WORLD_DUMP'"
+    fi
 fi
 
 if [[ $REALM == stable ]]; then
@@ -137,7 +166,17 @@ set_key "$W" CharacterDatabase.ImportPendingUpdates "$PENDING"
 if [[ -n $DATA_DIR ]]; then set_key "$W" DataDir "\"$DATA_DIR\""; fi
 mkdir -p "$PREFIX/logs"
 set_key "$W" LogsDir "\"$PREFIX/logs\""
-echo "Configured $W as the $REALM realm (RealmID $REALM_ID, port $WORLD_PORT, $WORLD_DB / $CHAR_DB)"
+if [[ -n $AUTO_SETUP ]]; then
+    for db in WorldDatabase CharacterDatabase; do
+        set_key "$W" "$db.AutoSetup" "$AUTO_SETUP"
+        set_key "$W" "$db.AutoCreate" "$AUTO_SETUP"
+    done
+fi
+if [[ -n $WORLD_DUMP ]]; then set_key "$W" WorldDatabase.BaseSqlFile "\"$WORLD_DUMP\""; fi
+if [[ $AUTO_SETUP == 1 ]] && grep -qE '^WorldDatabase\.BaseSqlFile[[:space:]]*=[[:space:]]*""' "$W"; then
+    echo "configure_realm: warning: no --world-dump set; worldserver will stop at startup if $WORLD_DB is empty" >&2
+fi
+echo "Configured $W as the $REALM realm (RealmID $REALM_ID, port $WORLD_PORT, $WORLD_DB / $CHAR_DB${AUTO_SETUP:+, auto-setup $AUTO_SETUP})"
 
 if [[ $REALM == stable ]]; then
     ensure_conf authserver
@@ -146,6 +185,10 @@ if [[ $REALM == stable ]]; then
     set_key "$A" LoginDatabase.SqlPath "\"$SQL_DIR\""
     set_key "$A" LoginDatabase.ImportPendingUpdates 0
     set_key "$A" LogsDir "\"$PREFIX/logs\""
+    if [[ -n $AUTO_SETUP ]]; then
+        set_key "$A" LoginDatabase.AutoSetup "$AUTO_SETUP"
+        set_key "$A" LoginDatabase.AutoCreate "$AUTO_SETUP"
+    fi
     echo "Configured $A (shared auth database)"
 fi
 
