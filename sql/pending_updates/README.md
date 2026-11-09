@@ -25,8 +25,12 @@ directory so the normal database setup and update tracking system can apply it.
    `ImportPendingUpdates` option on a non-production worldserver.
 3. Verify server startup, affected commands, and any in-game behavior.
 4. Name the file clearly for review. It does not need the final update name.
-   The promotion script assigns `YYYY_MM_DD_<database>_NN.sql` automatically.
-5. Push the pending SQL file and let the promotion workflow move it into
-   `sql/updates/<database>`.
+   The promotion script assigns `YYYY_MM_DD_<database>_custom_NN.sql`
+   automatically. Use a lowercase `.sql` extension and put the file directly
+   in its database folder; `.github/workflows/sql-names.yml` rejects anything
+   else. Do not name a database inside the SQL (`USE`, `world.creature`,
+   ...): each realm runs the same file against its own databases.
+5. Push the pending SQL file to `Development` and let the promotion workflow
+   move it into `sql/updates/<database>`.
 6. Let the database setup system record it through `skyfire_db_updates` and
    `db_update`.
