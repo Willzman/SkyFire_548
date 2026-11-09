@@ -7,6 +7,10 @@ Moves SQL files from sql/pending_updates/<database> to sql/updates/<database>
 and assigns each promoted file the next available official update name:
 YYYY_MM_DD_<database>_NN.sql.
 
+With -Suffix, promoted files are named YYYY_MM_DD_<database>_<suffix>_NN.sql
+instead, numbered separately from the unsuffixed files. Forks use this so
+their own updates can never take a filename that upstream also assigns.
+
 The script runs in dry-run mode by default. Use -Apply to move files.
 
 .EXAMPLE
@@ -17,6 +21,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev/promote_pending_up
 
 .EXAMPLE
 powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev/promote_pending_updates.ps1 -InputPath sql/pending_updates/world/areatrigger_tavern_missing.sql -Apply
+
+.EXAMPLE
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/dev/promote_pending_updates.ps1 -Suffix custom -Apply
 #>
 
 [CmdletBinding(SupportsShouldProcess = $true)]
@@ -30,13 +37,17 @@ param(
 
     [string[]] $InputPath,
 
+    [ValidatePattern('^([a-z][a-z0-9]*)?$')]
+    [string] $Suffix = '',
+
     [switch] $Apply
 )
 
 $ErrorActionPreference = 'Stop'
 
 $ValidDatabases = @('auth', 'characters', 'world')
-$UpdateNamePattern = '^(?<date>\d{4}_\d{2}_\d{2})_(?<database>auth|characters|world)_(?<sequence>\d{2})(?<suffix>.*)\.sql$'
+$NamePrefix = if ($Suffix) { "${Suffix}_" } else { '' }
+$UpdateNamePattern = '^(?<date>\d{4}_\d{2}_\d{2})_(?<database>auth|characters|world)_' + $NamePrefix + '(?<sequence>\d{2})(?<suffix>.*)\.sql$'
 
 function Resolve-PromotionDate {
     param([string] $RequestedDate)
@@ -237,7 +248,7 @@ function New-PromotionPlan {
         $updatesDir = Join-Path $RootPath "sql\updates\$($first.Database)"
 
         foreach ($info in ($group.Group | Sort-Object { $_.Source.Name })) {
-            $targetName = '{0}_{1}_{2:D2}.sql' -f $DateText, $info.Database, $nextSequence
+            $targetName = '{0}_{1}_{2}{3:D2}.sql' -f $DateText, $info.Database, $NamePrefix, $nextSequence
             $targetPath = Join-Path $updatesDir $targetName
 
             if (Test-Path -LiteralPath $targetPath) {

@@ -3,7 +3,7 @@ name: promote-pending-sql
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ Development ]
     paths:
       - 'sql/pending_updates/*.sql'
       - 'sql/pending_updates/**/*.sql'
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   promote:
-    if: github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/main'
+    if: github.actor != 'github-actions[bot]' && github.ref == 'refs/heads/Development'
     runs-on: windows-latest
 
     steps:
@@ -52,7 +52,7 @@ jobs:
             Write-Error ("Pending SQL files must live directly under sql/pending_updates/<database>. The promotion script assigns official YYYY_MM_DD_<database>_NN.sql filenames. Invalid file(s):`n" + ($invalidFiles -join "`n"))
           }
 
-          ./tools/dev/promote_pending_updates.ps1 -Apply
+          ./tools/dev/promote_pending_updates.ps1 -Suffix custom -Apply
           git add -A sql/pending_updates sql/updates
 
           $changes = git status --porcelain
