@@ -59,6 +59,10 @@ and the commands below always use the right one:
 `src-…` folders are what you **build and update**; `dev`/`stable` are what you
 **run**. Don't create `dev`/`stable` yourself; `cmake --install` does that.
 
+Only want the Development realm for now? Follow the steps below with the
+changes in [Development only](#development-only-no-stable-yet); you can add
+Stable later without redoing anything.
+
 ### 1. Packages
 ```bash
 sudo apt-get update
@@ -245,6 +249,42 @@ cd ~/skyfire/dev/bin    && ./worldserver   # Development realm
 ```
 To start them automatically at boot, make systemd units from
 `~/skyfire/dev/etc/worldserverd.service.dist` (same file in `stable/etc`).
+
+### Development only (no Stable yet)
+You can run just the Development realm and add Stable later. Normally the
+login server (`authserver`) runs from the Stable install; without it, run it
+from the Development install instead. Follow the steps above with these
+changes:
+
+| Step | Change |
+|------|--------|
+| 4    | Build only the **Development realm** block. |
+| 6.3  | Run only the `dev` command, and add `--with-authserver` to it (see below). |
+| 6.4  | Start the authserver from the dev install: `cd ~/skyfire/dev/bin && ./authserver` |
+| 6.6  | Start only the Development worldserver. |
+| 6.8  | Pick **Development** in the realm list. **Stable** is listed too but shows offline until you install it. |
+
+Step 6.3 for Development only:
+```bash
+cd ~/skyfire/src-dev
+tools/realms/configure_realm.sh dev --prefix ~/skyfire/dev \
+  --sql ~/skyfire/src-dev/sql --data ~/skyfire/data \
+  --auto-setup --world-dump ~/skyfire/world_database.sql --with-authserver
+```
+Everything else (6.1, 6.2, 6.5, 6.7) is unchanged. 6.1 also creates the empty
+`world_stable` and `characters_stable` databases; they wait unused.
+
+**Adding Stable later:**
+1. Merge `Development` into `Stable` (pull request `Development` → `Stable`).
+2. Build the **Stable realm** block from step 4 and run the `stable` command from
+   step 6.3.
+3. Stop the authserver running from `~/skyfire/dev/bin` and start it from
+   `~/skyfire/stable/bin` instead. Only one authserver can run (both use
+   port 3724).
+4. Start the Stable worldserver.
+
+Accounts and characters you made on Development stay; both realms use the same
+`auth` database.
 
 ### Updating
 **Development realm** (any time):

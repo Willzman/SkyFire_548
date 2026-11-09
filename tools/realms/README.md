@@ -39,7 +39,9 @@ databases, its own source checkout and its own install folder.
    those lines would load the dump into `world` instead of this realm's
    database.
 
-5. Start `authserver` from the Stable install. On first start it fills the
+5. Start `authserver` from the Stable install. (Development without Stable: add
+   `--with-authserver` to the `dev` command in step 4 and start `authserver`
+   from the Development install instead.) On first start it fills the
    empty `auth` database and applies all auth updates.
 
 6. Register both realms in the shared realm list (the servers do not add

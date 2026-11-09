@@ -10,8 +10,9 @@
 #   stable        1        8085  world_stable   characters_stable  off
 #   dev           2        8086  world_dev      characters_dev     on
 #
-# Both realms share the `auth` database. Only the Stable install's authserver
-# should run; this script configures authserver.conf for stable only.
+# Both realms share the `auth` database. Only one authserver runs, normally the
+# Stable install's; this script configures authserver.conf for stable, or for
+# dev with --with-authserver (when running Development on its own).
 #
 # Creates <prefix>/etc/*.conf from *.conf.dist when missing, then sets only the
 # keys below, so it is safe to re-run after every install. Other settings you
@@ -40,6 +41,9 @@ Options:
   --db-port PORT   MySQL port      (default 3306)
   --db-user USER   MySQL user      (default skyfire)
   --db-pass PASS   MySQL password  (default skyfire)
+  --with-authserver
+                   Also configure this install's authserver.conf (always done
+                   for stable). Use with dev when Stable is not installed.
   --auto-setup     Let the servers create and fill empty databases on start
   --no-auto-setup  Turn that off again (default: leave the setting as it is)
   --world-dump FILE
@@ -59,7 +63,7 @@ case "$1" in
     *) die "first argument must be 'stable' or 'dev', got '$1'" ;;
 esac
 
-PREFIX="" SQL_DIR="" DATA_DIR="" AUTO_SETUP="" WORLD_DUMP=""
+PREFIX="" SQL_DIR="" DATA_DIR="" AUTO_SETUP="" WORLD_DUMP="" WITH_AUTH=0
 DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=skyfire DB_PASS=skyfire
 
 while [[ $# -gt 0 ]]; do
@@ -67,6 +71,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)       usage; exit 0 ;;
         --auto-setup)    AUTO_SETUP=1; shift; continue ;;
         --no-auto-setup) AUTO_SETUP=0; shift; continue ;;
+        --with-authserver) WITH_AUTH=1; shift; continue ;;
     esac
     [[ $# -ge 2 ]] || die "missing value for $1"
     case "$1" in
@@ -178,7 +183,7 @@ if [[ $AUTO_SETUP == 1 ]] && grep -qE '^WorldDatabase\.BaseSqlFile[[:space:]]*=[
 fi
 echo "Configured $W as the $REALM realm (RealmID $REALM_ID, port $WORLD_PORT, $WORLD_DB / $CHAR_DB${AUTO_SETUP:+, auto-setup $AUTO_SETUP})"
 
-if [[ $REALM == stable ]]; then
+if [[ $REALM == stable || $WITH_AUTH == 1 ]]; then
     ensure_conf authserver
     A="$ETC/authserver.conf"
     set_key "$A" LoginDatabaseInfo "\"$DB_PREFIX;auth\""
