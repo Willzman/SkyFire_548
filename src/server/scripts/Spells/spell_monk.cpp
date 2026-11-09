@@ -5334,7 +5334,7 @@ class spell_monk_chi_brew : public SpellScript
             case SPEC_MONK_MISTWEAVER:
                 brewId = SPELL_MONK_MANA_TEA_STACKS;
                 visual = SPELL_MONK_PLUS_ONE_MANA_TEA;
-                if (roll_chance_f(monk->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + SPELL_SCHOOL_NATURE)))
+                if (roll_chance_f(monk->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + SPELL_SCHOOL_NATURE)))
                     stacks *= 2;
                 break;
             case SPEC_MONK_WINDWALKER:
@@ -5411,7 +5411,7 @@ class spell_monk_brewing_mana_tea : public spell_monk_brewing_chi_consumer
     void DoProc() OVERRIDE
     {
         Unit* monk = GetUnitOwner();
-        uint32 stacks = roll_chance_f(monk->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + SPELL_SCHOOL_NATURE)) ? 2 : 1;
+        uint32 stacks = roll_chance_f(monk->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + SPELL_SCHOOL_NATURE)) ? 2 : 1;
 
         for (uint32 i = 0; i < stacks; ++i)
         {

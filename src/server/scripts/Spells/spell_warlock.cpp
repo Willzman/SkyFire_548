@@ -1127,7 +1127,7 @@ public:
             // The periodic part benefits from critical strike chance the same way the direct hit does
             if (caster->GetTypeId() == TypeID::TYPEID_PLAYER)
             {
-                float crit = caster->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()));
+                float crit = caster->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()));
                 crit += GetUnitOwner()->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE, GetSpellInfo()->SchoolMask);
                 crit += GetUnitOwner()->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE);
                 if (crit > 0.0f)
@@ -1170,7 +1170,7 @@ public:
             if (!target)
                 return;
 
-            float crit = GetCaster()->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()));
+            float crit = GetCaster()->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()));
             crit += target->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE, GetSpellInfo()->SchoolMask);
             crit += target->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE);
             _critMod = std::max(crit, 0.0f);

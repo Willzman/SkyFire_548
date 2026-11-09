@@ -18,7 +18,8 @@ void CreateDir(std::string const& path)
 {
     if (chdir(path.c_str()) == 0)
     {
-        chdir("../");
+        if (chdir("../") != 0)
+            std::cout << "Could not return to the parent directory of " << path << std::endl;
         return;
     }
 

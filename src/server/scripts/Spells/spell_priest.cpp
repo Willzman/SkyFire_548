@@ -835,7 +835,7 @@ public:
                 // Divine Aegis: the shield can critically absorb
                 if (caster->HasAura(SPELL_PRIEST_DIVINE_AEGIS_PASSIVE))
                     if (Player* player = caster->ToPlayer())
-                        if (roll_chance_f(player->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()))))
+                        if (roll_chance_f(player->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + GetFirstSchoolInMask(GetSpellInfo()->GetSchoolMask()))))
                             amount *= 2;
             }
         }
@@ -2426,7 +2426,7 @@ public:
 
             // Mastery: Shield Discipline is applied by the absorb aura itself.
             if (Player* player = caster->ToPlayer())
-                AddPct(absorb, player->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE + SPELL_SCHOOL_HOLY));
+                AddPct(absorb, player->GetFloatValue(uint32(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE) + SPELL_SCHOOL_HOLY));
 
             // Multiple effects stack, so let's try to find this aura.
             if (AuraEffect const* shell = target->GetAuraEffect(SPELL_PRIEST_SPIRIT_SHELL_ABSORB, EFFECT_0, caster->GetGUID()))

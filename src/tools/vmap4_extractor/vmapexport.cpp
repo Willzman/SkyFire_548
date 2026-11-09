@@ -117,7 +117,7 @@ const char* szRawVMAPMagic = "VMAP054";
 
 bool LoadLocaleMPQFile(int locale)
 {
-    TCHAR buff[1024];
+    TCHAR buff[2048]; // input_path (1024) + locale and file name
     memset(buff, 0, sizeof(buff));
     _stprintf(buff, _T("%s%s/locale-%s.MPQ"), input_path, LocalesT[locale], LocalesT[locale]);
     if (!SFileOpenArchive(buff, 0, MPQ_OPEN_READ_ONLY, &LocaleMpq))
@@ -165,7 +165,7 @@ bool LoadLocaleMPQFile(int locale)
 
 void LoadCommonMPQFiles(uint32 build)
 {
-    TCHAR filename[1024];
+    TCHAR filename[2048]; // input_path (1024) + file name
     _stprintf(filename, _T("%sworld.MPQ"), input_path);
     _tprintf(_T("Loading common MPQ files\n"));
     if (!SFileOpenArchive(filename, 0, MPQ_OPEN_READ_ONLY, &WorldMpq))
@@ -254,7 +254,7 @@ void strToLower(char* str)
 bool ReadLiquidTypeTableDBC(int locale)
 {
     HANDLE localeFile;
-    char localMPQ[1024];
+    char localMPQ[2048]; // input_path (1024) + locale and file name
 
     snprintf(localMPQ, sizeof(localMPQ), "%smisc.MPQ", input_path);
     if (FileExists(localMPQ)==false)
@@ -341,8 +341,9 @@ bool ExtractSingleWmo(std::string& fname)
     char const* rchr = strrchr(plain_name, '_');
     if (rchr != NULL)
     {
-        char cpy[4];
-        strncpy((char*)cpy, rchr, 4);
+        char cpy[4] = { };
+        for (int i = 0; i < 4 && rchr[i]; ++i)
+            cpy[i] = rchr[i];
         for (int i = 0; i < 4; ++i)
         {
             int m = cpy[i];
@@ -375,14 +376,12 @@ bool ExtractSingleWmo(std::string& fname)
     {
         for (uint32 i = 0; i < froot.nGroups; ++i)
         {
-            char temp[1024];
-            strncpy(temp, fname.c_str(), 1024);
-            temp[fname.length()-4] = 0;
-            char groupFileName[1024];
-            snprintf(groupFileName, sizeof(groupFileName), "%s_%03u.wmo", temp, i);
-            //printf("Trying to open groupfile %s\n",groupFileName);
+            // "<root name without .wmo>_NNN.wmo"
+            char groupSuffix[16];
+            snprintf(groupSuffix, sizeof(groupSuffix), "_%03u.wmo", i);
+            std::string s = (fname.length() >= 4 ? fname.substr(0, fname.length() - 4) : fname) + groupSuffix;
+            //printf("Trying to open groupfile %s\n", s.c_str());
 
-            std::string s = groupFileName;
             WMOGroup fgroup(s);
             if(!fgroup.open())
             {
