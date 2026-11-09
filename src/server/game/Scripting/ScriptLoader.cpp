@@ -625,6 +625,13 @@ void AddSC_event_darkmoon_faire();
 
 // Pandaria
 void AddSC_wandering_island();
+// Gate of the Setting Sun
+void AddSC_instance_gate_of_the_setting_sun();
+void AddSC_boss_saboteur_kiptilak();
+void AddSC_boss_striker_gadok();
+void AddSC_boss_commander_rimok();
+void AddSC_boss_raigonn();
+void AddSC_gate_of_the_setting_sun();
 // Temple of Jade Serpent
 void AddSC_instance_jade_serpent();
 // Stormstout Brewery
@@ -1343,6 +1350,13 @@ void AddPandariaScripts()
 {
 #ifdef SCRIPTS
     AddSC_wandering_island();
+    // Gate of the Setting Sun
+    AddSC_instance_gate_of_the_setting_sun();
+    AddSC_boss_saboteur_kiptilak();
+    AddSC_boss_striker_gadok();
+    AddSC_boss_commander_rimok();
+    AddSC_boss_raigonn();
+    AddSC_gate_of_the_setting_sun();
     // Temple of Jade Serpent - Temple of Jade Serpent
     AddSC_instance_jade_serpent();
     // Stormstout Brewery
