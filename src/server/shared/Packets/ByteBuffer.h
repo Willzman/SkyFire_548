@@ -91,12 +91,14 @@ public:
 #endif
     }
 
-    operator uint64() const
+    operator uint64()
     {
         return _data.u64;
     }
 
     // Adapter for scripts ported from cores with a full ObjectGuid class (LoA/TrinityCore).
+    // operator uint64 stays non-const: a const one makes `cond ? guid : 0` ambiguous
+    // (BattlePetPackets.cpp). Use GetRawValue() on const objects.
     // SkyFire GUIDs stay plain uint64; this only adds the common read-only helpers.
     static ObjectGuid const Empty;
     bool IsEmpty() const { return _data.u64 == UI64LIT(0); }
