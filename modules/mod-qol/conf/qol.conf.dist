@@ -1,0 +1,33 @@
+[worldserver]
+
+########################################
+# mod-qol configuration
+########################################
+#
+#    QoL.Enable
+#        Description: Enable .qol commands (.gear remains a shortcut).
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+QoL.Enable = 1
+
+#
+#    QoL.Gear.MinQuality
+#    QoL.Gear.MaxQuality
+#        Description: ITEM_QUALITY band used when .qol gear / .gear is run
+#                     without a rarity token (0=poor, 1=common, 2=uncommon,
+#                     3=rare, 4=epic, 5=legendary).
+#        Default:     2 / 4
+
+QoL.Gear.MinQuality = 2
+QoL.Gear.MaxQuality = 4
+
+#
+#    QoL.Gear.ExactQuality
+#        Description: When a rarity token is passed (rare, epic, …):
+#                     1 - use that quality only (fallback to lower if a slot
+#                         has no matching item at this level)
+#                     0 - use it as a maximum, with MinQuality as the floor
+#        Default:     1
+
+QoL.Gear.ExactQuality = 1
