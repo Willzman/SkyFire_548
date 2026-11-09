@@ -23,8 +23,6 @@ CMakeLists.txt.user
 cmake-build-debug/
 .idea/
 /.vs/
-/skyfire-build.config.ps1
-/skyfire-build.log
 /CMakeUserPresets.json
 /out/
 /contrib/ScriptsConverter/.vs

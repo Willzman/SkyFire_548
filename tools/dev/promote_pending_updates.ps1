@@ -153,7 +153,7 @@ function Get-PendingSqlFiles {
     }
     else {
         foreach ($databaseName in (Get-SelectedDatabases -RequestedDatabases $RequestedDatabases)) {
-            $pendingDir = Join-Path $RootPath "sql\pending_updates\$databaseName"
+            $pendingDir = Join-Path $RootPath "sql/pending_updates/$databaseName"
             if (Test-Path -LiteralPath $pendingDir -PathType Container) {
                 $files += Get-ChildItem -LiteralPath $pendingDir -Filter '*.sql' -File | Sort-Object FullName
             }
@@ -173,7 +173,7 @@ function Get-PendingUpdateInfo {
         throw "Pending update '$($File.FullName)' is not a .sql file."
     }
 
-    $pendingRoot = Join-Path $RootPath 'sql\pending_updates'
+    $pendingRoot = Join-Path $RootPath 'sql/pending_updates'
     if (-not (Test-IsUnderPath -Path $File.FullName -ParentPath $pendingRoot)) {
         throw "Refusing '$($File.FullName)' because it is not under sql/pending_updates."
     }
@@ -202,7 +202,7 @@ function Get-MaxOfficialSequence {
         [string] $DateText
     )
 
-    $updatesDir = Join-Path $RootPath "sql\updates\$DatabaseName"
+    $updatesDir = Join-Path $RootPath "sql/updates/$DatabaseName"
     if (-not (Test-Path -LiteralPath $updatesDir -PathType Container)) {
         return -1
     }
@@ -245,7 +245,7 @@ function New-PromotionPlan {
     foreach ($group in $groups) {
         $first = $group.Group | Select-Object -First 1
         $nextSequence = (Get-MaxOfficialSequence -RootPath $RootPath -DatabaseName $first.Database -DateText $DateText) + 1
-        $updatesDir = Join-Path $RootPath "sql\updates\$($first.Database)"
+        $updatesDir = Join-Path $RootPath "sql/updates/$($first.Database)"
 
         foreach ($info in ($group.Group | Sort-Object { $_.Source.Name })) {
             $targetName = '{0}_{1}_{2}{3:D2}.sql' -f $DateText, $info.Database, $NamePrefix, $nextSequence

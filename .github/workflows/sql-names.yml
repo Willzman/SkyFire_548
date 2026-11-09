@@ -1,6 +1,7 @@
 name: sql-names
 
-# Checks SQL update file names and placement (tools/dev/check_sql_names.py).
+# Checks SQL update file names and placement (tools/dev/check_sql_names.py),
+# and tests the SQL promotion script on Ubuntu, where promote-pending-sql runs.
 # Pull requests are also checked for renamed/deleted merged updates and for new
 # updates that skip the _custom_ naming. Pull requests from main (upstream
 # SkyFire syncs), or labelled "upstream-sync", relax those change checks.
@@ -12,14 +13,20 @@ on:
     paths:
       - 'sql/**'
       - 'tools/dev/check_sql_names.py'
+      - 'tools/dev/promote_pending_updates.ps1'
+      - 'tools/dev/test_promote_pending_updates.sh'
       - '.github/workflows/sql-names.yml'
+      - '.github/workflows/promote-pending-sql.yml'
   pull_request:
     branches: [ Development, Stable ]
     types: [ opened, synchronize, reopened, labeled, unlabeled ]
     paths:
       - 'sql/**'
       - 'tools/dev/check_sql_names.py'
+      - 'tools/dev/promote_pending_updates.ps1'
+      - 'tools/dev/test_promote_pending_updates.sh'
       - '.github/workflows/sql-names.yml'
+      - '.github/workflows/promote-pending-sql.yml'
 
 permissions:
   contents: read
@@ -53,3 +60,7 @@ jobs:
             fi
           fi
           python3 tools/dev/check_sql_names.py "${args[@]}"
+
+      - name: Test SQL promotion script
+        shell: bash
+        run: tools/dev/test_promote_pending_updates.sh
