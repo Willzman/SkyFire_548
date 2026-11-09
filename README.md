@@ -77,7 +77,9 @@ sudo ldconfig
 ```
 
 ### 4. Get the source and build
-Clone the branch you want; the folder name and `PREFIX` keep each realm apart.
+Each realm gets its own clone and install folder (`PREFIX`), so build both.
+
+**Development realm:**
 ```bash
 git clone -b Development https://github.com/Willzman/SkyFire_548 ~/skyfire/src-dev
 cd ~/skyfire/src-dev
@@ -89,8 +91,19 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
-For the Stable realm use `-b Stable`, `~/skyfire/src-stable` and
-`-DPREFIX=$HOME/skyfire/stable`.
+
+**Stable realm:**
+```bash
+git clone -b Stable https://github.com/Willzman/SkyFire_548 ~/skyfire/src-stable
+cd ~/skyfire/src-stable
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
+  -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+  -DPREFIX=$HOME/skyfire/stable -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
+  -DBOOST_ROOT=$HOME/skyfire/deps/boost -DOPENSSL_ROOT_DIR=$HOME/skyfire/deps/openssl
+cmake --build build --parallel "$(nproc)"
+cmake --install build
+```
 
 The servers end up in `<PREFIX>/bin` and their configs in `<PREFIX>/etc`.
 Modules in `modules/` (such as mod-qol) are built in automatically.
@@ -108,31 +121,116 @@ mkdir -p mmaps && ~/skyfire/dev/bin/mmaps_generator
 ```
 Extract once; both realms share `~/skyfire/data`.
 
-### 6. Databases and configuration
-Follow [tools/realms/README.md](tools/realms/README.md). In short: create the
-databases with `sql/create/create_mysql_realms.sql`, run
-`tools/realms/configure_realm.sh` with `--auto-setup --world-dump <file>`,
-start `authserver`, register the realms with `sql/create/realmlist_realms.sql`,
-then start `worldserver`. The world database dump is published on the
-[releases page](https://github.com/ProjectSkyfire/SkyFire_548/releases).
+### 6. Databases, configuration and first start (one time)
+You only do this once. Each server creates and fills its own databases the
+first time it starts; you just create the MySQL user, point each realm at the
+world data, and start things in the right order.
 
-### 7. Run
+Both realms share one `auth` database (accounts and the realm list). Each realm
+has its own world and characters databases:
+
+| Realm       | World database | Characters database | Port |
+|-------------|----------------|---------------------|------|
+| Stable      | `world_stable` | `characters_stable` | 8085 |
+| Development | `world_dev`    | `characters_dev`    | 8086 |
+
+**6.1 Create the MySQL user and the empty databases.** This uses the MySQL root
+account and is the only step that needs it:
 ```bash
-cd ~/skyfire/stable/bin && ./authserver     # one authserver, from the Stable install
-cd ~/skyfire/dev/bin    && ./worldserver    # one worldserver per realm
+sudo mysql < ~/skyfire/src-dev/sql/create/create_mysql_realms.sql
 ```
-Use `tmux`/`screen`, or systemd units based on `<PREFIX>/etc/worldserverd.service.dist`.
+This creates the five databases above and a MySQL user `skyfire` (password
+`skyfire`) that can use them.
+
+**6.2 Download the world database.** Get the world database `.sql` file from the
+[releases page](https://github.com/ProjectSkyfire/SkyFire_548/releases), unzip
+it, and save it as `~/skyfire/world_database.sql`. Both realms load from the
+same file.
+
+**6.3 Configure each realm.** Run both commands. They create each realm's config
+files and fill in its database names, ports and paths:
+```bash
+cd ~/skyfire/src-dev
+tools/realms/configure_realm.sh dev --prefix ~/skyfire/dev \
+  --sql ~/skyfire/src-dev/sql --data ~/skyfire/data \
+  --auto-setup --world-dump ~/skyfire/world_database.sql
+
+cd ~/skyfire/src-stable
+tools/realms/configure_realm.sh stable --prefix ~/skyfire/stable \
+  --sql ~/skyfire/src-stable/sql --data ~/skyfire/data \
+  --auto-setup --world-dump ~/skyfire/world_database.sql
+```
+If the script says the dump "switches database", run the `sed` command it
+prints and then run it again.
+
+**6.4 Start the authserver** (terminal 1) and leave it running:
+```bash
+cd ~/skyfire/stable/bin && ./authserver
+```
+On this first start it fills the `auth` database.
+
+**6.5 Add both realms to the realm list** (terminal 2), once the authserver is up:
+```bash
+mysql -u skyfire -pskyfire auth < ~/skyfire/src-dev/sql/create/realmlist_realms.sql
+```
+
+**6.6 Start both worldservers** (terminals 3 and 4) and leave them running:
+```bash
+cd ~/skyfire/stable/bin && ./worldserver
+```
+```bash
+cd ~/skyfire/dev/bin && ./worldserver
+```
+The first start imports the world database and applies every update, which
+can take several minutes. It is done when the log says `ready...` and you get
+a `SF>` prompt.
+
+**6.7 Create your account.** Type these at the `SF>` prompt of either
+worldserver. Accounts are shared, so one account works on both realms:
+```
+account create you@example.com myname mypassword
+account set gmlevel myname 3 -1
+```
+The second line makes the account a GM (level 3) on all realms (`-1`); leave
+it out for a normal player account.
+
+**6.8 Log in.** In your 5.4.8 client folder, edit `WTF/Config.wtf` so it
+contains `SET realmlist "127.0.0.1"` (use the server's IP if the game runs on
+another computer). Log in with the email address and password from 6.7, then
+choose **Stable** or **Development** from the realm list.
+
+### 7. Running it day to day
+Start the authserver first, then the worldservers. Each in its own terminal
+(or `tmux`/`screen`):
+```bash
+cd ~/skyfire/stable/bin && ./authserver    # only one authserver, from the Stable install
+cd ~/skyfire/stable/bin && ./worldserver   # Stable realm
+cd ~/skyfire/dev/bin    && ./worldserver   # Development realm
+```
+To start them automatically at boot, make systemd units from
+`<PREFIX>/etc/worldserverd.service.dist`.
 
 ### Updating
+**Development realm** (any time):
 ```bash
 cd ~/skyfire/src-dev && git pull
 cmake --build build --parallel "$(nproc)" && cmake --install build
 tools/realms/configure_realm.sh dev --prefix ~/skyfire/dev --sql ~/skyfire/src-dev/sql
 ```
-Then restart the worldserver; it applies new SQL updates on startup.
+Then restart the Development worldserver; it applies new SQL updates on startup.
+
+**Stable realm** (after the changes are merged into `Stable`):
+```bash
+mysqldump -u root -p --databases auth world_stable characters_stable \
+  > ~/skyfire/backup-stable-$(date +%F).sql
+cd ~/skyfire/src-stable && git pull
+cmake --build build --parallel "$(nproc)" && cmake --install build
+tools/realms/configure_realm.sh stable --prefix ~/skyfire/stable --sql ~/skyfire/src-stable/sql
+```
+Then restart the authserver and the Stable worldserver.
 
 Changes go `Development` → test on the Development realm → pull request into
-`Stable`. Back up the Stable databases before updating Stable.
+`Stable`.
 
 Upstream wiki guide: [Ubuntu 24.04](https://wiki.projectskyfire.org/index.php?title=Installation_(Ubuntu_24.04_LTS)).
 
