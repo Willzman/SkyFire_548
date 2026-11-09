@@ -44,7 +44,24 @@ side, build each branch into its own folder (step 4) and then follow
 [tools/realms/README.md](tools/realms/README.md) for the databases and
 configuration.
 
-The examples install everything under `~/skyfire`.
+The examples put everything under `~/skyfire`. Each realm has **two** folders,
+and the commands below always use the right one:
+
+```
+~/skyfire/
+  src-dev/       Development source code (git clone): build here, run tools/realms/ and sql/ from here
+  src-stable/    Stable source code (git clone)
+  dev/           Development server, installed by the build: bin/ (programs) and etc/ (configs)
+  stable/        Stable server, installed by the build: bin/ and etc/
+  data/          client data (dbc, db2, cameras, maps, vmaps, mmaps), shared by both realms
+  deps/          Boost and OpenSSL, shared by both realms
+```
+`src-…` folders are what you **build and update**; `dev`/`stable` are what you
+**run**. Don't create `dev`/`stable` yourself; `cmake --install` does that.
+
+Only want the Development realm for now? Follow the steps below with the
+changes in [Development only](#development-only-no-stable-yet); you can add
+Stable later without redoing anything.
 
 ### 1. Packages
 ```bash
@@ -72,7 +89,8 @@ tar -xzf openssl-4.0.0.tar.gz && cd openssl-4.0.0
   --openssldir=$HOME/skyfire/deps/openssl/ssl shared enable-legacy
 make -j"$(nproc)" && make install_sw install_ssldirs
 # Let the servers find these libraries at runtime:
-echo "$HOME/skyfire/deps/openssl/lib64" | sudo tee /etc/ld.so.conf.d/skyfire-openssl.conf
+printf '%s\n' "$HOME/skyfire/deps/openssl/lib64" "$HOME/skyfire/deps/openssl/lib" \
+  | sudo tee /etc/ld.so.conf.d/skyfire-openssl.conf
 sudo ldconfig
 ```
 
@@ -92,7 +110,9 @@ cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
 
-**Stable realm:**
+**Stable realm:** the `Stable` branch only has these setup tools once
+`Development` has been merged into it (pull request `Development` → `Stable`).
+Do that before the very first Stable build.
 ```bash
 git clone -b Stable https://github.com/Willzman/SkyFire_548 ~/skyfire/src-stable
 cd ~/skyfire/src-stable
@@ -105,19 +125,25 @@ cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
 
-The servers end up in `<PREFIX>/bin` and their configs in `<PREFIX>/etc`.
+The programs end up in `~/skyfire/dev/bin` and `~/skyfire/stable/bin`, and
+their config files in `~/skyfire/dev/etc` and `~/skyfire/stable/etc`.
 Modules in `modules/` (such as mod-qol) are built in automatically.
 
 ### 5. Client data
-`-DTOOLS=ON` builds the extractors into `<PREFIX>/bin`. Run them from inside
-your 5.4.8 client folder, in this order, then move the resulting `dbc`, `maps`,
-`vmaps` and `mmaps` folders to `~/skyfire/data`:
+`-DTOOLS=ON` builds the extractors into `~/skyfire/dev/bin` (and
+`~/skyfire/stable/bin`; either copy works). Run them from inside
+your 5.4.8 client folder (the one containing `Data/`), in this order, then move
+the resulting folders to `~/skyfire/data`:
 ```bash
+mkdir -p ~/skyfire/data
 cd /path/to/wow-5.4.8
 ~/skyfire/dev/bin/mapextractor
 ~/skyfire/dev/bin/vmap4extractor
 mkdir -p vmaps && ~/skyfire/dev/bin/vmap4assembler Buildings vmaps
 mkdir -p mmaps && ~/skyfire/dev/bin/mmaps_generator
+```
+```bash
+mv dbc db2 cameras maps vmaps mmaps ~/skyfire/data/
 ```
 Extract once; both realms share `~/skyfire/data`.
 
@@ -195,9 +221,23 @@ The second line makes the account a GM (level 3) on all realms (`-1`); leave
 it out for a normal player account.
 
 **6.8 Log in.** In your 5.4.8 client folder, edit `WTF/Config.wtf` so it
-contains `SET realmlist "127.0.0.1"` (use the server's IP if the game runs on
-another computer). Log in with the email address and password from 6.7, then
-choose **Stable** or **Development** from the realm list.
+contains `SET realmlist "127.0.0.1"`. Log in with the email address and
+password from 6.7, then choose **Stable** or **Development** from the realm
+list.
+
+*Game on a different computer than the server?* Use the server's LAN IP
+(e.g. `192.168.1.50`) in `Config.wtf`, **and** tell the realm list that address,
+otherwise the client finds the realms but cannot enter them. Then restart the
+authserver:
+```bash
+mysql -u skyfire -pskyfire auth -e "UPDATE realmlist SET address='192.168.1.50' WHERE id IN (1,2);"
+```
+Open ports 3724 (login), 8085 (Stable) and 8086 (Development) in the server's
+firewall if it has one (`sudo ufw allow 3724,8085,8086/tcp`).
+
+*Client won't connect at all?* Some 5.4.8 clients must be patched to talk to a
+private server; `contrib/Client_Patch` contains a patcher for the client's
+`Wow.exe`/`Wow-64.exe` (it runs on Windows, where the game client lives).
 
 ### 7. Running it day to day
 Start the authserver first, then the worldservers. Each in its own terminal
@@ -208,7 +248,43 @@ cd ~/skyfire/stable/bin && ./worldserver   # Stable realm
 cd ~/skyfire/dev/bin    && ./worldserver   # Development realm
 ```
 To start them automatically at boot, make systemd units from
-`<PREFIX>/etc/worldserverd.service.dist`.
+`~/skyfire/dev/etc/worldserverd.service.dist` (same file in `stable/etc`).
+
+### Development only (no Stable yet)
+You can run just the Development realm and add Stable later. Normally the
+login server (`authserver`) runs from the Stable install; without it, run it
+from the Development install instead. Follow the steps above with these
+changes:
+
+| Step | Change |
+|------|--------|
+| 4    | Build only the **Development realm** block. |
+| 6.3  | Run only the `dev` command, and add `--with-authserver` to it (see below). |
+| 6.4  | Start the authserver from the dev install: `cd ~/skyfire/dev/bin && ./authserver` |
+| 6.6  | Start only the Development worldserver. |
+| 6.8  | Pick **Development** in the realm list. **Stable** is listed too but shows offline until you install it. |
+
+Step 6.3 for Development only:
+```bash
+cd ~/skyfire/src-dev
+tools/realms/configure_realm.sh dev --prefix ~/skyfire/dev \
+  --sql ~/skyfire/src-dev/sql --data ~/skyfire/data \
+  --auto-setup --world-dump ~/skyfire/world_database.sql --with-authserver
+```
+Everything else (6.1, 6.2, 6.5, 6.7) is unchanged. 6.1 also creates the empty
+`world_stable` and `characters_stable` databases; they wait unused.
+
+**Adding Stable later:**
+1. Merge `Development` into `Stable` (pull request `Development` → `Stable`).
+2. Build the **Stable realm** block from step 4 and run the `stable` command from
+   step 6.3.
+3. Stop the authserver running from `~/skyfire/dev/bin` and start it from
+   `~/skyfire/stable/bin` instead. Only one authserver can run (both use
+   port 3724).
+4. Start the Stable worldserver.
+
+Accounts and characters you made on Development stay; both realms use the same
+`auth` database.
 
 ### Updating
 **Development realm** (any time):
@@ -221,7 +297,7 @@ Then restart the Development worldserver; it applies new SQL updates on startup.
 
 **Stable realm** (after the changes are merged into `Stable`):
 ```bash
-mysqldump -u root -p --databases auth world_stable characters_stable \
+sudo mysqldump --databases auth world_stable characters_stable \
   > ~/skyfire/backup-stable-$(date +%F).sql
 cd ~/skyfire/src-stable && git pull
 cmake --build build --parallel "$(nproc)" && cmake --install build

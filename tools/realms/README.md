@@ -15,10 +15,10 @@ databases, its own source checkout and its own install folder.
    installed with `-DPREFIX=$HOME/skyfire/stable`, and `~/skyfire/src-dev`
    with `-DPREFIX=$HOME/skyfire/dev`.
 
-2. Create the databases and the `skyfire` MySQL user (needs the MySQL root
-   account, once):
+2. Create the databases and the `skyfire` MySQL user (needs MySQL's root
+   account, which on Ubuntu you reach with `sudo`; once):
 
-       mysql -u root -p < sql/create/create_mysql_realms.sql
+       sudo mysql < sql/create/create_mysql_realms.sql
 
 3. Get the world base dump (it is not stored in Git) as an uncompressed
    `.sql` file, e.g. `~/skyfire/world_database.sql`.
@@ -39,13 +39,15 @@ databases, its own source checkout and its own install folder.
    those lines would load the dump into `world` instead of this realm's
    database.
 
-5. Start `authserver` from the Stable install. On first start it fills the
+5. Start `authserver` from the Stable install. (Development without Stable: add
+   `--with-authserver` to the `dev` command in step 4 and start `authserver`
+   from the Development install instead.) On first start it fills the
    empty `auth` database and applies all auth updates.
 
 6. Register both realms in the shared realm list (the servers do not add
    realms themselves):
 
-       mysql -u root -p auth < sql/create/realmlist_realms.sql
+       mysql -u skyfire -pskyfire auth < sql/create/realmlist_realms.sql
 
 7. Start both worldservers. On first start each one imports the base SQL into
    its empty world and characters databases (the world dump plus
