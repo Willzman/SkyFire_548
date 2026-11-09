@@ -14,6 +14,13 @@ This repo is a fork. `main` mirrors upstream SkyFire and receives no local
 work. Bring upstream changes in as `main` -> `Development` (test) -> `Stable`;
 never merge `main` straight into `Stable`.
 
+This fork builds and runs on Ubuntu 24.04 only. The Windows build workflow
+(`windows.yml`) and Windows build scripts (`SkyFire-Build.ps1`,
+`skyfire-build.config.ps1.example`, `skyfire-updater.bat`,
+`contrib/update merge.bat`) were removed. If an upstream sync conflicts
+because upstream changed one of them, resolve by keeping it deleted.
+`tools/dev/*.ps1` stay: CI runs them with PowerShell.
+
 ## SQL updates
 
 - Put new SQL in `sql/pending_updates/<auth|characters|world>/`. Make it safe
