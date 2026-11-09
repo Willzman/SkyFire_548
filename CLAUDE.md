@@ -26,6 +26,9 @@ never merge `main` straight into `Stable`.
   `YYYY_MM_DD_<db>_NN.sql` files; updates are tracked by filename, so a
   shared name would cause one of them to be skipped silently.
 - Never rename a file in `sql/updates/` once it is merged.
+- Never name a database in update SQL: no `USE`, no `CREATE DATABASE`, no
+  `world.`/`auth.`/`characters.` prefixes. Each realm applies the same files
+  to its own databases. Use `DATABASE()` when you need the current one.
 - `.github/workflows/sql-names.yml` runs `tools/dev/check_sql_names.py` on
   pushes and pull requests to `Development`/`Stable`. Run it locally with
   `python3 tools/dev/check_sql_names.py --base origin/Development` before

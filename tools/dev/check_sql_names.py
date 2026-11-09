@@ -19,6 +19,12 @@ Always checked (whole tree):
     those may not contain subfolders.
   * sql/pending_updates/ SQL must sit directly in auth/, characters/ or world/
     and end in lowercase .sql.
+  * Update and pending SQL must not name a database: no USE, no
+    CREATE/ALTER/DROP DATABASE, and no database-qualified table names such as
+    `world`.`creature` or auth.account. Each realm applies the same files to
+    its own databases (world_stable, world_dev, ...), so a hard-coded name
+    would change the wrong database. information_schema is allowed; use
+    DATABASE() for the current database.
 
 With --base REF (changes since REF):
   * Merged files in sql/updates/ must not be deleted or renamed.
@@ -45,17 +51,94 @@ PENDING = "sql/pending_updates"
 NAME_RE = re.compile(
     r"^(?P<date>\d{4}_\d{2}_\d{2})_(?P<db>[a-z]+)_(?P<custom>custom_)?(?P<seq>\d{2})\.sql$")
 
+# A table reference: an identifier after a keyword that introduces a table.
+IDENT = r"(?:`[^`]+`|[A-Za-z_][A-Za-z0-9_$]*)"
+TABLE_KEYWORDS = r"(?:FROM|JOIN|INTO|UPDATE|TABLE|EXISTS|REFERENCES)"
+ALLOWED_SCHEMAS = ("information_schema", "performance_schema")
+CONTENT_RULES = (
+    (re.compile(r"(?:^|;)\s*USE\s+" + IDENT, re.I),
+     "USE switches database; remove it. The updater already connects to this realm's database."),
+    (re.compile(r"\b(?:CREATE|ALTER|DROP)\s+(?:DATABASE|SCHEMA)\b", re.I),
+     "creates/changes a database by name; updates must only touch tables in the current database."),
+    (re.compile(r"\b" + TABLE_KEYWORDS + r"\s+(?P<db>" + IDENT + r")\s*\.\s*" + IDENT, re.I),
+     "database-qualified table name '{db}.…'; drop the '{db}.' prefix so it works in every realm's database."),
+    (re.compile(r"(?<![\w`.])(?P<db>" + IDENT + r")\s*\.\s*" + IDENT + r"\s*\.\s*" + IDENT, re.I),
+     "database-qualified column '{db}.table.column'; drop the '{db}.' prefix so it works in every realm's database."),
+)
+
 errors = []
 warnings = []
 github = os.environ.get("GITHUB_ACTIONS") == "true"
 
 
-def error(path, message):
-    errors.append((path, message))
+def error(path, message, line=None):
+    errors.append((path, message, line))
 
 
-def warn(path, message):
-    warnings.append((path, message))
+def warn(path, message, line=None):
+    warnings.append((path, message, line))
+
+
+def strip_comments_and_strings(text):
+    """Blank out comments and string literals, keeping newlines so line
+    numbers still match. Backtick identifiers are kept."""
+    out = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        nxt = text[i + 1] if i + 1 < n else ""
+        if c == "#" or (c == "-" and nxt == "-" and (i + 2 >= n or text[i + 2] in " \t\r\n")):
+            end = text.find("\n", i)
+            end = n if end == -1 else end
+            out.append(" " * (end - i))
+            i = end
+        elif c == "/" and nxt == "*":
+            end = text.find("*/", i + 2)
+            end = n if end == -1 else end + 2
+            out.append(re.sub(r"[^\n]", " ", text[i:end]))
+            i = end
+        elif c in "'\"":
+            j = i + 1
+            while j < n:
+                if text[j] == "\\":
+                    j += 2
+                    continue
+                if text[j] == c:
+                    if j + 1 < n and text[j + 1] == c:  # doubled quote escape
+                        j += 2
+                        continue
+                    break
+                j += 1
+            j = min(j + 1, n)
+            out.append(re.sub(r"[^\n]", " ", text[i:j]))
+            i = j
+        elif c == "`":
+            end = text.find("`", i + 1)
+            end = n if end == -1 else end + 1
+            out.append(text[i:end])
+            i = end
+        else:
+            out.append(c)
+            i += 1
+    return "".join(out)
+
+
+def check_content(root, rel):
+    try:
+        with open(os.path.join(root, rel), encoding="utf-8", errors="replace") as handle:
+            code = strip_comments_and_strings(handle.read())
+    except OSError as exc:
+        error(rel, "cannot read file: %s" % exc)
+        return
+    for pattern, message in CONTENT_RULES:
+        for match in pattern.finditer(code):
+            db = match.groupdict().get("db")
+            if db and db.strip("`").lower() in ALLOWED_SCHEMAS:
+                continue
+            line = code.count("\n", 0, match.start()) + 1
+            # USE matches start at the preceding newline/semicolon.
+            line += match.group(0)[:len(match.group(0)) - len(match.group(0).lstrip(";\r\n \t"))].count("\n")
+            error(rel, message.format(db=(db or "").strip("`")), line)
 
 
 def is_sql(name):
@@ -102,6 +185,7 @@ def check_tree(root):
                     error(child, "subfolders are not scanned by the updater; move the files up")
                 elif is_sql(name):
                     check_update_name(child)
+                    check_content(root, child)
 
     pending_root = os.path.join(root, PENDING)
     if os.path.isdir(pending_root):
@@ -118,6 +202,8 @@ def check_tree(root):
                     error(rel, "pending SQL must be directly in sql/pending_updates/<auth|characters|world>/")
                 elif not name.endswith(".sql"):
                     error(rel, "use a lowercase .sql extension (the promotion workflow only picks up *.sql)")
+                else:
+                    check_content(root, rel)
 
 
 def git_changes(root, base):
@@ -164,15 +250,17 @@ def check_changes(root, base, upstream_sync):
 
 def report():
     for level, items in (("warning", warnings), ("error", errors)):
-        for path, message in items:
+        for path, message, line in sorted(items, key=lambda item: (item[0], item[2] or 0)):
             if github:
-                print("::%s file=%s::%s" % (level, path, message))
+                where = "file=%s,line=%d" % (path, line) if line else "file=%s" % path
+                print("::%s %s::%s" % (level, where, message))
             else:
-                print("%s: %s: %s" % (level.upper(), path, message))
+                where = "%s:%d" % (path, line) if line else path
+                print("%s: %s: %s" % (level.upper(), where, message))
     if errors:
-        print("\n%d SQL naming error(s). See tools/dev/check_sql_names.py for the rules." % len(errors))
+        print("\n%d SQL update error(s). See tools/dev/check_sql_names.py for the rules." % len(errors))
     else:
-        print("SQL update names OK (%d warning(s))." % len(warnings))
+        print("SQL update files OK (%d warning(s))." % len(warnings))
 
 
 def main():
