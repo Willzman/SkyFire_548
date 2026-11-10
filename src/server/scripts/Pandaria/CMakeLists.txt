@@ -5,6 +5,13 @@
 
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
+  Pandaria/ShadopanMonastery/boss_gu_cloudstrike.cpp
+  Pandaria/ShadopanMonastery/boss_master_snowdrift.cpp
+  Pandaria/ShadopanMonastery/boss_sha_of_violence.cpp
+  Pandaria/ShadopanMonastery/boss_taran_zhu.cpp
+  Pandaria/ShadopanMonastery/instance_shadopan_monastery.cpp
+  Pandaria/ShadopanMonastery/shadopan_monastery.cpp
+  Pandaria/ShadopanMonastery/shadopan_monastery.h
   Pandaria/GateOfTheSettingSun/gate_of_the_setting_sun.h
   Pandaria/GateOfTheSettingSun/instance_gate_of_the_setting_sun.cpp
   Pandaria/GateOfTheSettingSun/boss_saboteur_kiptilak.cpp
