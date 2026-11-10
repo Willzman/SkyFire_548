@@ -26,6 +26,7 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "SpellInfo.h"
 #include "zulaman.h"
 
 namespace
