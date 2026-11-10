@@ -247,6 +247,17 @@ void AddSC_silverpine_forest();
 void AddSC_stranglethorn_vale();
 void AddSC_undercity();
 void AddSC_westfall();
+void AddSC_boss_grilek();                   //Zul'Gurub (Cataclysm, map 859)
+void AddSC_boss_hazzarah();
+void AddSC_boss_jindo_the_godbreaker();
+void AddSC_boss_kilnara();
+void AddSC_boss_mandokir();
+void AddSC_boss_renataki();
+void AddSC_boss_venoxis();
+void AddSC_boss_wushoolay();
+void AddSC_boss_zanzil();
+void AddSC_instance_zulgurub();
+void AddSC_zulgurub();
 
 //kalimdor
 void AddSC_blackfathom_deeps();              //Blackfathom Depths
@@ -947,6 +958,17 @@ void AddEasternKingdomsScripts()
     AddSC_stranglethorn_vale();
     AddSC_elwynn_forest();
     AddSC_westfall();
+    AddSC_boss_grilek();                   //Zul'Gurub (Cataclysm, map 859)
+    AddSC_boss_hazzarah();
+    AddSC_boss_jindo_the_godbreaker();
+    AddSC_boss_kilnara();
+    AddSC_boss_mandokir();
+    AddSC_boss_renataki();
+    AddSC_boss_venoxis();
+    AddSC_boss_wushoolay();
+    AddSC_boss_zanzil();
+    AddSC_instance_zulgurub();
+    AddSC_zulgurub();
 #endif
 }
 

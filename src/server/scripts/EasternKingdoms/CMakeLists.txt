@@ -187,6 +187,18 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_stranglethorn_vale.cpp
   EasternKingdoms/zone_undercity.cpp
   EasternKingdoms/zone_westfall.cpp
+  EasternKingdoms/ZulGurub/boss_grilek.cpp
+  EasternKingdoms/ZulGurub/boss_hazzarah.cpp
+  EasternKingdoms/ZulGurub/boss_jindo_the_godbreaker.cpp
+  EasternKingdoms/ZulGurub/boss_kilnara.cpp
+  EasternKingdoms/ZulGurub/boss_mandokir.cpp
+  EasternKingdoms/ZulGurub/boss_renataki.cpp
+  EasternKingdoms/ZulGurub/boss_venoxis.cpp
+  EasternKingdoms/ZulGurub/boss_wushoolay.cpp
+  EasternKingdoms/ZulGurub/boss_zanzil.cpp
+  EasternKingdoms/ZulGurub/instance_zulgurub.cpp
+  EasternKingdoms/ZulGurub/zulgurub.cpp
+  EasternKingdoms/ZulGurub/zulgurub.h
 )
 
 message("  -> Prepared: Eastern Kingdoms")
