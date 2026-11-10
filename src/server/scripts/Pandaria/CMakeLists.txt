@@ -17,8 +17,12 @@ set(scripts_STAT_SRCS
   Pandaria/StormstoutBrewery/stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/instance_stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.h
-  Pandaria/TempleOfJadeSerpent/temple_of_jade_serpent.h
-  Pandaria/TempleOfJadeSerpent/instance_temple_of_jade_serpent.cpp
+  Pandaria/TempleOfTheJadeSerpent/boss_liu_flameheart.cpp
+  Pandaria/TempleOfTheJadeSerpent/boss_lorewalker_stonestep.cpp
+  Pandaria/TempleOfTheJadeSerpent/boss_sha_of_doubt.cpp
+  Pandaria/TempleOfTheJadeSerpent/boss_wise_mari.cpp
+  Pandaria/TempleOfTheJadeSerpent/instance_temple_of_the_jade_serpent.cpp
+  Pandaria/TempleOfTheJadeSerpent/temple_of_the_jade_serpent.h
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
 )
