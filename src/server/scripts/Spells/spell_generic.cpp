@@ -3765,8 +3765,143 @@ class spell_gen_override_display_power : public SpellScriptLoader
         }
 };
 
+// The next three scripts are ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), spell_generic.cpp.
+
+enum SeaforiumSpells
+{
+    SPELL_PLANT_CHARGES_CREDIT_ACHIEVEMENT  = 60937
+};
+
+// 52408 - Seaforium Blast
+class spell_gen_seaforium_blast : public SpellScriptLoader
+{
+    public:
+        spell_gen_seaforium_blast() : SpellScriptLoader("spell_gen_seaforium_blast") { }
+
+        class spell_gen_seaforium_blast_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_gen_seaforium_blast_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_PLANT_CHARGES_CREDIT_ACHIEVEMENT) != NULL;
+            }
+
+            bool Load() override
+            {
+                // OriginalCaster is always available in Spell::prepare
+                return GetOriginalCaster() && GetOriginalCaster()->GetTypeId() == TypeID::TYPEID_PLAYER;
+            }
+
+            void AchievementCredit(SpellEffIndex /*effIndex*/)
+            {
+                // but in effect handling OriginalCaster can become NULL
+                if (Unit* originalCaster = GetOriginalCaster())
+                    if (GameObject* go = GetHitGObj())
+                        if (go->GetGOInfo()->type == GAMEOBJECT_TYPE_DESTRUCTIBLE_BUILDING)
+                            originalCaster->CastSpell(originalCaster, SPELL_PLANT_CHARGES_CREDIT_ACHIEVEMENT, true);
+            }
+
+            void Register() override
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_gen_seaforium_blast_SpellScript::AchievementCredit, EFFECT_1, SPELL_EFFECT_GAMEOBJECT_DAMAGE);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_gen_seaforium_blast_SpellScript();
+        }
+};
+
+enum Replenishment
+{
+    SPELL_REPLENISHMENT             = 57669,
+    SPELL_INFINITE_REPLENISHMENT    = 61782
+};
+
+// 57669 - Replenishment
+class spell_gen_replenishment : public SpellScriptLoader
+{
+    public:
+        spell_gen_replenishment() : SpellScriptLoader("spell_gen_replenishment") { }
+
+        class spell_gen_replenishment_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_gen_replenishment_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) override
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_REPLENISHMENT) != NULL;
+            }
+
+            bool Load() override
+            {
+                return GetUnitOwner()->GetPower(POWER_MANA) != 0;
+            }
+
+            void CalculateAmount(AuraEffect const* /*aurEff*/, int32& amount, bool& /*canBeRecalculated*/)
+            {
+                switch (GetSpellInfo()->Id)
+                {
+                    case SPELL_REPLENISHMENT:
+                        amount = int32(GetUnitOwner()->GetMaxPower(POWER_MANA) * 0.002f);
+                        break;
+                    case SPELL_INFINITE_REPLENISHMENT:
+                        amount = int32(GetUnitOwner()->GetMaxPower(POWER_MANA) * 0.0025f);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            void Register() override
+            {
+                DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_gen_replenishment_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_PERIODIC_ENERGIZE);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_gen_replenishment_AuraScript();
+        }
+};
+
+// 73979 - Searching for Artifacts (archaeology find): skill-up once per player per find
+class spell_gen_searching_for_artifacts : public SpellScriptLoader
+{
+    public:
+        spell_gen_searching_for_artifacts() : SpellScriptLoader("spell_gen_searching_for_artifacts") { }
+
+        class spell_gen_searching_for_artifacts_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_gen_searching_for_artifacts_SpellScript);
+
+            void HandleSkillUpdate(SpellEffIndex /*effIndex*/)
+            {
+                if (Player* player = GetCaster()->ToPlayer())
+                    if (GameObject* go = GetHitGObj())
+                        if (!go->IsInSkillupList(player->GetGUIDLow()) && player->UpdateCraftSkill(GetSpellInfo()->Id))
+                            go->AddToSkillupList(player->GetGUIDLow());
+            }
+
+            void Register() override
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_gen_searching_for_artifacts_SpellScript::HandleSkillUpdate, EFFECT_0, SPELL_EFFECT_OPEN_LOCK);
+            }
+        };
+
+        SpellScript* GetSpellScript() const override
+        {
+            return new spell_gen_searching_for_artifacts_SpellScript();
+        }
+};
+
 void AddSC_generic_spell_scripts()
 {
+    new spell_gen_seaforium_blast();
+    new spell_gen_replenishment();
+    new spell_gen_searching_for_artifacts();
     new spell_gen_burn_constriction_totem();
     new spell_gen_rice_pudding();
     new spell_gen_rock_jump_a();

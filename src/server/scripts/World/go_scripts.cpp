@@ -1187,8 +1187,25 @@ public:
     }
 };
 
+// Ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), go_scripts.cpp go_soulwell.
+// Only members of the warlock's party/raid may take a Healthstone from a Soulwell.
+class go_soulwell : public GameObjectScript
+{
+public:
+    go_soulwell() : GameObjectScript("go_soulwell") { }
+
+    bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
+    {
+        Unit* owner = go->GetOwner();
+        if (!owner || owner->GetTypeId() != TypeID::TYPEID_PLAYER || !player->IsInSameRaidWith(owner->ToPlayer()))
+            return true;
+        return false;
+    }
+};
+
 void AddSC_go_scripts()
 {
+    new go_soulwell();
     new go_cat_figurine();
     new go_barov_journal();
     new go_field_repair_bot_74A();
