@@ -645,7 +645,11 @@ void AddSC_boss_commander_rimok();
 void AddSC_boss_raigonn();
 void AddSC_gate_of_the_setting_sun();
 // Temple of Jade Serpent
-void AddSC_instance_jade_serpent();
+void AddSC_instance_temple_of_the_jade_serpent();
+void AddSC_boss_wise_mari();
+void AddSC_boss_lorewalker_stonestep();
+void AddSC_boss_liu_flameheat();
+void AddSC_boss_sha_of_doubt();
 // Stormstout Brewery
 void AddSC_boss_hoptallus();
 void AddSC_boss_ook_ook();
@@ -1382,7 +1386,11 @@ void AddPandariaScripts()
     AddSC_boss_raigonn();
     AddSC_gate_of_the_setting_sun();
     // Temple of Jade Serpent - Temple of Jade Serpent
-    AddSC_instance_jade_serpent();
+    AddSC_instance_temple_of_the_jade_serpent();
+    AddSC_boss_wise_mari();
+    AddSC_boss_lorewalker_stonestep();
+    AddSC_boss_liu_flameheat();
+    AddSC_boss_sha_of_doubt();
     // Stormstout Brewery
     AddSC_boss_hoptallus();
     AddSC_boss_ook_ook();
