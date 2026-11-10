@@ -3180,8 +3180,39 @@ class achievement_neck_deep_in_vile : public AchievementCriteriaScript
         }
 };
 
+// Ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), boss_the_lich_king.cpp.
+// Spell 73159 plays the "Fall of the Lich King" movie (id 16) to each player hit.
+class spell_the_lich_king_play_movie : public SpellScriptLoader
+{
+    public:
+        spell_the_lich_king_play_movie() : SpellScriptLoader("spell_the_lich_king_play_movie") { }
+
+        class spell_the_lich_king_play_movie_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_the_lich_king_play_movie_SpellScript);
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                PreventHitDefaultEffect(effIndex);
+                if (Player* player = GetHitPlayer())
+                    player->SendMovieStart(16); // MOVIE_FALL_OF_THE_LICH_KING
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_the_lich_king_play_movie_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_PLAY_MOVIE);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_the_lich_king_play_movie_SpellScript();
+        }
+};
+
 void AddSC_boss_the_lich_king()
 {
+    new spell_the_lich_king_play_movie();
     new boss_the_lich_king();
     new npc_tirion_fordring_tft();
     new npc_shambling_horror_icc();

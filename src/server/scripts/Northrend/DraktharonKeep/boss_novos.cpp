@@ -324,6 +324,84 @@ public:
     }
 };
 
+// Ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), boss_novos.cpp npc_novos_minion.
+// SkyFire's Novos never passes a death spell to its minions, so that part is left out.
+enum NovosMinionSpells
+{
+    SPELL_MINION_SHADOW_BOLT        = 51363,
+    SPELL_MINION_THUNDERCLAP        = 55635,
+    SPELL_MINION_THUNDERCLAP_H      = 58975,
+    SPELL_MINION_FLASH_OF_DARKNESS  = 49668
+};
+
+class npc_novos_minion : public CreatureScript
+{
+public:
+    npc_novos_minion() : CreatureScript("npc_novos_minion") { }
+
+    struct npc_novos_minionAI : public ScriptedAI
+    {
+        npc_novos_minionAI(Creature* creature) : ScriptedAI(creature) { }
+
+        void Reset() OVERRIDE
+        {
+            events.Reset();
+            if (me->GetEntry() == NPC_RISEN_SHADOWCASTER)
+                events.ScheduleEvent(EVENT_ATTACK, urand(2000, 5000));
+            else
+                events.ScheduleEvent(EVENT_ATTACK, urand(5000, 10000));
+        }
+
+        void MoveInLineOfSight(Unit* who) OVERRIDE
+        {
+            if (who && me->IsWithinDist(who, 35.0f) && !me->IsInCombat() && me->CanStartAttack(who, false))
+                AttackStart(who);
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            if (!UpdateVictim())
+                return;
+
+            events.Update(diff);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            if (events.ExecuteEvent() == EVENT_ATTACK)
+            {
+                switch (me->GetEntry())
+                {
+                    case NPC_RISEN_SHADOWCASTER:
+                        DoCastVictim(SPELL_MINION_SHADOW_BOLT);
+                        events.ScheduleEvent(EVENT_ATTACK, urand(4000, 13000));
+                        break;
+                    case NPC_HULKING_CORPSE:
+                        DoCastAOE(DUNGEON_MODE(SPELL_MINION_THUNDERCLAP, SPELL_MINION_THUNDERCLAP_H));
+                        events.ScheduleEvent(EVENT_ATTACK, 46000);
+                        break;
+                    case NPC_CRYSTAL_HANDLER:
+                        DoCastVictim(SPELL_MINION_FLASH_OF_DARKNESS);
+                        events.ScheduleEvent(EVENT_ATTACK, urand(6000, 18000));
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            DoMeleeAttackIfReady();
+        }
+
+    private:
+        EventMap events;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new npc_novos_minionAI(creature);
+    }
+};
+
 class achievement_oh_novos : public AchievementCriteriaScript
 {
 public:
@@ -373,6 +451,7 @@ void AddSC_boss_novos()
 {
     new boss_novos();
     new npc_crystal_channel_target();
+    new npc_novos_minion();
     new spell_novos_summon_minions();
     new achievement_oh_novos();
 }

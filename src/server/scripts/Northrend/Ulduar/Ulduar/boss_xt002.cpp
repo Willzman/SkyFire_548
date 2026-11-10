@@ -794,6 +794,54 @@ public:
     }
 };
 
+// Ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), boss_xt002.cpp npc_void_zone.
+enum VoidZoneSpells
+{
+    SPELL_CONSUMPTION_10 = 64208,
+    SPELL_CONSUMPTION_25 = 64206
+};
+
+class npc_void_zone : public CreatureScript
+{
+public:
+    npc_void_zone() : CreatureScript("npc_void_zone") { }
+
+    struct npc_void_zoneAI : public ScriptedAI
+    {
+        npc_void_zoneAI(Creature* creature) : ScriptedAI(creature)
+        {
+            me->SetReactState(REACT_PASSIVE);
+            me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+            SetCombatMovement(false);
+        }
+
+        void Reset() OVERRIDE
+        {
+            _consumptionTimer = 3 * IN_MILLISECONDS;
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            if (_consumptionTimer <= diff)
+            {
+                int32 dmg = RAID_MODE<int32>(5000, 7500);
+                me->CastCustomSpell(me, RAID_MODE<uint32>(SPELL_CONSUMPTION_10, SPELL_CONSUMPTION_25), &dmg, NULL, NULL, false);
+                _consumptionTimer = 3 * IN_MILLISECONDS;
+            }
+            else
+                _consumptionTimer -= diff;
+        }
+
+    private:
+        uint32 _consumptionTimer;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return GetUlduarAI<npc_void_zoneAI>(creature);
+    }
+};
+
 class spell_xt002_searing_light_spawn_life_spark : public SpellScriptLoader
 {
 public:
@@ -1128,6 +1176,7 @@ void AddSC_boss_xt002()
     new npc_boombot();
 
     new npc_life_spark();
+    new npc_void_zone();
     new boss_xt002();
 
     new spell_xt002_searing_light_spawn_life_spark();

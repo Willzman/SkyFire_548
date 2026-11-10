@@ -263,9 +263,56 @@ class spell_crystal_spike : public SpellScriptLoader
         }
 };
 
+// Ported from Legends-of-Azeroth-Pandaria-5.4.8 (GPL v2+), boss_ormorok.cpp npc_crystalline_tangler.
+enum CrystallineTangler
+{
+    SPELL_TANGLER_ROOTS = 28858  // proper spell id is unknown
+};
+
+class npc_crystalline_tangler : public CreatureScript
+{
+    public:
+        npc_crystalline_tangler() : CreatureScript("npc_crystalline_tangler") { }
+
+        struct npc_crystalline_tanglerAI : public ScriptedAI
+        {
+            npc_crystalline_tanglerAI(Creature* creature) : ScriptedAI(creature) { }
+
+            uint32 uiRootsTimer;
+
+            void Reset() OVERRIDE
+            {
+                uiRootsTimer = 1 * IN_MILLISECONDS;
+            }
+
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
+                if (!UpdateVictim())
+                    return;
+
+                if (uiRootsTimer <= diff)
+                {
+                    if (me->IsWithinDist(me->GetVictim(), 5.0f, false))
+                    {
+                        DoCast(me->GetVictim(), SPELL_TANGLER_ROOTS);
+                        uiRootsTimer = 15 * IN_MILLISECONDS;
+                    }
+                }
+                else
+                    uiRootsTimer -= diff;
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return new npc_crystalline_tanglerAI(creature);
+        }
+};
+
 void AddSC_boss_ormorok()
 {
     new boss_ormorok();
     new npc_crystal_spike_trigger();
+    new npc_crystalline_tangler();
     new spell_crystal_spike();
 }
