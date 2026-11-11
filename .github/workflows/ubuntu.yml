@@ -41,9 +41,9 @@ jobs:
 
     - name: Install Ubuntu dependencies
       shell: bash
+      # Retries, and falls back to other Ubuntu mirrors when the runner's default one is unreachable
       run: |
-        sudo apt-get update
-        sudo apt-get install -y \
+        bash tools/dev/ci_apt_install.sh \
           build-essential \
           ca-certificates \
           ccache \
@@ -57,7 +57,7 @@ jobs:
           wget \
           zlib1g-dev
 
-        sudo apt-get install -y default-libmysqlclient-dev || sudo apt-get install -y libmysqlclient-dev
+        bash tools/dev/ci_apt_install.sh default-libmysqlclient-dev || bash tools/dev/ci_apt_install.sh libmysqlclient-dev
 
     - name: Verify compiler toolchain
       shell: bash
