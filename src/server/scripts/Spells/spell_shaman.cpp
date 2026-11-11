@@ -3876,8 +3876,149 @@ public:
     }
 };
 
+// ---- C2 Shaman ports from Legends of Azeroth Pandaria (spell_shaman.cpp) ----
+namespace
+{
+    enum ShamanC2Spells
+    {
+        SPELL_SHAMAN_C2_FROZEN_POWER            = 63374,
+        SPELL_SHAMAN_C2_FROST_SHOCK_FREEZE      = 63685,
+        SPELL_SHAMAN_C2_SPIRIT_HUNT_HEAL        = 58879,
+        SPELL_SHAMAN_C2_SEARING_FLAMES_TALENT   = 77657,
+        SPELL_SHAMAN_C2_SEARING_FLAMES_BUFF     = 77661,
+    };
+}
+
+// 8056 - Frost Shock
+// Frozen Power (63374): Frost Shock also roots the target (63685).
+class spell_sha_frozen_power : public SpellScriptLoader
+{
+public:
+    spell_sha_frozen_power() : SpellScriptLoader("spell_sha_frozen_power") { }
+
+    class spell_sha_frozen_power_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_frozen_power_SpellScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_SHAMAN_C2_FROST_SHOCK_FREEZE) != NULL;
+        }
+
+        void HandleAfterHit()
+        {
+            Unit* caster = GetCaster();
+            if (Unit* target = GetHitUnit())
+                if (caster->HasAura(SPELL_SHAMAN_C2_FROZEN_POWER))
+                    caster->CastSpell(target, SPELL_SHAMAN_C2_FROST_SHOCK_FREEZE, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterHit += SpellHitFn(spell_sha_frozen_power_SpellScript::HandleAfterHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_sha_frozen_power_SpellScript();
+    }
+};
+
+// 58877 - Spirit Hunt (Feral Spirit wolves)
+// The wolves' melee heals them and the shaman for a share of the damage done.
+class spell_sha_spirit_hunt : public SpellScriptLoader
+{
+public:
+    spell_sha_spirit_hunt() : SpellScriptLoader("spell_sha_spirit_hunt") { }
+
+    class spell_sha_spirit_hunt_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_sha_spirit_hunt_AuraScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_SHAMAN_C2_SPIRIT_HUNT_HEAL) != NULL;
+        }
+
+        bool CheckProc(ProcEventInfo& eventInfo)
+        {
+            return eventInfo.GetDamageInfo() && eventInfo.GetDamageInfo()->GetDamage() > 0;
+        }
+
+        void HandleProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
+        {
+            PreventDefaultAction();
+
+            Unit* wolf = GetUnitOwner();
+            int32 heal = CalculatePct(int32(eventInfo.GetDamageInfo()->GetDamage()), aurEff->GetAmount());
+            if (heal <= 0)
+                return;
+
+            if (Unit* shaman = wolf->GetOwner())
+                wolf->CastCustomSpell(shaman, SPELL_SHAMAN_C2_SPIRIT_HUNT_HEAL, &heal, NULL, NULL, true);
+            wolf->CastCustomSpell(wolf, SPELL_SHAMAN_C2_SPIRIT_HUNT_HEAL, &heal, NULL, NULL, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            DoCheckProc += AuraCheckProcFn(spell_sha_spirit_hunt_AuraScript::CheckProc);
+            OnEffectProc += AuraEffectProcFn(spell_sha_spirit_hunt_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+        }
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_sha_spirit_hunt_AuraScript();
+    }
+};
+
+// 3606 - Searing Bolt (Searing Totem), 57984 - Fire Blast, 12470 - Fire Nova (Fire Elemental)
+// Searing Flames (77657): damage from the Searing Totem or Fire Elemental gives the shaman a stack of
+// Searing Flames (77661), consumed by Lava Lash. LoA does this with a server-side proc aura on the
+// summon; here the summons' attacks grant the stack directly.
+class spell_sha_searing_flames_generate : public SpellScriptLoader
+{
+public:
+    spell_sha_searing_flames_generate() : SpellScriptLoader("spell_sha_searing_flames_generate") { }
+
+    class spell_sha_searing_flames_generate_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_searing_flames_generate_SpellScript);
+
+        bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_SHAMAN_C2_SEARING_FLAMES_BUFF) != NULL;
+        }
+
+        void HandleAfterHit()
+        {
+            if (GetHitDamage() <= 0)
+                return;
+
+            Unit* caster = GetCaster();
+            Unit* shaman = caster ? caster->GetOwner() : NULL;
+            if (shaman && shaman->GetTypeId() == TypeID::TYPEID_PLAYER && shaman->HasAura(SPELL_SHAMAN_C2_SEARING_FLAMES_TALENT))
+                shaman->CastSpell(shaman, SPELL_SHAMAN_C2_SEARING_FLAMES_BUFF, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterHit += SpellHitFn(spell_sha_searing_flames_generate_SpellScript::HandleAfterHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_sha_searing_flames_generate_SpellScript();
+    }
+};
+
 void AddSC_shaman_spell_scripts()
 {
+    new spell_sha_frozen_power();
+    new spell_sha_spirit_hunt();
+    new spell_sha_searing_flames_generate();
     new spell_sha_ancestral_awakening();
     new spell_sha_ancestral_awakening_proc();
     new spell_sha_ancestral_guidance();
