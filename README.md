@@ -45,14 +45,15 @@ Everything marked done is merged into `Development` and **still needs in-game te
 - [x] Class accuracy: MoP spell-power coefficients from the client data (#27), GCD haste rules (#28),
   Warlock resource regen (#29), missing class aura types such as spell power %, rating %, auto-attack %
   and mana regen (#30)
+- [x] Class accuracy, second pass: class spell DB rows and glyph-learned spells (#33), absorbs scaling with
+  spell power (#34), custom spell attributes (#35), energy/focus regen with haste and pet stat auras (#36),
+  real PPM procs for 5.4 trinkets, enchants and tier bonuses (#37), class spell corrections (#38),
+  Vengeance for all tanks (#41), Shaman, Priest and Mage script gaps (#39, #40, #43), power-level auras (#42)
 
 **Class accuracy (priority)**
-- [ ] Class spell scripts still missing (Shaman, Warlock, Priest, Druid, Hunter, DK, Mage)
-- [ ] Class spell DB rows: linked spells, proc rules, learned spells, pet auras
-- [ ] Class spell corrections (about 400 spells) and custom spell attributes
-- [ ] Real PPM procs (5.4 trinkets, enchants, legendaries, tier bonuses)
-- [ ] Absorb shields scaling with spell power (PW:S, Ice Barrier, Spirit Shell, ...)
-- [ ] Spec/stance-aware power costs and pet stat scaling and regen
+- [ ] In-game testing of all class fixes
+- [ ] Remaining class gaps: Shaman T16 Restoration 4P, Prayer of Mending (Divine Insight), absorbs and the
+  "ignore PvP power" flag, a few class spell corrections that need their LoA scripts
 
 **MoP content**
 - [ ] Remaining 5-man dungeons: Stormstout Brewery, Siege of Niuzao Temple, Gate of the Setting Sun trash
