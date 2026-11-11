@@ -431,7 +431,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleModManaRegenPct,                           //379 SPELL_AURA_379 base mana regen %, implemented in Player::UpdateManaRegen
     &AuraEffect::HandleUnused,                                    //380 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //381 SPELL_AURA_381 (used in spell 21741) (5.4.2)
-    &AuraEffect::HandleNULL,                                      //382 SPELL_AURA_382
+    &AuraEffect::HandleAuraModPetStat,                            //382 SPELL_AURA_MOD_PET_STAT
     &AuraEffect::HandleNoImmediateEffect,                         //383 SPELL_AURA_IGNORE_SPELL_COOLDOWN implemented in Player::HasSpellCooldown / AddSpellAndCategoryCooldowns
     &AuraEffect::HandleUnused,                                    //384 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //385 SPELL_AURA_385

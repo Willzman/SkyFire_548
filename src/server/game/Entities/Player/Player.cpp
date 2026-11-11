@@ -2522,6 +2522,11 @@ void Player::RegenerateAll()
 
     m_regenTimerCount += m_regenTimer;
 
+    // The client predicts energy/focus regen between updates with this field (regen / field), as in LoA.
+    float const regenHasteField = 1.0f / GetPowerRegenHasteMultiplier();
+    if (std::fabs(GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN) - regenHasteField) > 0.0001f)
+        SetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN, regenHasteField);
+
     if (getClass() == CLASS_PALADIN)
         m_holyPowerRegenTimerCount += m_regenTimer;
 
@@ -2628,7 +2633,6 @@ void Player::Regenerate(Powers power)
     float addvalue = 0.0f;
 
     // Powers now benefit from haste.
-    float rangedHaste = GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE);
     float meleeHaste = GetFloatValue(UNIT_FIELD_MOD_HASTE);
     float spellHaste = GetFloatValue(UNIT_FIELD_MOD_CASTING_SPEED);
 
@@ -2654,16 +2658,18 @@ void Player::Regenerate(Powers power)
             }
             break;
         }
-        case POWER_FOCUS:
+        // Energy and focus regen speed up with haste (C12). The old CalculatePct(x, haste) terms added
+        // almost nothing: the haste fields are time multipliers near 1.0, not percentages.
+        case POWER_FOCUS:                                               // once per second (RegenerateAll)
         {
             float flatMod = GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER + powerIndex);
-            addvalue += (6.0f + CalculatePct(6.0f, rangedHaste) + flatMod) * sWorld->getRate(Rates::RATE_POWER_FOCUS);
+            addvalue += (6.0f + flatMod) * GetPowerRegenHasteMultiplier() * sWorld->getRate(Rates::RATE_POWER_FOCUS);
             break;
         }
         case POWER_ENERGY:                                              // Regenerate energy (rogue) & (monk)
         {
             float flatMod = GetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER + powerIndex);
-            addvalue += ((0.01f * m_regenTimer) + CalculatePct(0.01f, meleeHaste) + flatMod * 0.001f * m_regenTimer)
+            addvalue += ((0.01f * m_regenTimer) + flatMod * 0.001f * m_regenTimer) * GetPowerRegenHasteMultiplier()
                 * sWorld->getRate(Rates::RATE_POWER_ENERGY);
             break;
         }

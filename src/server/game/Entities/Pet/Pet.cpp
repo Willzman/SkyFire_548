@@ -763,14 +763,16 @@ void Creature::Regenerate(Powers power)
     {
         case POWER_FOCUS:
         {
-            // For hunter pets.
-            addvalue = 24 * sWorld->getRate(Rates::RATE_POWER_FOCUS);
+            // For hunter pets (every PET_FOCUS_REGEN_INTERVAL), sped up by the hunter's haste (C12).
+            addvalue = 24 * GetPowerRegenHasteMultiplier() * sWorld->getRate(Rates::RATE_POWER_FOCUS);
+            if (std::fabs(GetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN) * GetPowerRegenHasteMultiplier() - 1.0f) > 0.0001f)
+                SetFloatValue(UNIT_FIELD_MOD_HASTE_REGEN, 1.0f / GetPowerRegenHasteMultiplier());
             break;
         }
         case POWER_ENERGY:
         {
-            // For deathknight's ghoul.
-            addvalue = 20;
+            // For deathknight's ghoul (and other energy pets), sped up by the owner's haste (C12).
+            addvalue = 20 * GetPowerRegenHasteMultiplier();
             break;
         }
         default:

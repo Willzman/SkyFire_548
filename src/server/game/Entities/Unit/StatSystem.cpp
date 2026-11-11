@@ -1121,8 +1121,27 @@ void Guardian::UpdateArmor()
     value *= GetModifierValue(unitMod, BASE_PCT);
     value += GetModifierValue(unitMod, TOTAL_VALUE) + bonus_armor;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
+    value *= GetOwnerPetStatMultiplier(13);
 
     SetArmor(int32(value));
+}
+
+float Guardian::GetOwnerPetStatMultiplier(int32 stat) const
+{
+    if (!IsPet() || !m_owner)
+        return 1.0f;
+
+    float multiplier = 1.0f;
+    AuraEffectList const& mods = m_owner->GetAuraEffectsByType(SPELL_AURA_MOD_PET_STAT);
+    for (AuraEffectList::const_iterator itr = mods.begin(); itr != mods.end(); ++itr)
+    {
+        if ((*itr)->GetMiscValue() != stat)
+            continue;
+        if ((*itr)->GetMiscValueB() && uint32((*itr)->GetMiscValueB()) != GetEntry())
+            continue;
+        AddPct(multiplier, (*itr)->GetAmount());
+    }
+    return multiplier;
 }
 
 void Guardian::UpdateMaxHealth()
@@ -1146,6 +1165,7 @@ void Guardian::UpdateMaxHealth()
     value *= GetModifierValue(unitMod, BASE_PCT);
     value += GetModifierValue(unitMod, TOTAL_VALUE) + stamina * multiplicator;
     value *= GetModifierValue(unitMod, TOTAL_PCT);
+    value *= GetOwnerPetStatMultiplier(1);
 
     SetMaxHealth((uint32)value);
 }
