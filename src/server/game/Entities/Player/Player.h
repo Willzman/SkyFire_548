@@ -3290,6 +3290,7 @@ protected:
     uint32 m_regenTimerCount;
     uint32 m_holyPowerRegenTimerCount;
     uint32 m_chiPowerDegenTimerCount;
+    uint32 m_soulShardRegenTimerCount;
     uint32 m_focusRegenTimerCount;
     float m_powerFraction[MAX_POWERS_PER_CLASS];
     uint32 m_contestedPvPTimer;

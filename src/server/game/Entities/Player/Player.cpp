@@ -556,6 +556,7 @@ Player::Player(WorldSession* session) : Unit(true)
     m_regenTimerCount = 0;
     m_holyPowerRegenTimerCount = 0;
     m_chiPowerDegenTimerCount = 0;
+    m_soulShardRegenTimerCount = 0;
     m_focusRegenTimerCount = 0;
     m_weaponChangeTimer = 0;
     _readyCheckTimer = 0;
@@ -2530,6 +2531,9 @@ void Player::RegenerateAll()
     if (getClass() == CLASS_HUNTER)
         m_focusRegenTimerCount += m_regenTimer;
 
+    if (getClass() == CLASS_WARLOCK)
+        m_soulShardRegenTimerCount += m_regenTimer;
+
     Regenerate(POWER_ENERGY);
     Regenerate(POWER_MANA);
 
@@ -2575,6 +2579,8 @@ void Player::RegenerateAll()
 
         if (getClass() == CLASS_WARLOCK && GetTalentSpecialization(GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY)
             Regenerate(POWER_DEMONIC_FURY);
+        else if (getClass() == CLASS_WARLOCK && GetTalentSpecialization(GetActiveSpec()) == SPEC_WARLOCK_DESTRUCTION)
+            Regenerate(POWER_BURNING_EMBERS);
 
         m_regenTimerCount -= 2000;
     }
@@ -2589,6 +2595,14 @@ void Player::RegenerateAll()
     {
         Regenerate(POWER_CHI);
         m_chiPowerDegenTimerCount -= 10000;
+    }
+
+    // Affliction: one Soul Shard every 20 s out of combat
+    if (m_soulShardRegenTimerCount >= 20000 && getClass() == CLASS_WARLOCK)
+    {
+        if (GetTalentSpecialization(GetActiveSpec()) == SPEC_WARLOCK_AFFLICTION)
+            Regenerate(POWER_SOUL_SHARDS);
+        m_soulShardRegenTimerCount -= 20000;
     }
 
     m_regenTimer = 0;
@@ -2680,14 +2694,36 @@ void Player::Regenerate(Powers power)
             }
             break;
         }
-        case POWER_DEMONIC_FURY:
+        // Warlock resources settle back to their resting value out of combat (MoP).
+        // Ported from Legends of Azeroth Pandaria (Player::Regenerate).
+        case POWER_DEMONIC_FURY:                                        // towards 200, 10 per second (called every 2 s)
         {
             if (!IsInCombat() && !HasAuraType(SPELL_AURA_INTERRUPT_REGEN))
             {
-                float DemonicFuryDecreaseRate = sWorld->getRate(Rates::RATE_POWER_RUNICPOWER_LOSS);
-                addvalue += -30 * DemonicFuryDecreaseRate;         // 3 fury by tick
+                uint32 const restValue = std::min<uint32>(200, maxValue);
+                if (curValue > restValue)
+                    SetPower(power, std::max(restValue, curValue > 20 ? curValue - 20 : 0));
+                else if (curValue < restValue)
+                    SetPower(power, std::min(restValue, curValue + 20));
             }
-            break;
+            return;
+        }
+        case POWER_BURNING_EMBERS:                                      // towards 1 ember (10), 1 point per 2 s
+        {
+            if (!IsInCombat())
+            {
+                if (curValue < 10)
+                    SetPower(power, std::min(maxValue, curValue + 1));
+                else if (curValue > 10)
+                    SetPower(power, curValue - 1);
+            }
+            return;
+        }
+        case POWER_SOUL_SHARDS:                                         // +1 shard (100) every 20 s
+        {
+            if (!IsInCombat() && curValue < maxValue)
+                SetPower(power, std::min(maxValue, curValue + 100));
+            return;
         }
         case POWER_HEALTH:
         {
@@ -2861,6 +2897,25 @@ void Player::ResetAllPowers()
         }
         default:
             break;
+    }
+
+    // Warlock secondary resources (LoA Player::ResetAllPowers): full shards, 1 ember, 200 fury
+    if (getClass() == CLASS_WARLOCK)
+    {
+        switch (GetTalentSpecialization(GetActiveSpec()))
+        {
+            case SPEC_WARLOCK_AFFLICTION:
+                SetPower(POWER_SOUL_SHARDS, GetMaxPower(POWER_SOUL_SHARDS));
+                break;
+            case SPEC_WARLOCK_DESTRUCTION:
+                SetPower(POWER_BURNING_EMBERS, 10);
+                break;
+            case SPEC_WARLOCK_DEMONOLOGY:
+                SetPower(POWER_DEMONIC_FURY, 200);
+                break;
+            default:
+                break;
+        }
     }
 }
 

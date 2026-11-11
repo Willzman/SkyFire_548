@@ -2577,12 +2577,12 @@ public:
     int32 SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const;
     float GetSpellPowerPctMultiplier() const;          // SPELL_AURA_MOD_SPELL_POWER_PCT (317), honouring same-effect spell groups
     int32 SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask) const;
-    uint32 SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1) const;
-    uint32 SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1) const;
+    uint32 SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
+    uint32 SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
     int32 SpellBaseHealingBonusDone(SpellSchoolMask schoolMask) const;
     int32 SpellBaseHealingBonusTaken(SpellSchoolMask schoolMask) const;
-    uint32 SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1) const;
-    uint32 SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1) const;
+    uint32 SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
+    uint32 SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
 
     uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);
     uint32 MeleeDamageBonusTaken(Unit* attacker, uint32 pdamage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);
@@ -2598,6 +2598,8 @@ public:
 
     uint32 GetCastingTimeForBonus(SpellInfo const* spellProto, DamageEffectType damagetype, uint32 CastingTime) const;
     float CalculateDefaultCoefficient(SpellInfo const* spellInfo, DamageEffectType damagetype) const;
+    // MoP spell-power coefficient from SpellEffect.dbc (BonusMultiplier); effIndex < 0 picks the damage or heal effect
+    float GetSpellBonusMultiplier(SpellInfo const* spellInfo, DamageEffectType damagetype, bool healing, int8 effIndex) const;
 
     uint32 GetRemainingPeriodicAmount(uint64 caster, uint32 spellId, AuraType auraType, uint8 effectIndex = 0) const;
 

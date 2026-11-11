@@ -813,8 +813,8 @@ public:
             canBeRecalculated = false;
             if (Unit* caster = GetCaster())
             {
-                // +80.68% from sp bonus
-                float bonus = 0.8068f;
+                // +187.1% from sp bonus (MoP 5.4; was the WotLK 80.68%)
+                float bonus = 1.871f;
 
                 // Borrowed Time
                 if (AuraEffect const* borrowedTime = caster->GetDummyAuraEffect(SPELLFAMILY_PRIEST, PRIEST_ICON_ID_BORROWED_TIME, EFFECT_1))
