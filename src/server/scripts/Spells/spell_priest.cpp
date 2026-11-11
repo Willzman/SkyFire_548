@@ -41,6 +41,8 @@ enum PriestSpells
     SPELL_PRIEST_LEAP_OF_FAITH_EFFECT               = 92832,
     SPELL_PRIEST_LEAP_OF_FAITH_GLYPH                = 119850,
     SPELL_PRIEST_MANA_LEECH_PROC                    = 34650,
+    SPELL_PRIEST_MINDBENDER_MANA_LEECH              = 123050,
+    SPELL_PRIEST_MINDBENDER_MANA_LEECH_PROC         = 123051,
     SPELL_PRIEST_PENANCE_R1                         = 47540,
     SPELL_PRIEST_PENANCE_R1_DAMAGE                  = 47758,
     SPELL_PRIEST_PENANCE_R1_HEAL                    = 47757,
@@ -618,7 +620,7 @@ public:
     }
 };
 
-// 28305 - Mana Leech (Passive) (Priest Pet Aura)
+// 28305 - Mana Leech (Passive) (Shadowfiend), 123050 - Mana Leech (Mindbender)
 class spell_pri_mana_leech : public SpellScriptLoader
 {
 public:
@@ -638,6 +640,8 @@ public:
         bool Load() OVERRIDE
         {
             _procTarget = NULL;
+            // Mindbender returns mana through its own spell (C2, as in LoA)
+            _manaSpell = GetId() == SPELL_PRIEST_MINDBENDER_MANA_LEECH ? SPELL_PRIEST_MINDBENDER_MANA_LEECH_PROC : SPELL_PRIEST_MANA_LEECH_PROC;
             return true;
         }
 
@@ -650,7 +654,7 @@ public:
         void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
         {
             PreventDefaultAction();
-            GetTarget()->CastSpell(_procTarget, SPELL_PRIEST_MANA_LEECH_PROC, true, NULL, aurEff);
+            GetTarget()->CastSpell(_procTarget, _manaSpell, true, NULL, aurEff);
         }
 
         void Register() OVERRIDE
@@ -661,6 +665,7 @@ public:
 
     private:
         Unit* _procTarget;
+        uint32 _manaSpell;
     };
 
     AuraScript* GetAuraScript() const OVERRIDE
