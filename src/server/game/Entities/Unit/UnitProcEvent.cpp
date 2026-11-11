@@ -86,6 +86,73 @@ float Unit::GetPPMProcChance(uint32 WeaponSpeed, float PPM, const SpellInfo* spe
     return floor((WeaponSpeed * PPM) / 600.0f);   // result is chance in percents (probability = Speed_in_sec * (PPM / 60))
 }
 
+// RPPM chance (C10), ported from Legends of Azeroth Pandaria's Unit::GetRealPPMProcChance: the chance grows
+// with the time since the last attempt (up to 10 s) and gets a "bad luck" boost once the time since the
+// last proc passes 1.5 average intervals.
+float Player::GetRealPPMProcChance(SpellInfo const* spellInfo, uint32 historyKey) const
+{
+    float rate = spellInfo->CalcRppmRate(this);
+    if (rate <= 0.0f)
+        return 0.0f;
+
+    float sinceLastAttempt = 10.0f;
+    float sinceLastProc = 1000.0f;
+    std::map<uint32, RppmProcHistory>::const_iterator itr = m_rppmHistory.find(historyKey);
+    if (itr != m_rppmHistory.end())
+    {
+        uint32 const now = getMSTime();
+        if (itr->second.attempted)
+            sinceLastAttempt = std::min(10.0f, getMSTimeDiff(itr->second.lastAttempt, now) / 1000.0f);
+        if (itr->second.succeeded)
+            sinceLastProc = std::min(1000.0f, getMSTimeDiff(itr->second.lastSuccess, now) / 1000.0f);
+    }
+
+    float const interval = 60.0f / rate;
+    float chance = rate * 100.0f * sinceLastAttempt / 60.0f;
+    chance *= std::max(1.0f, 1.0f + ((sinceLastProc / interval) - 1.5f) * 3.0f);
+    return chance;
+}
+
+void Player::RppmProcAttempt(uint32 historyKey)
+{
+    RppmProcHistory& entry = m_rppmHistory[historyKey];
+    entry.lastAttempt = getMSTime();
+    entry.attempted = true;
+}
+
+void Player::RppmProcSuccess(uint32 historyKey)
+{
+    RppmProcHistory& entry = m_rppmHistory[historyKey];
+    entry.lastSuccess = getMSTime();
+    entry.succeeded = true;
+}
+
+// Which RPPM history an aura proc uses. Weapon enchants (aura cast by the main/off hand weapon) only proc from
+// that weapon's attacks and keep their own history; everything else shares one (C10, as in LoA).
+static bool GetRppmHistoryKey(Unit const* unit, Aura const* aura, WeaponAttackType attType, uint32& key)
+{
+    key = aura->GetId() * 4;
+    Player const* player = unit->ToPlayer();
+    if (!player || !aura->GetCastItemGUID())
+        return true;
+
+    Item* mainHand = player->GetWeaponForAttack(WeaponAttackType::BASE_ATTACK);
+    Item* offHand = player->GetWeaponForAttack(WeaponAttackType::OFF_ATTACK);
+    if (mainHand && mainHand->GetGUID() == aura->GetCastItemGUID())
+    {
+        if (attType != WeaponAttackType::BASE_ATTACK)
+            return false;
+        key += uint32(WeaponAttackType::BASE_ATTACK);
+    }
+    else if (offHand && offHand->GetGUID() == aura->GetCastItemGUID())
+    {
+        if (attType != WeaponAttackType::OFF_ATTACK)
+            return false;
+        key += uint32(WeaponAttackType::OFF_ATTACK);
+    }
+    return true;
+}
+
 struct ProcTriggeredData
 {
     ProcTriggeredData(Aura* _aura)
@@ -385,6 +452,18 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
         uint32 cooldown = 0;
         if (prepare && GetTypeId() == TypeID::TYPEID_PLAYER && i->spellProcEvent && i->spellProcEvent->cooldown)
             cooldown = i->spellProcEvent->cooldown;
+        // No table cooldown: use the internal cooldown from SpellAuraOptions.dbc (ms; SkyFire proc
+        // cooldowns are whole seconds, so under 1 s rounds to none) (C10, as in LoA)
+        else if (prepare && GetTypeId() == TypeID::TYPEID_PLAYER && spellInfo->ProcCooldown >= IN_MILLISECONDS)
+            cooldown = spellInfo->ProcCooldown / IN_MILLISECONDS;
+
+        // RPPM: remember the successful proc for the bad-luck protection (C10)
+        if (prepare && spellInfo->ProcsPerMinute && GetTypeId() == TypeID::TYPEID_PLAYER)
+        {
+            uint32 historyKey = 0;
+            if (GetRppmHistoryKey(this, i->aura, attType, historyKey))
+                ToPlayer()->RppmProcSuccess(historyKey);
+        }
 
         // Note: must SetCantProc(false) before return
         if (spellInfo->AttributesEx3 & SPELL_ATTR3_DISABLE_PROC)
@@ -757,8 +836,19 @@ bool Unit::IsTriggeredAtSpellProcEvent(Unit* victim, Aura* aura, SpellInfo const
     // If in spellProcEvent exist custom chance, chance = spellProcEvent->customChance;
     if (spellProcEvent && spellProcEvent->customChance)
         chance = spellProcEvent->customChance;
+    // RPPM (SpellProcsPerMinute.dbc) takes priority over the table's flat PPM (C10)
+    if (spellProto->ProcsPerMinute && GetTypeId() == TypeID::TYPEID_PLAYER)
+    {
+        uint32 historyKey = 0;
+        if (!GetRppmHistoryKey(this, aura, attType, historyKey))
+            return false;
+
+        Player* player = ToPlayer();
+        chance = player->GetRealPPMProcChance(spellProto, historyKey);
+        player->RppmProcAttempt(historyKey);
+    }
     // If PPM exist calculate chance from PPM
-    if (spellProcEvent && spellProcEvent->ppmRate != 0)
+    else if (spellProcEvent && spellProcEvent->ppmRate != 0)
     {
         if (!isVictim)
         {

@@ -1956,6 +1956,12 @@ public:
     void SendTalentWipeConfirm(ObjectGuid guid, bool resetType);
     void ResetPetTalents();
     void RegenerateAll();
+
+    // RPPM proc history (C10): when each RPPM aura last tried and last managed to proc.
+    // Key: spell id * 4 + attack type (weapon enchants track each weapon on its own).
+    float GetRealPPMProcChance(SpellInfo const* spellInfo, uint32 historyKey) const;
+    void RppmProcAttempt(uint32 historyKey);
+    void RppmProcSuccess(uint32 historyKey);
     void Regenerate(Powers power);
     void RegenerateHealth();
     void setRegenTimerCount(uint32 time)
@@ -3289,6 +3295,16 @@ protected:
     // Gamemaster whisper whitelist
     WhisperListContainer WhisperList;
     uint32 m_regenTimerCount;
+
+    struct RppmProcHistory
+    {
+        RppmProcHistory() : lastAttempt(0), lastSuccess(0), attempted(false), succeeded(false) { }
+        uint32 lastAttempt;   // getMSTime()
+        uint32 lastSuccess;
+        bool attempted;
+        bool succeeded;
+    };
+    std::map<uint32, RppmProcHistory> m_rppmHistory;
     uint32 m_holyPowerRegenTimerCount;
     uint32 m_chiPowerDegenTimerCount;
     uint32 m_soulShardRegenTimerCount;

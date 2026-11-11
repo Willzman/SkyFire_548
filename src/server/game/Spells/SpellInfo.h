@@ -208,6 +208,8 @@ public:
     uint32 ProcFlags;
     uint32 ProcChance;
     uint32 ProcCharges;
+    uint32 ProcCooldown;                                    // ms, from SpellAuraOptions (C10)
+    SpellProcsPerMinuteEntry const* ProcsPerMinute;         // RPPM base rate, NULL if none (C10)
     uint32 MaxLevel;
     uint32 BaseLevel;
     uint32 SpellLevel;
@@ -367,6 +369,7 @@ public:
 
     uint32 CalcCastTime(uint8 level = 0, Spell* spell = NULL) const;
     uint32 GetRecoveryTime() const;
+    float CalcRppmRate(Player const* caster) const;         // RPPM rate after SpellProcsPerMinuteMod (C10)
 
     //int32 CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) const;
 

@@ -2305,8 +2305,26 @@ struct SpellAuraOptionsEntry
     uint32    procChance;                                   // 4       m_procChance
     uint32    procCharges;                                  // 5       m_procCharges
     uint32    procFlags;                                    // 6       m_procTypeMask
-    //uint32  unk1                                          // 7 - Pandaria
-    //uint32  unk2                                          // 8 - Pandaria
+    uint32    ProcCooldown;                                 // 7 - Pandaria, internal proc cooldown in ms
+    uint32    ProcsPerMinuteId;                             // 8 - Pandaria, SpellProcsPerMinute.dbc (RPPM)
+};
+
+// SpellProcsPerMinute.dbc (RPPM base rate)
+struct SpellProcsPerMinuteEntry
+{
+    uint32    Id;                                           // 0
+    float     ProcsPerMinute;                               // 1
+    //uint32  Unk;                                          // 2
+};
+
+// SpellProcsPerMinuteMod.dbc (RPPM modifiers: haste, crit, spec, item level, PvP)
+struct SpellProcsPerMinuteModEntry
+{
+    uint32    Id;                                           // 0
+    uint32    Type;                                         // 1
+    uint32    SubType;                                      // 2
+    float     Value;                                        // 3
+    uint32    SpellProcsPerMinuteId;                        // 4
 };
 
 // SpellAuraRestrictions.dbc/
