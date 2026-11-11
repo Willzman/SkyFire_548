@@ -2583,6 +2583,7 @@ public:
     int32 SpellBaseHealingBonusTaken(SpellSchoolMask schoolMask) const;
     uint32 SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
     uint32 SpellHealingBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 healamount, DamageEffectType damagetype, uint32 stack = 1, int8 effIndex = -1) const;
+    int32 SpellAbsorbBonusDone(Unit* victim, SpellInfo const* spellProto, uint8 effIndex, int32 absorbAmount, bool addSpellPower, bool applyAbsorbPct) const;
 
     uint32 MeleeDamageBonusDone(Unit* pVictim, uint32 damage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);
     uint32 MeleeDamageBonusTaken(Unit* attacker, uint32 pdamage, WeaponAttackType attType, SpellInfo const* spellProto = NULL);

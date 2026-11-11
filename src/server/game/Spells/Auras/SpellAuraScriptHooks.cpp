@@ -270,6 +270,21 @@ void Aura::CallScriptEffectUpdatePeriodicHandlers(AuraEffect* aurEff)
     }
 }
 
+// True if a loaded aura script calculates this effect's amount itself (DoEffectCalcAmount or AfterEffectCalcAmount).
+bool Aura::HasEffectCalcAmountScript(uint8 effIndex)
+{
+    for (std::list<AuraScript*>::iterator scritr = m_loadedScripts.begin(); scritr != m_loadedScripts.end(); ++scritr)
+    {
+        for (std::list<AuraScript::EffectCalcAmountHandler>::iterator itr = (*scritr)->DoEffectCalcAmount.begin(); itr != (*scritr)->DoEffectCalcAmount.end(); ++itr)
+            if (itr->IsEffectAffected(m_spellInfo, effIndex))
+                return true;
+        for (std::list<AuraScript::EffectCalcAmountHandler>::iterator itr = (*scritr)->AfterEffectCalcAmount.begin(); itr != (*scritr)->AfterEffectCalcAmount.end(); ++itr)
+            if (itr->IsEffectAffected(m_spellInfo, effIndex))
+                return true;
+    }
+    return false;
+}
+
 void Aura::CallScriptEffectCalcAmountHandlers(AuraEffect const* aurEff, int32& amount, bool& canBeRecalculated)
 {
     for (std::list<AuraScript*>::iterator scritr = m_loadedScripts.begin(); scritr != m_loadedScripts.end(); ++scritr)
