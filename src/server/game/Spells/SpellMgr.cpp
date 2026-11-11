@@ -3752,6 +3752,268 @@ void SpellMgr::LoadSpellInfoCorrections()
             default:
                 break;
         }
+
+        // Class spell corrections from Legends of Azeroth Pandaria's LoadSpellInfoCorrections (C8).
+        // Only data fixes that stand on their own; LoA's corrections that rewrite effects for its own
+        // scripts (effect -> dummy, new trigger spells, aura type swaps) are left for the C2 script ports.
+        switch (spellInfo->Id)
+        {
+            // ---- Damage/heal already computed by a script: don't add spell power and modifiers again ----
+            case 88767:  // Fulmination (Lightning Shield damage x charges)
+            case 83077:  // Improved Serpent Sting (share of the DoT)
+            case 86678:  // Light of the Ancient Kings (share of the heal)
+            case 101024: // Glyph of Ferocious Bite (heal)
+            case 122233: // Crimson Tempest (DoT from the hit)
+            case 146585: // Execution Sentence (dispel)
+            case 55533:  // Glyph of Healing Wave (share of the heal)
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
+                break;
+
+            // ---- Warlock ----
+            case 686:    // Shadow Bolt: both damage effects carry the base damage; merge so it hits once
+                spellInfo->Effects[EFFECT_0].BonusMultiplier = spellInfo->Effects[EFFECT_2].BonusMultiplier;
+                spellInfo->Effects[EFFECT_2].Effect = 0;
+                break;
+            case 108505: // Archimonde's Darkness
+                spellInfo->AttributesEx8 |= SPELL_ATTR8_AURA_SEND_AMOUNT;
+                break;
+            case 80240:  // Havoc: also covers Curse of the Elements
+                spellInfo->Effects[EFFECT_1].SpellClassMask[1] |= 0x200;
+                break;
+            case 108371: // Harvest Life: increases DoT damage
+                spellInfo->Effects[EFFECT_0].MiscValue = SPELLMOD_DOT;
+                break;
+            case 6203:   // Soulstone: can be cast on a dead player (battle resurrection)
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_DEAD;
+                break;
+            case 108503: // Grimoire of Sacrifice
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 113896: // Demonic Gateway
+            case 120729: // Demonic Gateway
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+
+            // ---- Priest ----
+            case 47753:  // Divine Aegis
+            case 121148: // Cascade
+            case 127629: // Cascade
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 120840: // Cascade
+            case 127631: // Cascade
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
+                break;
+            case 113792: // Psychic Terror (Psyfiend): interruptible
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 91724:  // Spell Warding: not removed by changing map
+                spellInfo->AuraInterruptFlags &= ~AURA_INTERRUPT_FLAG_CHANGE_MAP;
+                break;
+            case 137323: // Lucidity
+                spellInfo->Effects[EFFECT_0].SpellClassMask[2] |= 0x00400000;
+                break;
+
+            // ---- Druid ----
+            case 124988: // Nature's Vigil
+            case 145153: // Dream of Cenarius
+                spellInfo->Effects[EFFECT_0].RealPointsPerLevel = 0.0f;
+                break;
+            case 52610:  // Savage Roar
+            case 127538: // Savage Roar
+                spellInfo->AttributesEx8 |= SPELL_ATTR8_DONT_RESET_PERIODIC_TIMER;
+                break;
+            case 16931:  // Thick Hide
+                spellInfo->Effects[EFFECT_3].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 110788: // Cloak of Shadows (Symbiosis)
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 110790;
+                break;
+            case 110790: // Cloak of Shadows (Symbiosis)
+                spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                break;
+            case 81022:  // Stampede
+                spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_DEATH_PERSISTENT;
+                break;
+            case 100977: // Harmony: also covers Cenarion Ward
+                spellInfo->Effects[EFFECT_0].SpellClassMask[3] |= 0x00000400;
+                break;
+            case 102791: // Wild Mushroom: Bloom
+            case 102792: // Wild Mushroom: Bloom
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 126450: // Clash (Symbiosis)
+                spellInfo->Speed = SPEED_CHARGE;
+                break;
+
+            // ---- Rogue ----
+            case 22482:  // Blade Flurry: doesn't hit dead targets
+                spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CAN_TARGET_DEAD;
+                break;
+            case 58423:  // Relentless Strikes: also Envenom
+                spellInfo->Effects[EFFECT_0].SpellClassMask[1] |= 0x8;
+                break;
+            case 2094:   // Blind
+            case 5374:   // Mutilate
+                spellInfo->Attributes |= SPELL_ATTR0_IMPOSSIBLE_DODGE_PARRY_BLOCK;
+                break;
+            case 31224:  // Cloak of Shadows
+            case 39666:  // Cloak of Shadows
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 81549;
+                break;
+            case 81549:  // Cloak of Shadows
+            case 61851:  // Killing Spree
+                spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                break;
+            case 57840:  // Killing Spree
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_CAN_TARGET_INVISIBLE;
+                break;
+            case 57841:  // Killing Spree
+            case 57842:  // Killing Spree Off-Hand
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 61249:  // Improved Recuperate
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 137619: // Marked for Death
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+
+            // ---- Hunter ----
+            case 1130:   // Hunter's Mark
+            case 56303:  // Hunter's Mark
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            case 3355:   // Freezing Trap
+            case 13812:  // Explosive Trap
+            case 45145:  // Snake Trap
+            case 57879:  // Snake Trap
+            case 63487:  // Ice Trap
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_CAN_TARGET_INVISIBLE;
+                break;
+            case 118253: // Serpent Sting
+            case 120699: // Lynx Rush
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 53271:  // Master's Call
+            case 54114:  // Heart of the Phoenix
+            case 120761: // Glaive Toss
+            case 121414: // Glaive Toss
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 128997: // Spirit Beast Blessing
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+
+            // ---- Mage ----
+            case 15850:  // Chilled
+            case 16927:  // Chilled
+                spellInfo->Mechanic = MECHANIC_SNARE;
+                break;
+            case 146659: // Glyph of Rapid Displacement
+                spellInfo->AttributesEx8 |= SPELL_ATTR8_AURA_SEND_AMOUNT;
+                break;
+            case 82691:  // Ring of Frost
+                spellInfo->AttributesEx |= (SPELL_ATTR1_CANT_BE_REFLECTED | SPELL_ATTR1_CANT_BE_REDIRECTED);
+                break;
+            case 31687:  // Summon Water Elemental: interruptible
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 115611: // Temporal Ripples
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                spellInfo->Effects[EFFECT_0].RealPointsPerLevel = 0.0f;
+                break;
+            case 146557: // Frozen Thoughts
+                spellInfo->Effects[EFFECT_0].SpellClassMask[0] |= 0x00020220;
+                spellInfo->Effects[EFFECT_0].SpellClassMask[1] |= 0x00001000;
+                break;
+
+            // ---- Paladin ----
+            case 2812:   // Denounce: target must be in front
+                spellInfo->FacingCasterFlags |= SPELL_FACING_FLAG_INFRONT;
+                break;
+            case 20066:  // Repentance: interruptible
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 54957:  // Glyph of Flash of Light: also Eternal Flame
+                spellInfo->Effects[EFFECT_0].SpellClassMask[2] |= 0x02000000;
+                break;
+            case 26023:  // Pursuit of Justice
+                spellInfo->Effects[EFFECT_5].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+
+            // ---- Shaman ----
+            case 45284:  // Lightning Bolt (Elemental Overload): affected by Lightning Bolt modifiers
+                spellInfo->SpellFamilyFlags[0] |= 0x1;
+                break;
+            case 45297:  // Chain Lightning (Elemental Overload): affected by Chain Lightning modifiers
+                spellInfo->SpellFamilyFlags[0] |= 0x2;
+                break;
+            case 5672:   // Healing Stream (totem heal)
+            case 114941: // Healing Tide (totem heal)
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_HASTE_AFFECT_DURATION;
+                break;
+            case 16213:  // Purification: also Earth Shield heals
+                spellInfo->Effects[EFFECT_0].SpellClassMask[2] |= 0x40;
+                break;
+
+            // ---- Monk ----
+            case 116023: // Sparring
+            case 123332: // Crackling Jade Lightning Chi Proc Driver
+                spellInfo->AuraInterruptFlags &= ~AURA_INTERRUPT_FLAG_CAST;
+                break;
+            case 147364: // Rapid Rolling
+                spellInfo->StackAmount = 0;
+                break;
+            case 122235: // Clash
+                spellInfo->Speed = SPEED_CHARGE;
+                break;
+            case 119607: // Renewing Mist (jump)
+                spellInfo->Effects[EFFECT_1].RadiusEntry = spellInfo->Effects[EFFECT_1].MaxRadiusEntry;
+                break;
+            case 132464: // Chi Wave
+            case 132467: // Chi Wave
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 116330: // Dizzying Haze: the snare isn't a separate mechanic
+                spellInfo->Effects[EFFECT_1].Mechanic = MECHANIC_NONE;
+                break;
+            case 117666: // Legacy of the Emperor
+            case 125950: // Soothing Mist (statue)
+            case 125962: // Soothing Mist <Statue> Trigger
+            case 124280: // Touch of Karma (damage)
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 117667: // Legacy of the Emperor
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 125883: // Zen Flight: broken by attacking, not by immunity
+                spellInfo->AuraInterruptFlags |= AURA_INTERRUPT_FLAG_MELEE_ATTACK;
+                spellInfo->AuraInterruptFlags &= ~AURA_INTERRUPT_FLAG_IMMUNE_OR_LOST_SELECTION;
+                break;
+            case 134563: // Healing Elixirs
+                spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
+                break;
+
+            // ---- Death Knight ----
+            case 108201: // Desecrated Ground: usable while feared, stunned or confused
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_CONFUSED | SPELL_ATTR5_USABLE_WHILE_FEARED | SPELL_ATTR5_USABLE_WHILE_STUNNED;
+                break;
+            case 58673:  // Glyph of Icebound Fortitude
+                spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 51963:  // Gargoyle Strike: interruptible
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            default:
+                break;
+        }
     }
 
     if (SummonPropertiesEntry* properties = const_cast<SummonPropertiesEntry*>(sSummonPropertiesStore.LookupEntry(121)))
