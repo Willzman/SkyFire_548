@@ -3897,8 +3897,145 @@ class spell_gen_searching_for_artifacts : public SpellScriptLoader
         }
 };
 
+// 84839 - Vengeance (Paladin), 84840 - Vengeance (Druid, Bear Form only), 93098 - Vengeance (Warrior),
+// 93099 - Vengeance (Death Knight), 120267 - Vengeance (Monk)
+// Tanks gain attack power from damage taken (132365, 20 s). Ported from Legends of Azeroth Pandaria's
+// spell_common_vengeance (C2):
+//  - each hit from a non-player adds 1.5% of its unmitigated damage (crits count as 1.5x the hit,
+//    spell damage 2.5x), plus what is left of the current buff;
+//  - with several attackers, the Nth strongest one in the last 5 s gives 1/N;
+//  - at least 66% of the equilibrium for that attacker's damage rate; capped at max health.
+// SkyFire's proc damage is after armor, so melee damage is scaled back up by the armor reduction.
+class spell_gen_vengeance : public SpellScriptLoader
+{
+public:
+    spell_gen_vengeance() : SpellScriptLoader("spell_gen_vengeance") { }
+
+    class spell_gen_vengeance_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_gen_vengeance_AuraScript);
+
+        enum { SPELL_VENGEANCE_BUFF = 132365 };
+
+        struct AttackerInfo
+        {
+            uint32 lastDamage;
+            uint32 lastTime;
+        };
+
+        bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_VENGEANCE_BUFF) != NULL;
+        }
+
+        bool CheckProc(ProcEventInfo& eventInfo)
+        {
+            Unit* owner = GetUnitOwner();
+            if (GetId() == 84840 && owner->GetShapeshiftForm() != FORM_BEAR)
+                return false;
+
+            Unit* actor = eventInfo.GetActor();
+            if (!actor || actor == owner || actor->GetCharmerOrOwnerPlayerOrPlayerItself())
+                return false;
+
+            DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+            return damageInfo && (damageInfo->GetDamage() + damageInfo->GetAbsorb() + damageInfo->GetBlock() + damageInfo->GetResist()) > 0;
+        }
+
+        void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& eventInfo)
+        {
+            PreventDefaultAction();
+
+            Unit* owner = GetUnitOwner();
+            Unit* actor = eventInfo.GetActor();
+            DamageInfo* damageInfo = eventInfo.GetDamageInfo();
+            SpellInfo const* spellInfo = eventInfo.GetSpellInfo();
+
+            float damage = float(damageInfo->GetDamage());
+            // Undo armor for physical hits
+            if (damageInfo->GetSchoolMask() & SPELL_SCHOOL_MASK_NORMAL)
+            {
+                uint32 const probe = 100000;
+                uint32 const reduced = actor->CalcArmorReducedDamage(owner, probe, spellInfo, damageInfo->GetAttackType());
+                if (reduced > 0 && reduced < probe)
+                    damage *= float(probe) / float(reduced);
+            }
+            damage += float(damageInfo->GetAbsorb() + damageInfo->GetBlock() + damageInfo->GetResist());
+            if (damage <= 0.0f)
+                return;
+
+            float const vengPct = 0.015f;
+
+            // Rank this attacker among those that hit in the last 5 seconds
+            uint32 const now = getMSTime();
+            AttackerInfo& attacker = _attackers[actor->GetGUID()];
+            attacker.lastDamage = uint32(damage);
+            attacker.lastTime = now;
+            uint32 place = 1;
+            for (std::map<uint64, AttackerInfo>::iterator itr = _attackers.begin(); itr != _attackers.end();)
+            {
+                if (getMSTimeDiff(itr->second.lastTime, now) > 5 * IN_MILLISECONDS)
+                {
+                    _attackers.erase(itr++);
+                    continue;
+                }
+                if (itr->second.lastDamage > uint32(damage))
+                    ++place;
+                ++itr;
+            }
+
+            if (eventInfo.GetHitMask() & PROC_EX_CRITICAL_HIT)
+                damage *= 1.5f;
+
+            float amount = damage * vengPct / float(place);
+            if (spellInfo)
+                amount *= 2.5f;
+
+            if (AuraEffect const* vengeance = owner->GetAuraEffect(SPELL_VENGEANCE_BUFF, EFFECT_0))
+                if (int32 maxDuration = vengeance->GetBase()->GetMaxDuration())
+                    amount += float(vengeance->GetAmount()) * vengeance->GetBase()->GetDuration() / float(maxDuration);
+
+            float attackFrequency = 1.0f / 60.0f;
+            if (!spellInfo)
+            {
+                float const swing = actor->GetFloatValue(UNIT_FIELD_ATTACK_ROUND_BASE_TIME) / 1000.0f;
+                if (swing > 0.0f)
+                    attackFrequency = 1.0f / swing;
+            }
+            float const equilibrium = damage * vengPct * attackFrequency * 20.0f;
+            amount = std::max(amount, equilibrium * 0.66f);
+            amount = std::min(amount, float(owner->GetMaxHealth()));
+
+            owner->CastSpell(owner, SPELL_VENGEANCE_BUFF, true);
+            if (Aura* vengeance = owner->GetAura(SPELL_VENGEANCE_BUFF))
+            {
+                if (AuraEffect* ap = vengeance->GetEffect(EFFECT_0))
+                    ap->ChangeAmount(int32(amount));
+                if (AuraEffect* rangedAp = vengeance->GetEffect(EFFECT_1))
+                    rangedAp->ChangeAmount(int32(amount));
+                vengeance->RefreshDuration();
+            }
+        }
+
+        void Register() OVERRIDE
+        {
+            DoCheckProc += AuraCheckProcFn(spell_gen_vengeance_AuraScript::CheckProc);
+            OnEffectProc += AuraEffectProcFn(spell_gen_vengeance_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+        }
+
+    private:
+        std::map<uint64, AttackerInfo> _attackers;
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_gen_vengeance_AuraScript();
+    }
+};
+
 void AddSC_generic_spell_scripts()
 {
+    new spell_gen_vengeance();
     new spell_gen_seaforium_blast();
     new spell_gen_replenishment();
     new spell_gen_searching_for_artifacts();
