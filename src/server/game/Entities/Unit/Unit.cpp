@@ -6535,6 +6535,53 @@ float Unit::CalculateDefaultCoefficient(SpellInfo const* spellInfo, DamageEffect
     return (CastingTime / 3500.0f) * DotFactor;
 }
 
+// MoP keeps the spell-power coefficient of each effect in SpellEffect.dbc (EffectBonusMultiplier).
+// Used when spell_bonus_data has no row (or a negative one) instead of the WotLK cast-time formula.
+// Ported from Legends of Azeroth Pandaria (Unit::SpellDamageBonusDone and friends), which reads
+// the coefficient of the effect being calculated; callers that don't pass the effect get the
+// first damage or heal effect that has one.
+float Unit::GetSpellBonusMultiplier(SpellInfo const* spellInfo, DamageEffectType damagetype, bool healing, int8 effIndex) const
+{
+    if (!spellInfo)
+        return 0.0f;
+
+    if (effIndex >= 0 && effIndex < MAX_SPELL_EFFECTS)
+        return spellInfo->Effects[effIndex].BonusMultiplier;
+
+    int8 fallback = -1;
+    for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+    {
+        SpellEffectInfo const& effect = spellInfo->Effects[i];
+        if (!effect.Effect || effect.BonusMultiplier == 0.0f)
+            continue;
+
+        bool matches = false;
+        if (damagetype == DOT)
+        {
+            if (effect.Effect == SPELL_EFFECT_APPLY_AURA || effect.Effect == SPELL_EFFECT_PERSISTENT_AREA_AURA || effect.IsAreaAuraEffect())
+            {
+                if (healing)
+                    matches = effect.ApplyAuraName == SPELL_AURA_PERIODIC_HEAL;
+                else
+                    matches = effect.ApplyAuraName == SPELL_AURA_PERIODIC_DAMAGE || effect.ApplyAuraName == SPELL_AURA_PERIODIC_LEECH;
+            }
+        }
+        else if (healing)
+            matches = effect.Effect == SPELL_EFFECT_HEAL || effect.Effect == SPELL_EFFECT_HEAL_MECHANICAL;
+        else
+            matches = effect.Effect == SPELL_EFFECT_SCHOOL_DAMAGE || effect.Effect == SPELL_EFFECT_HEALTH_LEECH ||
+                (effect.Effect == SPELL_EFFECT_APPLY_AURA && (effect.ApplyAuraName == SPELL_AURA_DAMAGE_SHIELD || effect.ApplyAuraName == SPELL_AURA_PROC_TRIGGER_DAMAGE));
+
+        if (matches)
+            return effect.BonusMultiplier;
+
+        if (fallback < 0)
+            fallback = int8(i);
+    }
+
+    return fallback >= 0 ? spellInfo->Effects[fallback].BonusMultiplier : 0.0f;
+}
+
 void Unit::AddPetAura(PetAura const* petSpell)
 {
     if (GetTypeId() != TypeID::TYPEID_PLAYER)
