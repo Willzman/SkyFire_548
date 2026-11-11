@@ -8322,16 +8322,40 @@ void Spell::TriggerGlobalCooldown()
     // but as tests show are not affected by any spell mods.
     if (m_spellInfo->StartRecoveryTime >= MIN_GCD && m_spellInfo->StartRecoveryTime <= MAX_GCD)
     {
-        // gcd modifier auras are applied only to own spells and only players have such mods
-        if (m_caster->GetTypeId() == TypeID::TYPEID_PLAYER)
-            m_caster->ToPlayer()->ApplySpellMod(m_spellInfo->Id, SPELLMOD_GLOBAL_COOLDOWN, gcd, this);
+        // MoP: spell haste only shortens the 1.5 s spell GCD (category 133). Melee, ranged and
+        // energy/focus abilities keep their GCD unless an aura 417 (SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE,
+        // e.g. Unholy Presence, Sanctity of Battle) applies their haste to it.
+        // Ported from Legends of Azeroth Pandaria (Spell::TriggerGlobalCooldown); check ripped from the client.
+        if (m_spellInfo->StartRecoveryCategory == 133 &&
+            m_spellInfo->StartRecoveryTime == 1500 &&
+            m_spellInfo->DmgClass != SPELL_DAMAGE_CLASS_MELEE &&
+            m_spellInfo->DmgClass != SPELL_DAMAGE_CLASS_RANGED &&
+            !(m_spellInfo->Attributes & (SPELL_ATTR0_REQ_AMMO | SPELL_ATTR0_ABILITY)))
+            gcd = int32(m_caster->GetFloatValue(UNIT_FIELD_MOD_CASTING_SPEED) * 1500.0f);
 
-        // Apply haste rating
-        gcd = int32(float(gcd) * m_caster->GetFloatValue(UNIT_FIELD_MOD_CASTING_SPEED));
+        Unit::AuraEffectList const& gcdByHaste = m_caster->GetAuraEffectsByType(SPELL_AURA_417);
+        for (Unit::AuraEffectList::const_iterator itr = gcdByHaste.begin(); itr != gcdByHaste.end(); ++itr)
+        {
+            if (!(*itr)->IsAffectingSpell(m_spellInfo))
+                continue;
+
+            // Melee haste (ranged for hunters) as a time multiplier, below 1.0 when hasted
+            float hasteMod = m_caster->GetFloatValue(m_caster->getClass() == CLASS_HUNTER ? UNIT_FIELD_MOD_RANGED_HASTE : UNIT_FIELD_MOD_HASTE);
+            if (hasteMod <= 0.0f)
+                continue;
+            float hastePct = (1.0f - CalculatePct(hasteMod, (*itr)->GetAmount())) * 100.0f;
+            AddPct(gcd, -hastePct);
+        }
+
         if (gcd < MIN_GCD)
             gcd = MIN_GCD;
         else if (gcd > MAX_GCD)
             gcd = MAX_GCD;
+
+        // gcd modifier auras are applied only to own spells and only players have such mods
+        // (after the clamp, so spell mods such as Adrenaline Rush can take it below 1 s)
+        if (m_caster->GetTypeId() == TypeID::TYPEID_PLAYER)
+            m_caster->ToPlayer()->ApplySpellMod(m_spellInfo->Id, SPELLMOD_GLOBAL_COOLDOWN, gcd, this);
     }
 
     // Only players or controlled units have global cooldown
