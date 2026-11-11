@@ -466,7 +466,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleNULL,                                      //414 SPELL_AURA_414
     &AuraEffect::HandleNULL,                                      //415 SPELL_AURA_415 (used in spell 123316) (5.4.2)
     &AuraEffect::HandleNULL,                                      //416 SPELL_AURA_416
-    &AuraEffect::HandleNULL,                                      //417 SPELL_AURA_417 (used in spell 25956) (5.4.2)
+    &AuraEffect::HandleNoImmediateEffect,                         //417 SPELL_AURA_417 global cooldown by haste (e.g. 25956), implemented in Spell::TriggerGlobalCooldown
     &AuraEffect::HandleAuraModIncreaseMaxPowerFlat,               //418 SPELL_AURA_MOD_MAX_POWER
     &AuraEffect::HandleNULL,                                      //419 SPELL_AURA_419
     &AuraEffect::HandleNULL,                                      //420 SPELL_AURA_MOD_PET_XP_PCT / NYI
