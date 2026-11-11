@@ -32,6 +32,7 @@ set(scripts_STAT_SRCS
   Pandaria/TempleOfTheJadeSerpent/temple_of_the_jade_serpent.h
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
+  Pandaria/zone_wandering_island_loa.cpp
 )
 
 message("  -> Prepared: Pandaria")
