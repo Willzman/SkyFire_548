@@ -445,7 +445,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleNULL,                                      //393 SPELL_AURA_393
     &AuraEffect::HandleNULL,                                      //394 SPELL_AURA_394
     &AuraEffect::HandleAreaTrigger,                               //395 SPELL_AURA_AREA_TRIGGER
-    &AuraEffect::HandleNULL,                                      //396 SPELL_AURA_396
+    &AuraEffect::HandleNoImmediateEffect,                         //396 SPELL_AURA_TRIGGER_ON_POWER_LEVEL implemented in Unit::SetPower
     &AuraEffect::HandleNULL,                                      //397 SPELL_AURA_397
     &AuraEffect::HandleNULL,                                      //398 SPELL_AURA_398
     &AuraEffect::HandleUnused,                                    //399 unused (5.4.2)
