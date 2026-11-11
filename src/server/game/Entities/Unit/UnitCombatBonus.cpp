@@ -395,6 +395,10 @@ uint32 Unit::SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, ui
     if (spellProto->SpellFamilyName == SPELLFAMILY_POTION)
         return healamount;
 
+    // Heals whose amount a script already calculated (e.g. a share of another heal), as for damage (C8, as in LoA)
+    if (spellProto->AttributesEx3 & SPELL_ATTR3_NO_DONE_BONUS)
+        return healamount;
+
     float DoneTotalMod = 1.0f;
     int32 DoneTotal = 0;
 
