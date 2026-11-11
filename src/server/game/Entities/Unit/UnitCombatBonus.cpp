@@ -278,7 +278,7 @@ uint32 Unit::SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uin
     {
         modOwner->ApplySpellMod(spellProto->Id, damagetype == DOT ? SPELLMOD_DOT : SPELLMOD_DAMAGE, tmpDamage);
 
-        if (IsPvpPowerTarget(victim))
+        if (IsPvpPowerTarget(victim) && !(spellProto->AttributesCu & SPELL_ATTR0_CU_IGNORE_PVP_POWER))
             AddPct(tmpDamage, modOwner->GetFloatValue(PLAYER_FIELD_PVP_POWER_DAMAGE));
     }
 
@@ -506,7 +506,7 @@ uint32 Unit::SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, ui
     {
         modOwner->ApplySpellMod(spellProto->Id, damagetype == DOT ? SPELLMOD_DOT : SPELLMOD_DAMAGE, heal);
 
-        if (IsPvpPowerTarget(victim))
+        if (IsPvpPowerTarget(victim) && !(spellProto->AttributesCu & SPELL_ATTR0_CU_IGNORE_PVP_POWER))
             AddPct(heal, modOwner->GetFloatValue(PLAYER_FIELD_PVP_POWER_HEALING));
     }
 
@@ -711,7 +711,7 @@ uint32 Unit::MeleeDamageBonusDone(Unit* victim, uint32 pdamage, WeaponAttackType
         if (spellProto)
             modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_DAMAGE, tmpDamage);
 
-        if (IsPvpPowerTarget(victim))
+        if (IsPvpPowerTarget(victim) && !(spellProto && (spellProto->AttributesCu & SPELL_ATTR0_CU_IGNORE_PVP_POWER)))
             AddPct(tmpDamage, modOwner->GetFloatValue(PLAYER_FIELD_PVP_POWER_DAMAGE));
     }
 

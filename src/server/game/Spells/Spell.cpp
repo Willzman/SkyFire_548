@@ -2633,7 +2633,8 @@ void Spell::DoAllEffectOnTarget(TargetInfo* target)
 
     if (missInfo != SPELL_MISS_EVADE && !m_caster->IsFriendlyTo(unit) && (!m_spellInfo->IsPositive() || m_spellInfo->HasEffect(SPELL_EFFECT_DISPEL)))
     {
-        m_caster->CombatStart(unit, !(m_spellInfo->AttributesEx & SPELL_ATTR1_NO_THREAT || m_spellInfo->AttributesEx3 & SPELL_ATTR3_NO_INITIAL_AGGRO));
+        m_caster->CombatStart(unit, !(m_spellInfo->AttributesEx & SPELL_ATTR1_NO_THREAT || m_spellInfo->AttributesEx3 & SPELL_ATTR3_NO_INITIAL_AGGRO
+            || m_spellInfo->AttributesCu & SPELL_ATTR0_CU_DONT_SET_IN_COMBAT_STATE));
 
         if (m_spellInfo->AttributesCu & SPELL_ATTR0_CU_AURA_CC)
             if (!unit->IsStandState())
@@ -3389,6 +3390,7 @@ void Spell::cast(bool skipCheck)
         // This prevents spells such as Hunter's Mark from triggering pet attack
         // Stampede extras are controlled Pets but not GetPet() — notify them too.
         if (this->GetSpellInfo()->DmgClass != SPELL_DAMAGE_CLASS_NONE &&
+            !(m_spellInfo->AttributesCu & SPELL_ATTR0_CU_DONT_SET_IN_COMBAT_STATE) &&
             (m_targets.GetTargetMask() & TARGET_FLAG_UNIT))
         {
             if (Unit* attacked = m_targets.GetObjectTarget()->ToUnit())
@@ -7487,7 +7489,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
             break;
     }
 
-    if (IsTriggered() || m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS || DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS))
+    if ((IsTriggered() && !(m_spellInfo->AttributesCu & SPELL_ATTR0_CU_ALWAYS_CHECK_LOS)) || m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS || DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS))
         return true;
 
     /// @todo shit below shouldn't be here, but it's temporary
@@ -7543,7 +7545,8 @@ bool Spell::IsAutoActionResetSpell() const
 bool Spell::IsNeedSendToClient() const
 {
     return m_spellInfo->SpellVisual[0] || m_spellInfo->SpellVisual[1] || m_spellInfo->IsChanneled() ||
-        (m_spellInfo->AttributesEx8 & SPELL_ATTR8_AURA_SEND_AMOUNT) || m_spellInfo->Speed > 0.0f || (!m_triggeredByAuraSpell && !IsTriggered());
+        (m_spellInfo->AttributesEx8 & SPELL_ATTR8_AURA_SEND_AMOUNT) || m_spellInfo->Speed > 0.0f || (!m_triggeredByAuraSpell && !IsTriggered()) ||
+        (m_spellInfo->AttributesCu & SPELL_ATTR0_CU_ALWAYS_SEND_TO_CLIENT);
 }
 
 bool Spell::HaveTargetsForEffect(uint8 effect) const

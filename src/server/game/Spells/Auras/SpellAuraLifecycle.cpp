@@ -556,6 +556,9 @@ bool Aura::CanBeSaved() const
     if (IsPassive())
         return false;
 
+    if (GetSpellInfo()->AttributesCu & SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB)
+        return false;
+
     if (GetCasterGUID() != GetOwner()->GetGUID())
         if (GetSpellInfo()->IsSingleTarget())
             return false;
