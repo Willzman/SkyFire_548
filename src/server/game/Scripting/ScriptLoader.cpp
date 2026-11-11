@@ -637,6 +637,7 @@ void AddSC_event_darkmoon_faire();
 
 // Pandaria
 void AddSC_wandering_island();
+void AddSC_wandering_island_loa();
 // Gate of the Setting Sun
 void AddSC_instance_gate_of_the_setting_sun();
 void AddSC_boss_saboteur_kiptilak();
@@ -1385,6 +1386,7 @@ void AddPandariaScripts()
 {
 #ifdef SCRIPTS
     AddSC_wandering_island();
+    AddSC_wandering_island_loa();
     // Gate of the Setting Sun
     AddSC_instance_gate_of_the_setting_sun();
     AddSC_boss_saboteur_kiptilak();
