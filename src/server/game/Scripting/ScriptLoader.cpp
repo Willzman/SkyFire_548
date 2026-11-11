@@ -22,6 +22,7 @@ void AddSC_warlock_spell_scripts();
 void AddSC_warrior_spell_scripts();
 void AddSC_quest_spell_scripts();
 void AddSC_item_spell_scripts();
+void AddSC_item_spell_scripts_mop();
 void AddSC_holiday_spell_scripts();
 
 void AddSC_SmartSCripts();
@@ -737,6 +738,7 @@ void AddSpellScripts()
     AddSC_warrior_spell_scripts();
     AddSC_quest_spell_scripts();
     AddSC_item_spell_scripts();
+    AddSC_item_spell_scripts_mop();
     AddSC_holiday_spell_scripts();
 }
 
