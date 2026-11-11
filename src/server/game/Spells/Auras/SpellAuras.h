@@ -219,6 +219,7 @@ public:
     void CallScriptAuraUpdateHandlers(uint32 diff);
     void CallScriptEffectUpdatePeriodicHandlers(AuraEffect* aurEff);
     void CallScriptEffectCalcAmountHandlers(AuraEffect const* aurEff, int32& amount, bool& canBeRecalculated);
+    bool HasEffectCalcAmountScript(uint8 effIndex);
     void CallScriptEffectCalcPeriodicHandlers(AuraEffect const* aurEff, bool& isPeriodic, int32& amplitude);
     void CallScriptEffectCalcSpellModHandlers(AuraEffect const* aurEff, SpellModifier*& spellMod);
     void CallScriptEffectCalcTickAmountHandlers(AuraEffect const* eff, AuraApplication const* app, int32& amount);

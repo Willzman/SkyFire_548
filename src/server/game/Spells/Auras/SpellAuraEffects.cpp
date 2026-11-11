@@ -470,7 +470,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleAuraModIncreaseMaxPowerFlat,               //418 SPELL_AURA_MOD_MAX_POWER
     &AuraEffect::HandleNULL,                                      //419 SPELL_AURA_419
     &AuraEffect::HandleNULL,                                      //420 SPELL_AURA_MOD_PET_XP_PCT / NYI
-    &AuraEffect::HandleNULL,                                      //421 SPELL_AURA_421
+    &AuraEffect::HandleNoImmediateEffect,                         //421 SPELL_AURA_MOD_ABSORPTION_PCT implemented in Unit::SpellAbsorbBonusDone
     &AuraEffect::HandleNULL,                                      //422 SPELL_AURA_422 (used in spell 136577) (5.4.2)
     &AuraEffect::HandleNULL,                                      //423 SPELL_AURA_423 (used in spell 108294) (5.4.2)
     &AuraEffect::HandleNULL,                                      //424 SPELL_AURA_424
@@ -551,6 +551,29 @@ void AuraEffect::GetApplicationList(std::list<AuraApplication*>& applicationList
     {
         if (appIter->second->HasEffect(GetEffIndex()))
             applicationList.push_back(appIter->second);
+    }
+}
+
+// Scripted absorbs that are plain damage shields, so absorb % auras (421: PvP Battle Fatigue, Spirit of Chi-Ji)
+// scale them. Other scripted absorbs use the amount as a cap or marker (Cheat Death, Dampen Harm,
+// Touch of Karma, Stagger, Anti-Magic Shell, ...) and are left alone.
+static bool IsScriptedAbsorbShield(uint32 spellId)
+{
+    switch (spellId)
+    {
+        case 17:     // Power Word: Shield
+        case 123258: // Power Word: Shield (Divine Insight)
+        case 65148:  // Sacred Shield
+        case 114893: // Stone Bulwark
+        case 112048: // Shield Barrier
+        case 115295: // Guard
+        case 118604: // Guard (Black Ox Statue)
+        case 136070: // Guard (Black Ox Statue, magic)
+        case 108416: // Sacrificial Pact
+        case 138979: // Soul Barrier
+            return true;
+        default:
+            return false;
     }
 }
 
@@ -637,6 +660,16 @@ int32 AuraEffect::CalculateAmount(Unit* caster)
     GetBase()->CallScriptEffectCalcAmountHandlers(this, amount, m_canBeRecalculated);
     amount *= GetBase()->GetStackAmount();
     GetBase()->CallScriptEffectAfterCalcAmountHandlers(this, amount, m_canBeRecalculated);
+
+    // Absorb shields: spell power bonus and absorb % auras (C11, from LoA's Unit::SpellAbsorbBonusDone).
+    // Absorbs whose script calculates the amount already add their own spell power, so only the
+    // unscripted ones (Ice Barrier, Incanter's Ward, Twilight/Fury/Nether Ward, Life Cocoon, ...) get it here.
+    if (caster && amount > 0 && GetAuraType() == SPELL_AURA_SCHOOL_ABSORB && GetBase()->GetType() == UNIT_AURA_TYPE)
+    {
+        bool const scripted = GetBase()->HasEffectCalcAmountScript(GetEffIndex());
+        amount = caster->SpellAbsorbBonusDone(GetBase()->GetUnitOwner(), m_spellInfo, GetEffIndex(), amount, !scripted, !scripted || IsScriptedAbsorbShield(m_spellInfo->Id));
+    }
+
     return amount;
 }
 

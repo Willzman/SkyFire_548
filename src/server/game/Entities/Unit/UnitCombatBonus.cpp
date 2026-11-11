@@ -863,3 +863,81 @@ float Unit::GetAPMultiplier(WeaponAttackType attType, bool normalized)
             return Weapon->GetTemplate()->SubClass == ITEM_SUBCLASS_WEAPON_DAGGER ? 1.7f : 2.4f;
     }
 }
+
+// Absorb shield bonuses (C11). Ported from Legends of Azeroth Pandaria's Unit::SpellAbsorbBonusDone.
+// addSpellPower: add the caster's spell power (and attack power) using spell_bonus_data.direct_bonus,
+//   falling back to the DBC coefficient like heals do (SkyFire convention: -1 = DBC, 0 = no bonus).
+//   Off for absorbs whose aura script computes the amount, because those scripts add their own.
+// applyAbsorbPct: PvP power (healing) and the target's absorb % auras (421: Battle Fatigue in PvP,
+//   Spirit of Chi-Ji).
+// Absorbs made from another heal or hit (Divine Aegis, Illuminated Healing, Angelic Bulwark, Blood Shield,
+// Spirit Shell, Touch of Karma) already include those bonuses and are left unchanged, as in LoA.
+int32 Unit::SpellAbsorbBonusDone(Unit* victim, SpellInfo const* spellProto, uint8 effIndex, int32 absorbAmount, bool addSpellPower, bool applyAbsorbPct) const
+{
+    if (!spellProto || absorbAmount <= 0 || effIndex >= MAX_SPELL_EFFECTS)
+        return absorbAmount;
+
+    // Totems use their owner's bonuses
+    if (GetTypeId() == TypeID::TYPEID_UNIT && IsTotem())
+        if (Unit* owner = GetOwner())
+            return owner->SpellAbsorbBonusDone(victim, spellProto, effIndex, absorbAmount, addSpellPower, applyAbsorbPct);
+
+    switch (spellProto->Id)
+    {
+        case 47753:  // Divine Aegis
+        case 86273:  // Illuminated Healing
+        case 114214: // Angelic Bulwark
+        case 77535:  // Blood Shield
+        case 114908: // Spirit Shell
+        case 122470: // Touch of Karma
+            return absorbAmount;
+        default:
+            break;
+    }
+
+    float absorb = float(absorbAmount);
+
+    if (addSpellPower && !(spellProto->AttributesEx3 & SPELL_ATTR3_NO_DONE_BONUS))
+    {
+        float coeff = -1.0f;
+        float apCoeff = 0.0f;
+        if (SpellBonusEntry const* bonus = sSpellMgr->GetSpellBonusData(spellProto->Id))
+        {
+            coeff = bonus->direct_damage;
+            apCoeff = bonus->ap_bonus;
+        }
+
+        if (coeff < 0.0f)
+            coeff = spellProto->Effects[effIndex].BonusMultiplier;
+
+        if (coeff > 0.0f)
+        {
+            if (int32 spellPower = SpellBaseHealingBonusDone(spellProto->GetSchoolMask()))
+            {
+                if (Player* modOwner = GetSpellModOwner())
+                {
+                    coeff *= 100.0f;
+                    modOwner->ApplySpellMod(spellProto->Id, SPELLMOD_BONUS_MULTIPLIER, coeff);
+                    coeff /= 100.0f;
+                }
+
+                absorb += spellPower * coeff;
+            }
+        }
+
+        if (apCoeff > 0.0f)
+            absorb += apCoeff * GetTotalAttackPowerValue(WeaponAttackType::BASE_ATTACK);
+    }
+
+    if (applyAbsorbPct)
+    {
+        if (Player* modOwner = GetSpellModOwner())
+            if (IsPvpPowerTarget(victim))
+                AddPct(absorb, modOwner->GetFloatValue(PLAYER_FIELD_PVP_POWER_HEALING));
+
+        if (victim)
+            absorb *= victim->GetTotalAuraMultiplier(SPELL_AURA_MOD_ABSORPTION_PCT);
+    }
+
+    return int32(std::max(absorb, 0.0f));
+}
