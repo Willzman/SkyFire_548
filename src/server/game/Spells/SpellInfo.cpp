@@ -635,6 +635,8 @@ SpellInfo::SpellInfo(SpellEntry const* spellEntry, SpellEffectEntry const** effe
     ProcChance = _options ? _options->procChance : 0;
     ProcCharges = _options ? _options->procCharges : 0;
     StackAmount = _options ? _options->StackAmount : 0;
+    ProcCooldown = _options ? _options->ProcCooldown : 0;
+    ProcsPerMinute = (_options && _options->ProcsPerMinuteId) ? sSpellProcsPerMinuteStore.LookupEntry(_options->ProcsPerMinuteId) : NULL;
 
     // SpellAuraRestrictionsEntry
     SpellAuraRestrictionsEntry const* _aura = GetSpellAuraRestrictions();
@@ -2030,6 +2032,79 @@ uint32 SpellInfo::GetMaxTicks() const
 uint32 SpellInfo::GetRecoveryTime() const
 {
     return Skyfire::Spells::CalculateRecoveryTime(RecoveryTime, CategoryRecoveryTime);
+}
+
+// RPPM ("real procs per minute", MoP 5.2+) rate after the SpellProcsPerMinuteMod.dbc modifiers (C10).
+// Ported from Legends of Azeroth Pandaria's SpellInfo::CalcRppmRate. Modifier types:
+// 1 haste, 2 crit, 4 specialization, 7 battleground/arena. Type 6 (item level) needs item scaling
+// SkyFire doesn't have and is used by 2 of 107 rows; types 3 and 5 are unknown (LoA skips them too).
+float SpellInfo::CalcRppmRate(Player const* caster) const
+{
+    if (!ProcsPerMinute)
+        return 0.0f;
+
+    float rate = ProcsPerMinute->ProcsPerMinute;
+    if (!caster)
+        return rate;
+
+    float const meleeHaste = 1.0f / std::max(0.01f, caster->GetFloatValue(UNIT_FIELD_MOD_HASTE));
+    float const rangedHaste = 1.0f / std::max(0.01f, caster->GetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE));
+    float const spellHaste = 1.0f / std::max(0.01f, caster->GetFloatValue(UNIT_FIELD_MOD_SPELL_HASTE));
+
+    for (uint32 i = 0; i < sSpellProcsPerMinuteModStore.GetNumRows(); ++i)
+    {
+        SpellProcsPerMinuteModEntry const* mod = sSpellProcsPerMinuteModStore.LookupEntry(i);
+        if (!mod || mod->SpellProcsPerMinuteId != ProcsPerMinute->Id)
+            continue;
+
+        switch (mod->Type)
+        {
+            case 1: // haste
+            {
+                float haste = 1.0f;
+                switch (mod->SubType)
+                {
+                    case 1: haste = meleeHaste; break;
+                    case 2: haste = rangedHaste; break;
+                    case 3:
+                    case 4: haste = spellHaste; break; // 4 = "true" haste (rating + haste buffs), closest SkyFire field
+                    case 5: haste = std::max(meleeHaste, std::max(rangedHaste, spellHaste)); break;
+                    default: break;
+                }
+                rate *= 1.0f + mod->Value * (haste - 1.0f);
+                break;
+            }
+            case 2: // crit
+            {
+                float crit = 1.0f;
+                switch (mod->SubType)
+                {
+                    case 1: crit = caster->GetFloatValue(PLAYER_FIELD_CRIT_PERCENTAGE); break;
+                    case 2: crit = caster->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE); break;
+                    case 3: crit = caster->GetFloatValue(PLAYER_FIELD_RANGED_CRIT_PERCENTAGE); break;
+                    case 4:
+                        crit = std::max(caster->GetFloatValue(PLAYER_FIELD_CRIT_PERCENTAGE),
+                            std::max(caster->GetFloatValue(PLAYER_FIELD_RANGED_CRIT_PERCENTAGE), caster->GetFloatValue(PLAYER_FIELD_SPELL_CRIT_PERCENTAGE)));
+                        break;
+                    default: break;
+                }
+                AddPct(rate, mod->Value * crit);
+                break;
+            }
+            case 4: // specialization (ChrSpecialization id)
+                if (mod->SubType == caster->GetTalentSpecialization(caster->GetActiveSpec()))
+                    rate *= 1.0f + mod->Value;
+                break;
+            case 7: // battleground or arena
+                if (caster->GetMap() && caster->GetMap()->IsBattlegroundOrArena())
+                    rate *= 1.0f + mod->Value;
+                break;
+            default:
+                break;
+        }
+    }
+
+    return std::max(rate, 0.0f);
 }
 /*
 int32 SpellInfo::CalcPowerCost(Unit const* caster, SpellSchoolMask schoolMask) const

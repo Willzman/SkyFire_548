@@ -198,6 +198,8 @@ DBCStorage <SpellScalingEntry> sSpellScalingStore(SpellScalingEntryfmt);
 DBCStorage <SpellTotemsEntry> sSpellTotemsStore(SpellTotemsEntryfmt);
 DBCStorage <SpellTargetRestrictionsEntry> sSpellTargetRestrictionsStore(SpellTargetRestrictionsEntryfmt);
 DBCStorage <SpellPowerEntry> sSpellPowerStore(SpellPowerEntryfmt);
+DBCStorage <SpellProcsPerMinuteEntry> sSpellProcsPerMinuteStore(SpellProcsPerMinuteEntryfmt);
+DBCStorage <SpellProcsPerMinuteModEntry> sSpellProcsPerMinuteModStore(SpellProcsPerMinuteModEntryfmt);
 DBCStorage <SpellLevelsEntry> sSpellLevelsStore(SpellLevelsEntryfmt);
 DBCStorage <SpellInterruptsEntry> sSpellInterruptsStore(SpellInterruptsEntryfmt);
 DBCStorage <SpellEquippedItemsEntry> sSpellEquippedItemsStore(SpellEquippedItemsEntryfmt);
@@ -589,6 +591,8 @@ void LoadDBCStores(const std::string& dataPath)
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellTotemsStore, dbcPath, "SpellTotems.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellTargetRestrictionsStore, dbcPath, "SpellTargetRestrictions.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellPowerStore, dbcPath, "SpellPower.dbc");//15595
+    LoadDBC(availableDbcLocales, bad_dbc_files, sSpellProcsPerMinuteStore, dbcPath, "SpellProcsPerMinute.dbc");
+    LoadDBC(availableDbcLocales, bad_dbc_files, sSpellProcsPerMinuteModStore, dbcPath, "SpellProcsPerMinuteMod.dbc");
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellLevelsStore, dbcPath, "SpellLevels.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellInterruptsStore, dbcPath, "SpellInterrupts.dbc");//15595
     LoadDBC(availableDbcLocales, bad_dbc_files, sSpellEquippedItemsStore, dbcPath, "SpellEquippedItems.dbc");//15595

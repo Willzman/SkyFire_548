@@ -223,6 +223,8 @@ extern DBCStorage <SpellEquippedItemsEntry>      sSpellEquippedItemsStore;
 extern DBCStorage <SpellInterruptsEntry>         sSpellInterruptsStore;
 extern DBCStorage <SpellLevelsEntry>             sSpellLevelsStore;
 extern DBCStorage <SpellPowerEntry>              sSpellPowerStore;
+extern DBCStorage <SpellProcsPerMinuteEntry>     sSpellProcsPerMinuteStore;
+extern DBCStorage <SpellProcsPerMinuteModEntry>  sSpellProcsPerMinuteModStore;
 extern DBCStorage <SpellTargetRestrictionsEntry> sSpellTargetRestrictionsStore;
 extern DBCStorage <SpellTotemsEntry>             sSpellTotemsStore;
 extern DBCStorage <SpellScalingEntry>            sSpellScalingStore;

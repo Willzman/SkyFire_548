@@ -121,7 +121,7 @@ char const SoundEntriesfmt[] = "nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 char const SpecializationSpellsfmt[] = "diiix";
 
 
-char const SpellAuraOptionsEntryfmt[] = "dxxiiiixx";
+char const SpellAuraOptionsEntryfmt[] = "dxxiiiiii";
 char const SpellAuraRestrictionsEntryfmt[] = "dxxiiiiiiii";
 char const SpellCastingRequirementsEntryfmt[] = "dixxixi";
 char const SpellCastTimefmt[] = "dixx";
@@ -157,6 +157,8 @@ char const SpellItemEnchantmentfmt[] = "nxiiiiiiiiisiiiiiiiixxxxxx";
 char const SpellItemEnchantmentConditionfmt[] = "nbbbbbxxxxxbbbbbbbbbbiiiiiXXXXX";
 char const SpellRadiusfmt[] = "nffxf";
 char const SpellPowerEntryfmt[] = "dixiiiiixffix";
+char const SpellProcsPerMinuteEntryfmt[] = "nfx";
+char const SpellProcsPerMinuteModEntryfmt[] = "niifi";
 char const SpellRuneCostfmt[] = "niiiii";
 char const SpellShapeshiftFormfmt[] = "nxxiixiiixxiiiiiiiiix";
 
