@@ -29,6 +29,44 @@ For further information on the SkyFire project, please visit our project website
 ## Supported Client Version
 **MoP 5.4.8 Build 18414**
 
+## Roadmap / TODO
+Goal of this fork: as complete and class-accurate a MoP 5.4.8 server as possible. Most fixes are ported
+from [Legends of Azeroth Pandaria](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8)
+(GPL v2+); older content can come from AzerothCore and TrinityCore (GPL v2+). One pull request per item.
+Everything marked done is merged into `Development` and **still needs in-game testing**.
+
+**Done**
+- [x] Script API compatibility for ported scripts (#9, #12)
+- [x] Scripts the world DB already expected: Gate of the Setting Sun, Mogu'shan Vaults, Mogu'shan Palace,
+  Temple of the Jade Serpent, Shado-Pan Monastery, Zul'Gurub, Zul'Aman (re-enabled), Wandering Isle,
+  Emerald Dragons and more, with their missing spawns and DB rows (#10, #13–#17, #22–#24); dead ScriptName
+  bindings cleaned up (#25, #26)
+- [x] Missing quest starters/enders (#20), item and trinket spell scripts (#21), creature loot (#19)
+- [x] Class accuracy: MoP spell-power coefficients from the client data (#27), GCD haste rules (#28),
+  Warlock resource regen (#29), missing class aura types such as spell power %, rating %, auto-attack %
+  and mana regen (#30)
+
+**Class accuracy (priority)**
+- [ ] Class spell scripts still missing (Shaman, Warlock, Priest, Druid, Hunter, DK, Mage)
+- [ ] Class spell DB rows: linked spells, proc rules, learned spells, pet auras
+- [ ] Class spell corrections (about 400 spells) and custom spell attributes
+- [ ] Real PPM procs (5.4 trinkets, enchants, legendaries, tier bonuses)
+- [ ] Absorb shields scaling with spell power (PW:S, Ice Barrier, Spirit Shell, ...)
+- [ ] Spec/stance-aware power costs and pet stat scaling and regen
+
+**MoP content**
+- [ ] Remaining 5-man dungeons: Stormstout Brewery, Siege of Niuzao Temple, Gate of the Setting Sun trash
+- [ ] Isle of Thunder (spawns, quests, Nalak) and Pandaria zone scripting
+- [ ] Scarlet Halls, Scarlet Monastery and Scholomance (MoP versions)
+- [ ] Scenario framework, then the scenarios
+- [ ] Raids: Heart of Fear, Terrace of Endless Spring, Throne of Thunder, Siege of Orgrimmar
+- [ ] World bosses and Timeless Isle; challenge modes; MoP battlegrounds and arenas
+
+**Other gaps**
+- [ ] Cataclysm instances and zones; selected older instances (AzerothCore for Outland/Northrend)
+- [ ] Quests with no giver in any source, unscripted elites and rares, missing loot
+- [ ] Pet battle ability effects; DB fill-ins (vendors, item and gameobject templates)
+
 ## Requirements
 + Ubuntu 24.04 LTS, x86_64, with a processor that supports SSE2.
 + GCC 14 (`g++-14`; C++23).
