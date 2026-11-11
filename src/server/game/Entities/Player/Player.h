@@ -2385,6 +2385,7 @@ public:
     void UpdateSpellDamageAndHealingBonus();
     void ApplyRatingMod(CombatRating cr, int32 value, bool apply);
     void UpdateRating(CombatRating cr);
+    void UpdateHasteFromRating(CombatRating cr, int32 rating);
     void UpdateAllRatings();
     void UpdateMastery();
     void UpdatePvpPower();
@@ -3471,6 +3472,7 @@ protected:
 
     float m_auraBaseMod[BASEMOD_END][MOD_END];
     int16 m_baseRatingValue[MAX_COMBAT_RATING];
+    float m_appliedHasteRatingPct[3];                    // haste % currently applied from CR_HASTE_MELEE/RANGED/SPELL (see UpdateHasteFromRating)
     uint32 m_baseSpellPower;
     uint32 m_baseManaRegen;
     uint32 m_baseHealthRegen;

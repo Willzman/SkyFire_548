@@ -2575,6 +2575,7 @@ public:
     Unit* GetMeleeHitRedirectTarget(Unit* victim, SpellInfo const* spellInfo = NULL);
 
     int32 SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const;
+    float GetSpellPowerPctMultiplier() const;          // SPELL_AURA_MOD_SPELL_POWER_PCT (317), honouring same-effect spell groups
     int32 SpellBaseDamageBonusTaken(SpellSchoolMask schoolMask) const;
     uint32 SpellDamageBonusDone(Unit* victim, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1) const;
     uint32 SpellDamageBonusTaken(Unit* caster, SpellInfo const* spellProto, uint32 pdamage, DamageEffectType damagetype, uint32 stack = 1) const;

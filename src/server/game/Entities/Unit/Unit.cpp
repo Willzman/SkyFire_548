@@ -3287,6 +3287,23 @@ void Unit::EnergizeBySpell(Unit* victim, uint32 spellId, int32 damage, Powers po
     victim->getHostileRefManager().threatAssist(this, float(damage) * 0.5f, spellInfo);
 }
 
+float Unit::GetSpellPowerPctMultiplier() const
+{
+    // Raid buffs in one SPELL_GROUP_STACK_RULE_EXCLUSIVE_SAME_EFFECT group only count once (highest)
+    std::map<SpellGroup, int32> sameEffectSpellGroup;
+    float multiplier = 1.0f;
+
+    AuraEffectList const& auras = GetAuraEffectsByType(SPELL_AURA_MOD_SPELL_POWER_PCT);
+    for (AuraEffectList::const_iterator i = auras.begin(); i != auras.end(); ++i)
+        if (!sSpellMgr->AddSameEffectStackRuleSpellGroups((*i)->GetSpellInfo(), (*i)->GetAmount(), sameEffectSpellGroup))
+            AddPct(multiplier, (*i)->GetAmount());
+
+    for (std::map<SpellGroup, int32>::const_iterator itr = sameEffectSpellGroup.begin(); itr != sameEffectSpellGroup.end(); ++itr)
+        AddPct(multiplier, itr->second);
+
+    return multiplier;
+}
+
 int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
 {
     if (GetTypeId() == TypeID::TYPEID_PLAYER)
@@ -3315,6 +3332,9 @@ int32 Unit::SpellBaseDamageBonusDone(SpellSchoolMask schoolMask) const
         // Check if we are ever using mana - PaperDollFrame.lua
         if (GetPowerIndex(POWER_MANA) != MAX_POWERS)
             DoneAdvertisedBenefit += std::max(0, int32(GetStat(STAT_INTELLECT)) - 10);  // spellpower from intellect
+
+        // Spell power % (Arcane Brilliance, Dark Intent, Inner Fire, ...), as in LoA
+        DoneAdvertisedBenefit = int32(DoneAdvertisedBenefit * GetSpellPowerPctMultiplier());
 
         // Damage bonus from stats
         AuraEffectList const& mDamageDoneOfStatPercent = GetAuraEffectsByType(SPELL_AURA_MOD_SPELL_DAMAGE_OF_STAT_PERCENT);
@@ -3651,6 +3671,9 @@ int32 Unit::SpellBaseHealingBonusDone(SpellSchoolMask schoolMask) const
         // Check if we are ever using mana - PaperDollFrame.lua
         if (GetPowerIndex(POWER_MANA) != MAX_POWERS)
             advertisedBenefit += std::max(0, int32(GetStat(STAT_INTELLECT)) - 10);  // spellpower from intellect
+
+        // Spell power % (Arcane Brilliance, Dark Intent, Inner Fire, ...), as in LoA
+        advertisedBenefit = int32(advertisedBenefit * GetSpellPowerPctMultiplier());
 
         // Healing bonus from stats
         AuraEffectList const& mHealingDoneOfStatPercent = GetAuraEffectsByType(SPELL_AURA_MOD_SPELL_HEALING_OF_STAT_PERCENT);
@@ -6418,6 +6441,11 @@ void Unit::ApplyCastTimePercentMod(float val, bool apply)
         ApplyPercentModFloatValue(UNIT_FIELD_MOD_CASTING_SPEED, -val, apply);
         ApplyPercentModFloatValue(UNIT_FIELD_MOD_SPELL_HASTE, -val, apply);
     }
+
+    // Spell haste feeds base mana regen under SPELL_AURA_412 (Chaotic Energy, Nether Attunement)
+    if (Player* player = ToPlayer())
+        if (player->HasAuraType(SPELL_AURA_412))
+            player->UpdateManaRegen();
 }
 
 uint32 Unit::GetCastingTimeForBonus(SpellInfo const* spellProto, DamageEffectType damagetype, uint32 CastingTime) const

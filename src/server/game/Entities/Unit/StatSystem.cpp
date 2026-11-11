@@ -400,6 +400,11 @@ void Player::CalculateMinMaxDamage(WeaponAttackType attType, bool normalized, bo
     float total_value = GetModifierValue(unitMod, TOTAL_VALUE);
     float total_pct = addTotalPct ? GetModifierValue(unitMod, TOTAL_PCT) : 1.0f;
 
+    // SPELL_AURA_MOD_AUTOATTACK_DAMAGE (344): auto attacks only (Cat Form, Way of the Monk, ...), as in LoA.
+    // Weapon-damage abilities that use the non-normalized value divide it back out (Spell::EffectWeaponDmg).
+    if (!normalized)
+        total_pct *= GetTotalAuraMultiplier(SPELL_AURA_MOD_AUTOATTACK_DAMAGE);
+
     float weapon_mindamage = GetWeaponDamageRange(attType, WeaponDamageRange::MINDAMAGE);
     float weapon_maxdamage = GetWeaponDamageRange(attType, WeaponDamageRange::MAXDAMAGE);
 
@@ -762,11 +767,25 @@ void Player::UpdateManaRegen()
     float base_regen = GetMaxPower(POWER_MANA) * 0.02f;
     // Mana regen from spirit
     float spirit_regen = OCTRegenMPPerSpirit();
-    // Apply PCT bonus from SPELL_AURA_MOD_POWER_REGEN_PERCENT aura on spirit base regen
-    spirit_regen *= GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_POWER_REGEN_PERCENT, POWER_MANA);
 
-    //Apply FLAT bonus from SPELL_AURA_MOD_POWER_REGEN 
-    spirit_regen += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA);
+    // C4, as in Legends of Azeroth Pandaria (Player::UpdateManaRegen): the regen % auras scale the base
+    // regen, not spirit. Warlock Chaotic Energy (+625%) and Mage Mana Attunement (+400%) are meant for
+    // specs with no spirit; on spirit they did almost nothing.
+    // SPELL_AURA_379: base mana regen % (Rune of Power, Incanter's Ward, Holy/Spiritual Insight, ...)
+    base_regen *= GetTotalAuraMultiplier(SPELL_AURA_379);
+    // SPELL_AURA_412: base mana regen scales with spell haste (Chaotic Energy, Nether Attunement)
+    if (HasAuraType(SPELL_AURA_412))
+    {
+        float castSpeed = GetFloatValue(UNIT_FIELD_MOD_CASTING_SPEED);
+        if (castSpeed > 0.0f)
+            base_regen /= castSpeed;                    // = * (1 + haste)
+    }
+
+    //Apply FLAT bonus from SPELL_AURA_MOD_POWER_REGEN
+    base_regen += GetTotalAuraModifierByMiscValue(SPELL_AURA_MOD_POWER_REGEN, POWER_MANA);
+
+    // Apply PCT bonus from SPELL_AURA_MOD_POWER_REGEN_PERCENT
+    base_regen *= GetTotalAuraMultiplierByMiscValue(SPELL_AURA_MOD_POWER_REGEN_PERCENT, POWER_MANA);
 
     // mp5
     spirit_regen /= 5.0f;

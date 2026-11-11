@@ -5534,8 +5534,14 @@ void Spell::TakeRunePower(bool didHit)
 
     // you can gain some runic power when use runes
     if (didHit)
+    {
         if (int32 rp = int32(runeCostData->runePowerGain * sWorld->getRate(Rates::RATE_POWER_RUNICPOWER_INCOME)))
+        {
+            // SPELL_AURA_MOD_RUNE_REGEN_SPEED (329): runic power gained % (Frost Presence +20%), as in LoA
+            AddPct(rp, player->GetTotalAuraModifier(SPELL_AURA_MOD_RUNE_REGEN_SPEED));
             player->ModifyPower(POWER_RUNIC_POWER, int32(rp));
+        }
+    }
 }
 
 void Spell::TakeReagents()

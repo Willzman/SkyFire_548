@@ -1165,6 +1165,10 @@ void Spell::EffectWeaponDmg(SpellEffIndex effIndex)
 
     int32 weaponDamage = m_caster->CalculateDamage(m_attackType, normalized, true);
 
+    // Auto-attack damage % (344) is included in the non-normalized value; abilities don't get it
+    if (!normalized && m_caster->HasAuraType(SPELL_AURA_MOD_AUTOATTACK_DAMAGE))
+        weaponDamage = int32(weaponDamage / m_caster->GetTotalAuraMultiplier(SPELL_AURA_MOD_AUTOATTACK_DAMAGE));
+
     // Sequence is important
     for (int j = 0; j < MAX_SPELL_EFFECTS; ++j)
     {
