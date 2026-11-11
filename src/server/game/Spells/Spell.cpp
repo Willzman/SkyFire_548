@@ -8324,7 +8324,7 @@ void Spell::TriggerGlobalCooldown()
     {
         // MoP: spell haste only shortens the 1.5 s spell GCD (category 133). Melee, ranged and
         // energy/focus abilities keep their GCD unless an aura 417 (SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE,
-        // e.g. Unholy Presence, Sanctity of Battle) applies their haste to it.
+        // in 5.4.8 only Sanctity of Battle, Retribution) applies their haste to it.
         // Ported from Legends of Azeroth Pandaria (Spell::TriggerGlobalCooldown); check ripped from the client.
         if (m_spellInfo->StartRecoveryCategory == 133 &&
             m_spellInfo->StartRecoveryTime == 1500 &&
