@@ -13379,6 +13379,7 @@ void Player::_LoadGlyphAuras()
                     if (gp->TypeFlags == gs->TypeFlags)
                     {
                         CastSpell(this, gp->SpellId, true);
+                        ApplyGlyphLearnedSpells(gp->SpellId, true);
                         continue;
                     }
                     else
@@ -21137,6 +21138,23 @@ void Player::SetGlyph(uint8 slot, uint32 glyph)
     SetUInt32Value(PLAYER_FIELD_GLYPHS + slot, glyph);
 }
 
+// Glyph auras are cast, not learned, so their spell_learn_spell rows (e.g. Glyph of Holy Nova -> Holy Nova)
+// would never apply. Learn or unlearn them together with the glyph aura.
+void Player::ApplyGlyphLearnedSpells(uint32 glyphSpellId, bool apply)
+{
+    SpellLearnSpellMapBounds bounds = sSpellMgr->GetSpellLearnSpellMapBounds(glyphSpellId);
+    for (SpellLearnSpellMap::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
+    {
+        if (apply)
+        {
+            if (!HasSpell(itr->second.spell))
+                learnSpell(itr->second.spell, false);
+        }
+        else if (HasSpell(itr->second.spell))
+            removeSpell(itr->second.spell, false, false);
+    }
+}
+
 bool Player::isTotalImmune()
 {
     AuraEffectList const& immune = GetAuraEffectsByType(SPELL_AURA_SCHOOL_IMMUNITY);
@@ -22663,7 +22681,10 @@ void Player::ActivateSpec(uint8 spec)
     for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
         if (uint32 oldglyph = GetGlyph(GetActiveSpec(), slot))
             if (GlyphPropertiesEntry const* old_gp = sGlyphPropertiesStore.LookupEntry(oldglyph))
+            {
                 RemoveAurasDueToSpell(old_gp->SpellId);
+                ApplyGlyphLearnedSpells(old_gp->SpellId, false);
+            }
 
     SetActiveSpec(spec);
     SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, GetTalentSpecialization(GetActiveSpec()));
@@ -22704,7 +22725,10 @@ void Player::ActivateSpec(uint8 spec)
 
         if (glyph)
             if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyph))
+            {
                 CastSpell(this, gp->SpellId, true);
+                ApplyGlyphLearnedSpells(gp->SpellId, true);
+            }
 
         SetGlyph(slot, glyph);
     }

@@ -2141,6 +2141,7 @@ public:
         return GetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS + slot);
     }
     void SetGlyph(uint8 slot, uint32 glyph);
+    void ApplyGlyphLearnedSpells(uint32 glyphSpellId, bool apply);
     uint32 GetGlyph(uint8 spec, uint8 slot) const
     {
         return _talentMgr->SpecInfo[spec].Glyphs[slot];
