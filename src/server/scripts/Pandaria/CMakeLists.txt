@@ -39,6 +39,11 @@ set(scripts_STAT_SRCS
   Pandaria/MogushanVault/instance_mogu_shan_vault.cpp
   Pandaria/MogushanVault/mogu_shan_vault.cpp
   Pandaria/MogushanVault/mogu_shan_vault.h
+  Pandaria/MogushanPalace/boss_gekkan.cpp
+  Pandaria/MogushanPalace/boss_trial_of_the_king.cpp
+  Pandaria/MogushanPalace/boss_xin_the_weaponmaster.cpp
+  Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
+  Pandaria/MogushanPalace/mogu_shan_palace.h
   Pandaria/pandaria_loa_compat.h
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp

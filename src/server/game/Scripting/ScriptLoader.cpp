@@ -646,6 +646,11 @@ void AddSC_boss_striker_gadok();
 void AddSC_boss_commander_rimok();
 void AddSC_boss_raigonn();
 void AddSC_gate_of_the_setting_sun();
+// Mogu'shan Palace
+void AddSC_boss_gekkan();
+void AddSC_boss_trial_of_the_king();
+void AddSC_boss_xin_the_weaponmaster();
+void AddSC_instance_mogu_shan_palace();
 // Mogu'shan Vaults
 void AddSC_boss_elegon();
 void AddSC_boss_feng();
@@ -1405,6 +1410,11 @@ void AddPandariaScripts()
     AddSC_boss_commander_rimok();
     AddSC_boss_raigonn();
     AddSC_gate_of_the_setting_sun();
+    // Mogu'shan Palace
+    AddSC_boss_gekkan();
+    AddSC_boss_trial_of_the_king();
+    AddSC_boss_xin_the_weaponmaster();
+    AddSC_instance_mogu_shan_palace();
     // Mogu'shan Vaults
     AddSC_boss_elegon();
     AddSC_boss_feng();
