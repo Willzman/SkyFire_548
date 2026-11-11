@@ -5557,6 +5557,7 @@ void Unit::SetPower(Powers power, int32 val)
     if (maxPower < val)
         val = maxPower;
 
+    int32 const oldVal = GetInt32Value(UNIT_FIELD_POWER + powerIndex);
     SetInt32Value(UNIT_FIELD_POWER + powerIndex, val);
 
     if (IsInWorld())
@@ -5606,6 +5607,37 @@ void Unit::SetPower(Powers power, int32 val)
             if (owner && (owner->GetTypeId() == TypeID::TYPEID_PLAYER) && owner->ToPlayer()->GetGroup())
                 owner->ToPlayer()->SetGroupUpdateFlag(GROUP_UPDATE_FLAG_PET_CUR_POWER);
         }
+    }
+
+    // SPELL_AURA_TRIGGER_ON_POWER_LEVEL (396): cast the trigger spell when this power crosses the aura's
+    // amount, going up (misc value B 0) or down (1). Warlock T16 4P (Ember Master), ember/shard
+    // visuals; Pursuit of Justice is scripted on its own (C2, ported from Legends of Azeroth Pandaria's Unit::SetPower).
+    if (val != oldVal && HasAuraType(SPELL_AURA_TRIGGER_ON_POWER_LEVEL))
+    {
+        std::vector<uint32> triggers;
+        AuraEffectList const& powerLevelAuras = GetAuraEffectsByType(SPELL_AURA_TRIGGER_ON_POWER_LEVEL);
+        for (AuraEffectList::const_iterator itr = powerLevelAuras.begin(); itr != powerLevelAuras.end(); ++itr)
+        {
+            AuraEffect const* effect = *itr;
+            if (effect->GetMiscValue() != int32(power))
+                continue;
+
+            int32 const threshold = effect->GetAmount();
+            bool const crossed = effect->GetMiscValueB()
+                ? (val < oldVal && threshold < oldVal && threshold >= val)
+                : (val > oldVal && threshold > oldVal && threshold <= val);
+            if (!crossed)
+                continue;
+
+            uint32 const triggerSpell = effect->GetSpellInfo()->Effects[effect->GetEffIndex()].TriggerSpell;
+            if (triggerSpell && sSpellMgr->GetSpellInfo(triggerSpell)   // some triggers are server-side spells SkyFire lacks
+                && std::find(triggers.begin(), triggers.end(), triggerSpell) == triggers.end())
+                triggers.push_back(triggerSpell);
+        }
+
+        // Cast after the loop: the triggered spells can change the aura list
+        for (std::vector<uint32>::const_iterator itr = triggers.begin(); itr != triggers.end(); ++itr)
+            CastSpell(this, *itr, true);
     }
 }
 
