@@ -591,7 +591,9 @@ public:
     }
 };
 
-// 56372 - Glyph of Ice Block
+// 45438 - Ice Block
+// Glyph of Ice Block (115723): when Ice Block ends, a free Frost Nova (115757) and a short spell
+// immunity (115760). Ported from Legends of Azeroth Pandaria (C2).
 class spell_mage_glyph_of_ice_block : public SpellScriptLoader
 {
 public:
@@ -601,33 +603,35 @@ public:
     {
         PrepareAuraScript(spell_mage_glyph_of_ice_block_AuraScript);
 
-        bool Validate(SpellInfo const* /*spellInfo*/) override
+        enum
         {
-            if (!sSpellMgr->GetSpellInfo(SPELL_MAGE_FROST_NOVA))
-                return false;
-            return true;
+            SPELL_MAGE_GLYPH_OF_ICE_BLOCK            = 115723,
+            SPELL_MAGE_GLYPH_OF_ICE_BLOCK_FROST_NOVA = 115757,
+            SPELL_MAGE_GLYPH_OF_ICE_BLOCK_IMMUNITY   = 115760,
+        };
+
+        bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+        {
+            return sSpellMgr->GetSpellInfo(SPELL_MAGE_GLYPH_OF_ICE_BLOCK_FROST_NOVA) && sSpellMgr->GetSpellInfo(SPELL_MAGE_GLYPH_OF_ICE_BLOCK_IMMUNITY);
         }
 
-        bool CheckProc(ProcEventInfo& /*eventInfo*/)
+        void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
-            return GetTarget()->GetTypeId() == TypeID::TYPEID_PLAYER;
+            Unit* mage = GetTarget();
+            if (mage->GetTypeId() != TypeID::TYPEID_PLAYER || !mage->IsAlive() || !mage->HasAura(SPELL_MAGE_GLYPH_OF_ICE_BLOCK))
+                return;
+
+            mage->CastSpell(mage, SPELL_MAGE_GLYPH_OF_ICE_BLOCK_FROST_NOVA, true);
+            mage->CastSpell(mage, SPELL_MAGE_GLYPH_OF_ICE_BLOCK_IMMUNITY, true);
         }
 
-        void HandleEffectProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
+        void Register() OVERRIDE
         {
-            PreventDefaultAction();
-            // Remove Frost Nova cooldown
-            GetTarget()->ToPlayer()->RemoveSpellCooldown(SPELL_MAGE_FROST_NOVA, true);
-        }
-
-        void Register() override
-        {
-            DoCheckProc += AuraCheckProcFn(spell_mage_glyph_of_ice_block_AuraScript::CheckProc);
-            OnEffectProc += AuraEffectProcFn(spell_mage_glyph_of_ice_block_AuraScript::HandleEffectProc, EFFECT_0, SPELL_AURA_DUMMY);
+            AfterEffectRemove += AuraEffectRemoveFn(spell_mage_glyph_of_ice_block_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_MOD_STUN, AURA_EFFECT_HANDLE_REAL);
         }
     };
 
-    AuraScript* GetAuraScript() const override
+    AuraScript* GetAuraScript() const OVERRIDE
     {
         return new spell_mage_glyph_of_ice_block_AuraScript();
     }
