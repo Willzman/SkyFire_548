@@ -3627,6 +3627,13 @@ void SpellMgr::LoadSpellInfoCorrections()
                     if (spellInfo->Effects[i].Effect == SPELL_EFFECT_SUMMON)
                         spellInfo->Effects[i].TargetA = SpellImplicitTargetInfo(TARGET_DEST_CHANNEL_TARGET);
                 break;
+            // Vengeance (Monk): the client uses SPELL_EFFECT_APPLY_AREA_AURA_ENTRY (174), which SkyFire doesn't
+            // implement, so the passive never applied. Apply it to the monk like the other tanks' (C2).
+            case 120267:
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                break;
             case 64306:
             case 70719:
                 // Petrified Root triggers 70719 to summon the withered ent on the corpse.
