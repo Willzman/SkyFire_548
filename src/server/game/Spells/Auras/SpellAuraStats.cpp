@@ -620,6 +620,38 @@ void AuraEffect::HandleModPowerRegenPCT(AuraApplication const* aurApp, uint8 mod
     player->SetFloatValue(UNIT_FIELD_POWER_REGEN_FLAT_MODIFIER + powerIndex, baseRegen * (multiplier - 1.0f));
 }
 
+// 382 SPELL_AURA_MOD_PET_STAT: % max health (misc 1) or armor (misc 13) of the owner's pet, optionally only
+// one pet entry (misc B). Glyph of Water Elemental, Glyph of Demon Training, Shadow Bulwark, Metamorphosis.
+// The pet reads the owner's auras in Guardian::UpdateMaxHealth/UpdateArmor (C12, ported from LoA).
+void AuraEffect::HandleAuraModPetStat(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    Player* player = aurApp->GetTarget()->ToPlayer();
+    if (!player)
+        return;
+
+    Pet* pet = player->GetPet();
+    if (!pet)
+        return;
+
+    if (GetMiscValueB() && uint32(GetMiscValueB()) != pet->GetEntry())
+        return;
+
+    switch (GetMiscValue())
+    {
+        case 1:
+            pet->UpdateMaxHealth();
+            break;
+        case 13:
+            pet->UpdateArmor();
+            break;
+        default:
+            break;
+    }
+}
+
 void AuraEffect::HandleAuraModIncreaseHealth(AuraApplication const* aurApp, uint8 mode, bool apply) const
 {
     if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))

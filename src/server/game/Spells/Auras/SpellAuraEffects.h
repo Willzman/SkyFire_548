@@ -201,6 +201,7 @@ public:
     void HandleModAutoAttackDamage(AuraApplication const* aurApp, uint8 mode, bool apply) const;
 
     void HandleAuraModIncreaseHealth(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+    void HandleAuraModPetStat(AuraApplication const* aurApp, uint8 mode, bool apply) const;
     void HandleAuraModIncreaseMaxHealth(AuraApplication const* aurApp, uint8 mode, bool apply) const;
     void HandleAuraModIncreaseMaxPowerFlat(AuraApplication const* aurApp, uint8 mode, bool apply) const;
     void HandleAuraModIncreaseEnergyPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;

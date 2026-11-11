@@ -87,6 +87,10 @@ public:
 
     int32 GetBonusDamage() const { return m_bonusSpellDamage; }
     void SetBonusDamage(int32 damage);
+
+    // SPELL_AURA_MOD_PET_STAT (382) on the owner: misc value 1 = max health, 13 = armor;
+    // misc value B limits it to one pet entry (C12, as in LoA).
+    float GetOwnerPetStatMultiplier(int32 stat) const;
 protected:
     int32   m_bonusSpellDamage;
     float   m_statFromOwner[MAX_STATS];
