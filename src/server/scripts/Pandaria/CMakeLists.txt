@@ -30,6 +30,16 @@ set(scripts_STAT_SRCS
   Pandaria/TempleOfTheJadeSerpent/boss_wise_mari.cpp
   Pandaria/TempleOfTheJadeSerpent/instance_temple_of_the_jade_serpent.cpp
   Pandaria/TempleOfTheJadeSerpent/temple_of_the_jade_serpent.h
+  Pandaria/MogushanVault/boss_elegon.cpp
+  Pandaria/MogushanVault/boss_feng.cpp
+  Pandaria/MogushanVault/boss_garajal.cpp
+  Pandaria/MogushanVault/boss_spirit_kings.cpp
+  Pandaria/MogushanVault/boss_stone_guard.cpp
+  Pandaria/MogushanVault/boss_will_of_emperor.cpp
+  Pandaria/MogushanVault/instance_mogu_shan_vault.cpp
+  Pandaria/MogushanVault/mogu_shan_vault.cpp
+  Pandaria/MogushanVault/mogu_shan_vault.h
+  Pandaria/pandaria_loa_compat.h
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
 )
