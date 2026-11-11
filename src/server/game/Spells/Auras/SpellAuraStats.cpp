@@ -527,6 +527,52 @@ void AuraEffect::HandleModPowerRegen(AuraApplication const* aurApp, uint8 mode, 
     // other powers are not immediate effects - implemented in Player::Regenerate, Creature::Regenerate
 }
 
+// C4 aura handlers, ported from Legends of Azeroth Pandaria (SpellAuraEffects.cpp). The effects themselves
+// are applied where the value is calculated; these only make the core recalculate it.
+
+// 379 (base mana regen %) and 412 (base mana regen scales with haste)
+void AuraEffect::HandleModManaRegenPct(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    if (Player* player = aurApp->GetTarget()->ToPlayer())
+        player->UpdateManaRegen();
+}
+
+// 317 SPELL_AURA_MOD_SPELL_POWER_PCT: refresh the spell power the client shows
+void AuraEffect::HandleAuraModSpellPowerPercent(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    if (Player* player = aurApp->GetTarget()->ToPlayer())
+        player->UpdateSpellDamageAndHealingBonus();
+}
+
+// 405: % of the ratings in the misc mask (Bear Form, Flurry, Stance of the Wise Serpent, ...)
+void AuraEffect::HandleAuraModRatingPercent(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    if (Player* player = aurApp->GetTarget()->ToPlayer())
+        for (uint8 i = 0; i < MAX_COMBAT_RATING; ++i)
+            if (GetMiscValue() & (1 << i))
+                player->UpdateRating(CombatRating(i));
+}
+
+// 344: auto-attack damage % (Cat Form, Way of the Monk, Might of the Frozen Wastes, ...)
+void AuraEffect::HandleModAutoAttackDamage(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
+{
+    if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))
+        return;
+
+    Unit* target = aurApp->GetTarget();
+    target->UpdateDamagePhysical(WeaponAttackType::BASE_ATTACK);
+    target->UpdateDamagePhysical(WeaponAttackType::OFF_ATTACK);
+}
+
 void AuraEffect::HandleModPowerRegenPCT(AuraApplication const* aurApp, uint8 mode, bool /*apply*/) const
 {
     if (!(mode & (AURA_EFFECT_HANDLE_CHANGE_AMOUNT_MASK | AURA_EFFECT_HANDLE_STAT)))

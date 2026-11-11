@@ -690,6 +690,9 @@ Player::Player(WorldSession* session) : Unit(true)
     for (uint8 i = 0; i < MAX_COMBAT_RATING; i++)
         m_baseRatingValue[i] = 0;
 
+    for (uint8 i = 0; i < 3; ++i)
+        m_appliedHasteRatingPct[i] = 0.0f;
+
     m_baseSpellPower = 0;
     m_baseManaRegen = 0;
     m_baseHealthRegen = 0;
@@ -3474,6 +3477,8 @@ void Player::InitStatsForLevel(bool reapplyMods)
     SetFloatValue(UNIT_FIELD_MOD_SPELL_HASTE, 1.0f);
     SetFloatValue(UNIT_FIELD_MOD_HASTE, 1.0f);
     SetFloatValue(UNIT_FIELD_MOD_RANGED_HASTE, 1.0f);
+    for (uint8 i = 0; i < 3; ++i)                         // the haste fields above no longer hold any rating haste
+        m_appliedHasteRatingPct[i] = 0.0f;
 
     // reset size before reapply auras
     SetObjectScale(1.0f);
@@ -6184,33 +6189,57 @@ void Player::ApplyRatingMod(CombatRating cr, int32 value, bool apply)
 {
     m_baseRatingValue[uint8(cr)] += (apply ? value : -value);
 
-    // explicit affected values
+    // Haste from rating is applied in UpdateRating from the final rating, so rating % auras (405)
+    // and rating-from-stat auras change real haste, not just the character sheet.
+    UpdateRating(cr);
+}
+
+void Player::UpdateHasteFromRating(CombatRating cr, int32 rating)
+{
+    uint8 const index = uint8(cr) - uint8(CombatRating::CR_HASTE_MELEE);
+    if (index >= 3)
+        return;
+
+    float const newPct = rating * GetRatingMultiplier(cr);
+    float const oldPct = m_appliedHasteRatingPct[index];
+    if (newPct == oldPct)
+        return;
+
+    // Percent mods are multiplicative, so taking the old value off and putting the new one on is exact
     switch (cr)
     {
         case CombatRating::CR_HASTE_MELEE:
-        {
-            float RatingChange = value * GetRatingMultiplier(cr);
-            ApplyAttackTimePercentMod(WeaponAttackType::BASE_ATTACK, RatingChange, apply);
-            ApplyAttackTimePercentMod(WeaponAttackType::OFF_ATTACK, RatingChange, apply);
-            if (getClass() == CLASS_DEATH_KNIGHT)
-                UpdateAllRunesRegen();
+            if (oldPct)
+            {
+                ApplyAttackTimePercentMod(WeaponAttackType::BASE_ATTACK, oldPct, false);
+                ApplyAttackTimePercentMod(WeaponAttackType::OFF_ATTACK, oldPct, false);
+            }
+            if (newPct)
+            {
+                ApplyAttackTimePercentMod(WeaponAttackType::BASE_ATTACK, newPct, true);
+                ApplyAttackTimePercentMod(WeaponAttackType::OFF_ATTACK, newPct, true);
+            }
             break;
-        }
         case CombatRating::CR_HASTE_RANGED:
-        {
-            ApplyAttackTimePercentMod(WeaponAttackType::RANGED_ATTACK, value * GetRatingMultiplier(cr), apply);
+            if (oldPct)
+                ApplyAttackTimePercentMod(WeaponAttackType::RANGED_ATTACK, oldPct, false);
+            if (newPct)
+                ApplyAttackTimePercentMod(WeaponAttackType::RANGED_ATTACK, newPct, true);
             break;
-        }
         case CombatRating::CR_HASTE_SPELL:
-        {
-            ApplyCastTimePercentMod(value * GetRatingMultiplier(cr), apply);
+            if (oldPct)
+                ApplyCastTimePercentMod(oldPct, false);
+            if (newPct)
+                ApplyCastTimePercentMod(newPct, true);
             break;
-        }
         default:
-            break;
+            return;
     }
 
-    UpdateRating(cr);
+    m_appliedHasteRatingPct[index] = newPct;
+
+    if (cr == CombatRating::CR_HASTE_MELEE && getClass() == CLASS_DEATH_KNIGHT)
+        UpdateAllRunesRegen();
 }
 
 void Player::UpdateRating(CombatRating cr)
@@ -6224,6 +6253,9 @@ void Player::UpdateRating(CombatRating cr)
             amount += int32(CalculatePct(GetStat(Stats((*i)->GetMiscValueB())), (*i)->GetAmount()));
     if (amount < 0)
         amount = 0;
+
+    // SPELL_AURA_405: % more of the ratings in its misc mask (Bear Form, Flurry, Stance of the Wise Serpent), as in LoA
+    amount = int32(amount * GetTotalAuraMultiplierByMiscMask(SPELL_AURA_405, 1 << uint8(cr)));
     SetUInt32Value(PLAYER_FIELD_COMBAT_RATINGS + uint8(cr), uint32(amount));
 
     bool affectStats = CanModifyStats();
@@ -6273,9 +6305,10 @@ void Player::UpdateRating(CombatRating cr)
         case CombatRating::CR_RESILIENCE_CRIT_TAKEN:
         case CombatRating::CR_CRIT_TAKEN_SPELL:                           // Deprecated since Cataclysm
             break;
-        case CombatRating::CR_HASTE_MELEE:                                // Implemented in Player::ApplyRatingMod
+        case CombatRating::CR_HASTE_MELEE:
         case CombatRating::CR_HASTE_RANGED:
         case CombatRating::CR_HASTE_SPELL:
+            UpdateHasteFromRating(cr, amount);
             break;
         case CombatRating::CR_WEAPON_SKILL_MAINHAND:                      // Implemented in Unit::RollMeleeOutcomeAgainst
         case CombatRating::CR_WEAPON_SKILL_OFFHAND:
@@ -17987,6 +18020,23 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
 
         if (catrec < 0)
             catrec = 0;
+
+        // SPELL_AURA_416: melee haste shortens the cooldown of the affected spells
+        // (Sanctity of Battle, Monk Fighting Style), as in LoA (SpellHistory::StartCooldown)
+        Unit::AuraEffectList const& cooldownByHaste = GetAuraEffectsByType(SPELL_AURA_416);
+        for (Unit::AuraEffectList::const_iterator itr = cooldownByHaste.begin(); itr != cooldownByHaste.end(); ++itr)
+        {
+            if (!(*itr)->IsAffectingSpell(spellInfo))
+                continue;
+
+            float hasteMod = GetFloatValue(UNIT_FIELD_MOD_HASTE);   // time multiplier, below 1.0 when hasted
+            if (hasteMod > 0.0f && hasteMod < 1.0f)
+            {
+                rec = int32(rec * hasteMod);
+                catrec = int32(catrec * hasteMod);
+            }
+            break;                                                  // only one applies
+        }
 
         // Category charges own the long recharge (e.g. Charge + Double Time). Applying
         // RecoveryTime as a normal spell CD locks the button for ~20s and makes the client

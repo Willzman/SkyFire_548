@@ -195,6 +195,10 @@ public:
     //   heal and energize
     void HandleModPowerRegen(AuraApplication const* aurApp, uint8 mode, bool apply) const;
     void HandleModPowerRegenPCT(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+    void HandleModManaRegenPct(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+    void HandleAuraModSpellPowerPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+    void HandleAuraModRatingPercent(AuraApplication const* aurApp, uint8 mode, bool apply) const;
+    void HandleModAutoAttackDamage(AuraApplication const* aurApp, uint8 mode, bool apply) const;
 
     void HandleAuraModIncreaseHealth(AuraApplication const* aurApp, uint8 mode, bool apply) const;
     void HandleAuraModIncreaseMaxHealth(AuraApplication const* aurApp, uint8 mode, bool apply) const;

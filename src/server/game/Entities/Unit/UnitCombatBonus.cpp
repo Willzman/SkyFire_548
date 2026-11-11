@@ -777,6 +777,14 @@ uint32 Unit::MeleeDamageBonusTaken(Unit* attacker, uint32 pdamage, WeaponAttackT
                     AddPct(TakenTotalMod, (*i)->GetAmount());
         }
     }
+    else
+    {
+        // Auto attacks: SPELL_AURA_343 (auto-attack damage taken from the caster: Vendetta, Sanguinary Vein), as in LoA
+        AuraEffectList const& autoAttackTaken = GetAuraEffectsByType(SPELL_AURA_343);
+        for (AuraEffectList::const_iterator i = autoAttackTaken.begin(); i != autoAttackTaken.end(); ++i)
+            if ((*i)->GetCasterGUID() == attacker->GetGUID())
+                AddPct(TakenTotalMod, (*i)->GetAmount());
+    }
 
     // .. taken pct: dummy auras
     AuraEffectList const& mDummyAuras = GetAuraEffectsByType(SPELL_AURA_DUMMY);
