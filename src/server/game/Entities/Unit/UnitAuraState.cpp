@@ -1425,6 +1425,43 @@ float Unit::GetTotalAuraMultiplier(AuraType auratype) const
     return multiplier;
 }
 
+// How much haste speeds up energy and focus regeneration (C12). Same sources as Legends of Azeroth
+// Pandaria's Unit::GetHasteMultiplier: haste rating, positive haste auras (193), Bloodlust-type spell
+// haste (65 on spells that also have 192) and, for hunters, ranged haste (140). Attack speed auras
+// (Slice and Dice 319, the 10% melee haste raid buff 342) don't count. Pets use their owner's haste.
+float Unit::GetPowerRegenHasteMultiplier() const
+{
+    if (GetTypeId() != TypeID::TYPEID_PLAYER)
+        if (Unit* owner = GetOwner())
+            if (owner->GetTypeId() == TypeID::TYPEID_PLAYER)
+                return owner->GetPowerRegenHasteMultiplier();
+
+    float mult = 1.0f;
+
+    AuraEffectList const& haste = GetAuraEffectsByType(SPELL_AURA_MELEE_SLOW);
+    for (AuraEffectList::const_iterator i = haste.begin(); i != haste.end(); ++i)
+        if ((*i)->GetAmount() > 0)
+            mult *= 1.0f + (*i)->GetAmount() / 100.0f;
+
+    AuraEffectList const& castSpeed = GetAuraEffectsByType(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK);
+    for (AuraEffectList::const_iterator i = castSpeed.begin(); i != castSpeed.end(); ++i)
+        if ((*i)->GetAmount() > 0 && (*i)->GetBase()->HasEffectType(SPELL_AURA_MOD_MELEE_RANGED_HASTE))
+            mult *= 1.0f + (*i)->GetAmount() / 100.0f;
+
+    if (getClass() == CLASS_HUNTER)
+    {
+        AuraEffectList const& rangedHaste = GetAuraEffectsByType(SPELL_AURA_MOD_RANGED_HASTE);
+        for (AuraEffectList::const_iterator i = rangedHaste.begin(); i != rangedHaste.end(); ++i)
+            if ((*i)->GetAmount() > 0)
+                mult *= 1.0f + (*i)->GetAmount() / 100.0f;
+    }
+
+    if (Player const* player = ToPlayer())
+        AddPct(mult, player->GetRatingBonusValue(CombatRating::CR_HASTE_MELEE));
+
+    return mult;
+}
+
 int32 Unit::GetMaxPositiveAuraModifier(AuraType auratype) const
 {
     int32 modifier = 0;

@@ -2310,6 +2310,7 @@ public:
 
     int32 GetTotalAuraModifier(AuraType auratype) const;
     float GetTotalAuraMultiplier(AuraType auratype) const;
+    float GetPowerRegenHasteMultiplier() const;        // energy/focus regen speed-up from haste (C12)
     int32 GetMaxPositiveAuraModifier(AuraType auratype) const;
     int32 GetMaxNegativeAuraModifier(AuraType auratype) const;
 
