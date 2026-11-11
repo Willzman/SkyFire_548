@@ -206,11 +206,13 @@ void Spell::EffectApplyGlyph(SpellEffIndex effIndex)
                 if (GlyphPropertiesEntry const* oldGlyphProperties = sGlyphPropertiesStore.LookupEntry(oldGlyph))
                 {
                     player->RemoveAurasDueToSpell(oldGlyphProperties->SpellId);
+                    player->ApplyGlyphLearnedSpells(oldGlyphProperties->SpellId, false);
                     player->SetGlyph(m_glyphIndex, 0);
                 }
             }
 
             player->CastSpell(m_caster, newGlyphProperties->SpellId, true);
+            player->ApplyGlyphLearnedSpells(newGlyphProperties->SpellId, true);
             player->SetGlyph(m_glyphIndex, newGlyph);
             player->SendTalentsInfoData();
         }
@@ -220,6 +222,7 @@ void Spell::EffectApplyGlyph(SpellEffIndex effIndex)
         if (GlyphPropertiesEntry const* oldGlyphProperties = sGlyphPropertiesStore.LookupEntry(oldGlyph))
         {
             player->RemoveAurasDueToSpell(oldGlyphProperties->SpellId);
+            player->ApplyGlyphLearnedSpells(oldGlyphProperties->SpellId, false);
             player->SetGlyph(m_glyphIndex, 0);
             player->SendTalentsInfoData();
         }
