@@ -536,7 +536,8 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                 damage -= damageInfo->blocked;
             }
 
-            ApplyResilience(victim, &damage, crit);
+            if (!(spellInfo->AttributesCu & SPELL_ATTR0_CU_IGNORE_RESILIENCE))
+                ApplyResilience(victim, &damage, crit);
             break;
         }
         // Magical Attacks
@@ -550,7 +551,8 @@ void Unit::CalculateSpellDamageTaken(SpellNonMeleeDamage* damageInfo, int32 dama
                 damage = SpellCriticalDamageBonus(spellInfo, damage, victim);
             }
 
-            ApplyResilience(victim, &damage, crit);
+            if (!(spellInfo->AttributesCu & SPELL_ATTR0_CU_IGNORE_RESILIENCE))
+                ApplyResilience(victim, &damage, crit);
             break;
         }
         default:

@@ -2901,6 +2901,121 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 break;
         }
 
+        // Class spell attributes from Legends of Azeroth Pandaria's spell_custom_attribute table (C9).
+        // Kept separate from the switch above (Rake 1822 is in both).
+        switch (spellInfo->Id)
+        {
+            case 81269: // Efflorescence
+            case 105421: // Blinding Light
+            case 115752: // Blinding Light
+            case 117418: // Fists of Fury
+            case 120086: // Fists of Fury
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_ALWAYS_CHECK_LOS;
+                break;
+            case 5374: // Mutilate
+            case 27576: // Mutilate Off-Hand
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_ALWAYS_SEND_TO_CLIENT;
+                break;
+            case 148581: // Rocket Attack
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_CONE_LINE;
+                break;
+            case 92694: // Cannon
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_CONE_LINE | SPELL_ATTR0_CU_IGNORE_RESILIENCE | SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 51755: // Camouflage
+            case 53397: // Invigoration
+            case 57894: // Lesser Proportion
+            case 80325: // Camouflage
+            case 80326: // Camouflage
+            case 110478: // Symbiosis
+            case 110479: // Symbiosis
+            case 110482: // Symbiosis
+            case 110483: // Symbiosis
+            case 110484: // Symbiosis
+            case 110485: // Symbiosis
+            case 110486: // Symbiosis
+            case 110488: // Symbiosis
+            case 110490: // Symbiosis
+            case 110491: // Symbiosis
+            case 119450: // Camouflage
+            case 145737: // Brutal Kinship
+            case 147358: // Unbound Water Elemental Transform
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
+                break;
+            case 118: // Polymorph
+            case 3600: // Earthbind
+            case 28271: // Polymorph
+            case 28272: // Polymorph
+            case 33619: // Reflective Shield
+            case 44461: // Living Bomb
+            case 61025: // Polymorph
+            case 61305: // Polymorph
+            case 61721: // Polymorph
+            case 61780: // Polymorph
+            case 64695: // Earthgrab
+            case 64803: // Entrapment
+            case 79136: // Venomous Wound
+            case 112947: // Nerve Strike
+            case 114924: // Nether Tempest
+            case 114954: // Nether Tempest
+            case 114956: // Nether Tempest
+            case 116947: // Earthbind
+            case 131900: // A Murder of Crows
+            case 135299: // Ice Trap
+            case 137639: // Storm, Earth, and Fire
+            case 138130: // Storm, Earth and Fire
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SET_IN_COMBAT_STATE;
+                break;
+            case 116631: // Colossus
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_ENCHANT_PROC;
+                break;
+            case 1822: // Rake
+            case 12723: // Sweeping Strikes
+            case 22482: // Blade Flurry
+            case 106830: // Thrash
+            case 118459: // Beast Cleave
+            case 146061: // Multistrike
+            case 146137: // Cleave
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 47753: // Divine Aegis
+            case 52752: // Ancestral Awakening
+            case 53652: // Beacon of Light
+            case 55533: // Glyph of Healing Wave
+            case 77489: // Echo of Light
+            case 83077: // Improved Serpent Sting
+            case 86273: // Illuminated Healing
+            case 86678: // Light of the Ancient Kings
+            case 98021: // Spirit Link
+            case 114214: // Angelic Bulwark
+            case 114911: // Ancestral Guidance
+            case 115450: // Detox
+            case 118594: // Void Shift
+            case 122281: // Healing Elixirs
+            case 124988: // Nature's Vigil
+            case 148009: // Spirit of Chi-Ji
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_PVP_POWER;
+                break;
+            case 87023: // Cauterize
+            case 124280: // Touch of Karma
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_PVP_POWER | SPELL_ATTR0_CU_IGNORE_RESILIENCE;
+                break;
+            case 122233: // Crimson Tempest
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_RESILIENCE;
+                break;
+            case 115080: // Touch of Death
+            case 146069: // Multistrike
+            case 146162: // Cleave
+            case 146361: // Slam
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_RESILIENCE | SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 148208: // Burning Pitch
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            default:
+                break;
+        }
+
         switch (spellInfo->SpellFamilyName)
         {
             case SPELLFAMILY_WARRIOR:

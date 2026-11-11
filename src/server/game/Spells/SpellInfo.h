@@ -77,6 +77,13 @@ enum SpellCustomAttributes
     SPELL_ATTR0_CU_IGNORE_ARMOR = 0x00008000,
     SPELL_ATTR0_CU_REQ_TARGET_FACING_CASTER = 0x00010000,
     SPELL_ATTR0_CU_REQ_CASTER_BEHIND_TARGET = 0x00020000,
+    // From Legends of Azeroth Pandaria (C9). LoA uses other bit values: never copy its raw numbers.
+    SPELL_ATTR0_CU_IGNORE_PVP_POWER = 0x00000020,         // PvP power doesn't raise this spell's damage/healing/absorb
+    SPELL_ATTR0_CU_DONT_SET_IN_COMBAT_STATE = 0x00000080, // hitting a target doesn't start combat or aggro (Polymorph, AoE spreads)
+    SPELL_ATTR0_CU_IGNORE_RESILIENCE = 0x00040000,        // resilience doesn't reduce this spell's damage
+    SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB = 0x00080000,     // aura isn't saved on logout/pet dismiss
+    SPELL_ATTR0_CU_ALWAYS_CHECK_LOS = 0x00100000,         // targets need line of sight even if the spell is triggered
+    SPELL_ATTR0_CU_ALWAYS_SEND_TO_CLIENT = 0x00200000,    // always send SPELL_START/SPELL_GO, even when triggered
 
     SPELL_ATTR0_CU_NEGATIVE = SPELL_ATTR0_CU_NEGATIVE_EFF0 | SPELL_ATTR0_CU_NEGATIVE_EFF1 | SPELL_ATTR0_CU_NEGATIVE_EFF2
 };
