@@ -1,3 +1,7 @@
+-- This fork: remove our earlier quest-giver spawn that this file re-adds at the same spot.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500036);
+DELETE FROM `creature` WHERE `guid` IN (9500036);
+
 -- Feralas (map 1, zone, zone 357): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 

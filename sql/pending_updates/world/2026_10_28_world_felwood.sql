@@ -1,3 +1,8 @@
+-- This fork: remove our earlier quest-giver spawns that this file re-adds at the same spots.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500033, 9500034, 9500035, 9500067);
+DELETE FROM `creature` WHERE `guid` IN (9500033, 9500034, 9500035, 9500067);
+DELETE FROM `gameobject` WHERE `guid` IN (9500005, 9500006, 9500007, 9500008);
+
 -- Felwood (map 1, zone, zone 361): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 
