@@ -9,6 +9,7 @@
 #include "InstanceScript.h"
 #include "MoveSplineInit.h"
 #include "Player.h"
+#include "SpellInfo.h"
 #include "shadowfang_keep.h"
 
 #define GOSSIP_SENDER_SHADOWFANG_PORT 33

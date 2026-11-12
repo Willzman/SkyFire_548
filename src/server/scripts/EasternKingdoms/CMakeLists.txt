@@ -148,9 +148,6 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ScarletHalls/boss_armsmaster_harlan.cpp
   EasternKingdoms/ScarletHalls/boss_flameweaver_koegler.cpp
   #REWORKED IN CATACLYSM
-  #EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp
-  #EasternKingdoms/ShadowfangKeep/instance_shadowfang_keep.cpp
-  #EasternKingdoms/ShadowfangKeep/shadowfang_keep.h
   EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp
   EasternKingdoms/ShadowfangKeep/instance_shadowfang_keep.cpp
   EasternKingdoms/ShadowfangKeep/shadowfang_keep.h
