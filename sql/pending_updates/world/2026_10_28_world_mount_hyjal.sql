@@ -34585,10 +34585,11 @@ INSERT INTO `creature_queststarter` (`id`,`quest`) VALUES
 DELETE FROM `creature_questender` WHERE `id`=39933 AND `quest`=25443;
 DELETE FROM `creature_questender` WHERE `id`=45312 AND `quest`=25317;
 DELETE FROM `creature_questender` WHERE `id`=45312 AND `quest`=25464;
+-- Upstream also made Deathstalker Commander Belmont (45312, Silverpine Forest) a turn-in for Protect the World
+-- Tree (25317) and The Return of Baron Geddon (25464). Both are turned in to Malfurion Stormrage (39857), which
+-- the database already has, so those two rows are left out; the DELETEs above stay to keep the file re-runnable.
 INSERT INTO `creature_questender` (`id`,`quest`) VALUES
-(39933,25443),
-(45312,25317),
-(45312,25464);
+(39933,25443);
 
 -- gameobject_queststarter
 DELETE FROM `gameobject_queststarter` WHERE `id`=208184 AND `quest`=29030;
