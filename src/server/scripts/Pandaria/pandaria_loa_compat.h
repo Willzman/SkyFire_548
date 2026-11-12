@@ -185,6 +185,7 @@ namespace LoaCompat
 } // namespace LoaCompat
 
 // LoA UnitAI.h spec target selectors (true = valid target). Usable with remove_if / SelectTarget.
+// MeeleSpecTargetSelector and TankSpecTargetSelector live in the core (AI/CoreAI/UnitAI.h) with the same rules.
 #define LOA_SPEC_SELECTOR(Name, Test)                                                   \
     struct Name                                                                          \
     {                                                                                    \
@@ -200,9 +201,7 @@ namespace LoaCompat
     };
 
 LOA_SPEC_SELECTOR(CasterSpecTargetSelector,  LoaCompat::IsCaster(p))
-LOA_SPEC_SELECTOR(MeeleSpecTargetSelector,   LoaCompat::IsMelee(p))
 LOA_SPEC_SELECTOR(DpsSpecTargetSelector,     LoaCompat::GetRole(p) == LoaCompat::ROLES_DPS)
-LOA_SPEC_SELECTOR(TankSpecTargetSelector,    LoaCompat::GetRole(p) == LoaCompat::ROLES_TANK)
 LOA_SPEC_SELECTOR(HealerSpecTargetSelector,  LoaCompat::GetRole(p) == LoaCompat::ROLES_HEALER)
 LOA_SPEC_SELECTOR(NonTankSpecTargetSelector, LoaCompat::GetRole(p) != LoaCompat::ROLES_TANK)
 

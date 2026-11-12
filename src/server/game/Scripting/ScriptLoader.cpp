@@ -703,6 +703,13 @@ void AddSC_boss_sha_of_violence();
 void AddSC_boss_taran_zhu();
 void AddSC_instance_shadopan_monastery();
 void AddSC_shadopan_monastery();
+// Isle of Thunder
+void AddSC_scenario_isle_of_thunder();
+void AddSC_thunder_king_citadel();
+void AddSC_boss_nalak();
+void AddSC_isle_of_thunder();
+void AddSC_instance_isle_of_thunder();
+void AddSC_instance_thunder_king_citadel();
 
 // Pets
 void AddSC_deathknight_pet_scripts();
@@ -1490,6 +1497,13 @@ void AddPandariaScripts()
     AddSC_boss_taran_zhu();
     AddSC_instance_shadopan_monastery();
     AddSC_shadopan_monastery();
+    // Isle of Thunder
+    AddSC_scenario_isle_of_thunder();
+    AddSC_thunder_king_citadel();
+    AddSC_boss_nalak();
+    AddSC_isle_of_thunder();
+    AddSC_instance_isle_of_thunder();
+    AddSC_instance_thunder_king_citadel();
 #endif
 }
 

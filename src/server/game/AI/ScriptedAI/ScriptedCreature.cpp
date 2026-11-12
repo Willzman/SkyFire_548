@@ -12,6 +12,7 @@
 #include "ScriptedCreature.h"
 #include "ScriptMgr.h"
 #include "Spell.h"
+#include "SpellMgr.h"
 #include "TemporarySummon.h"
 
 // Spell summary for ScriptedAI::SelectSpell

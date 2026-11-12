@@ -56,6 +56,14 @@ set(scripts_STAT_SRCS
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
   Pandaria/zone_wandering_island_loa.cpp
+  Pandaria/Scenarios/IsleOfThunder/isle_of_thunder.h
+  Pandaria/Scenarios/IsleOfThunder/isle_of_thunder.cpp
+  Pandaria/Scenarios/IsleOfThunder/thunder_king_citadel.h
+  Pandaria/Scenarios/IsleOfThunder/thunder_king_citadel.cpp
+  Pandaria/boss_nalak.cpp
+  Pandaria/zone_isle_of_thunder.cpp
+  Pandaria/Scenarios/IsleOfThunder/instance_isle_of_thunder.cpp
+  Pandaria/Scenarios/IsleOfThunder/instance_thunder_king_citadel.cpp
 )
 
 message("  -> Prepared: Pandaria")

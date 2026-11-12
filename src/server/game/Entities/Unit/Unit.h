@@ -2795,6 +2795,7 @@ public:
     {
         m_vehicle = vehicle;
     }
+    bool IsOnVehicle() const { return m_vehicle != NULL; }
     bool IsOnVehicle(const Unit* vehicle) const;
     Unit* GetVehicleBase()  const;
     Creature* GetVehicleCreatureBase() const;

@@ -341,6 +341,10 @@ public:
     {
         return GetZoneIdByAreaFlag(GetAreaFlag(x, y, z), GetId());
     }
+    uint32 GetZoneId(uint32 /*phaseMask*/, float x, float y, float z) const
+    {
+        return GetZoneId(x, y, z);
+    }
 
     void GetZoneAndAreaId(uint32& zoneid, uint32& areaid, float x, float y, float z) const
     {
@@ -673,6 +677,7 @@ public:
 
     uint32 GetMaxPlayers() const;
     uint32 GetMaxResetDelay() const;
+    bool IsLFGMap() const;
 
     virtual void InitVisibilityDistance() OVERRIDE;
 private:

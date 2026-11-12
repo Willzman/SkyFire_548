@@ -439,6 +439,7 @@ protected:
 
     EventMap events;
     SummonList summons;
+    TaskScheduler scheduler;
 
 private:
     BossBoundaryMap const* const _boundary;
