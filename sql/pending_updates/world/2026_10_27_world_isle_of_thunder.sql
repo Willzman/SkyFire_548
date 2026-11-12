@@ -1,3 +1,8 @@
+-- This fork: remove our earlier quest-giver spawns that this file re-adds at the same spots.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500097, 9500100, 9500101, 9500102, 9500103, 9500105, 9500106, 9500107, 9500108);
+DELETE FROM `creature` WHERE `guid` IN (9500097, 9500100, 9500101, 9500102, 9500103, 9500105, 9500106, 9500107, 9500108);
+DELETE FROM `gameobject` WHERE `guid` IN (9500011);
+
 -- Isle of Thunder (map 1064, zone, zone 6507): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 

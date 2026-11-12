@@ -1,3 +1,7 @@
+-- This fork: remove our earlier quest-giver spawns that this file re-adds at the same spots.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500095, 9500096);
+DELETE FROM `creature` WHERE `guid` IN (9500095, 9500096);
+
 -- Mogu Island Progression Events (map 1126, scenario, MoP): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 
