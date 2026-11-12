@@ -443,142 +443,203 @@ public:
 
 /*######
 ## Quest: Proving Pit: 24642, 24754, 24762, 24768, 24774, 24780, 24786, 26276, 31161
-## npc_darkspear_jailor
+## npc_darkspear_jailor, npc_captive_spitescale_scout
 ######*/
 
-Position DarkSpearJailorPos = { -1153.53f, -5519.42f, 11.98f, 6.27f };
-Position DarkSpearJailorPos2 = { -1135.68f, -5417.78f, 13.26f, 1.47f };
-Position NagaPos = { -1149.90f, -5527.76f, 8.10f, 4.76f };
-Position NagaPos2 = { -1141.74f, -5414.54f, 10.59f, 3.42f };
-
-class npc_darkspear_jailor : public CreatureScript
+enum ProvingPit
 {
-public:
-    npc_darkspear_jailor() : CreatureScript("npc_darkspear_jailor") { }
+    NPC_DARKSPEAR_JAILOR            = 39062,
+    NPC_CAPTIVE_SPITESCALE_SCOUT    = 38142,
+    GO_DARKSPEAR_CAGE               = 201968,
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    SAY_JAILOR_PIT                  = 0,
+    SAY_SCOUT_AGGRO                 = 0,
+
+    ACTION_OPEN_CAGE                = 1,
+    DATA_RELEASE_SCOUT              = 1,
+    DATA_SCOUT_CAGED                = 2,
+
+    POINT_JAILOR_PATH               = 1,
+    POINT_JAILOR_CAGE               = 2,
+    POINT_JAILOR_BACK               = 3,
+    POINT_JAILOR_HOME               = 4,
+    POINT_SCOUT_PIT                 = 1,
+
+    EVENT_JAILOR_NEXT_POINT         = 1,
+    EVENT_JAILOR_LEAVE_CAGE         = 2,
+    EVENT_SCOUT_ATTACK              = 1,
+};
+
+// One entry per pit: the jailor walks around the cage to its door, then the scout walks down into the pit.
+Position const JailorCagePath[2][2] =
+{
+    { { -1158.725f, -5520.147f, 12.086f, 0.0f }, { -1153.468f, -5519.447f, 11.987f, 0.0f } },
+    { { -1137.682f, -5428.351f, 13.705f, 0.0f }, { -1136.195f, -5417.040f, 13.269f, 0.0f } }
+};
+
+Position const ScoutPitPos[2] =
+{
+    { -1150.158f, -5526.100f, 8.105f, 0.0f },
+    { -1142.020f, -5415.306f, 10.597f, 0.0f }
+};
+
+struct npc_darkspear_jailor : public ScriptedAI
+{
+    npc_darkspear_jailor(Creature* creature) : ScriptedAI(creature), _pit(0), _point(0) { }
+
+    void Reset() OVERRIDE
     {
-        return new npc_darkspear_jailorAI(creature);
+        _events.Reset();
     }
 
-    struct npc_darkspear_jailorAI : public ScriptedAI
+    void DoAction(int32 action) OVERRIDE
     {
-        enum JailorEvents
-        {
-            EVENT_JAILOR_OPENING = 1,
-            EVENT_JAILOR_OPEN_CAGE = 2,
-            EVENT_JAILOR_RESET = 3,
-        };
-        EventMap events;
-        npc_darkspear_jailorAI(Creature* creature) : ScriptedAI(creature) { }
+        if (action != ACTION_OPEN_CAGE)
+            return;
 
-        void Reset() OVERRIDE
-        {
-            events.Reset();
-        }
+        _pit = me->GetDistance(JailorCagePath[0][1]) < me->GetDistance(JailorCagePath[1][1]) ? 0 : 1;
+        me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+        me->SetWalk(false);
+        me->GetMotionMaster()->MovePoint(POINT_JAILOR_PATH, JailorCagePath[_pit][0]);
+    }
 
-        void MovementInform(uint32 type, uint32 id) OVERRIDE
-        {
-            if (type != POINT_MOTION_TYPE)
-                return;
+    void SetData(uint32 type, uint32 /*data*/) OVERRIDE
+    {
+        if (type == DATA_SCOUT_CAGED)
+            me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+    }
 
-            switch (id)
+    void MovementInform(uint32 type, uint32 id) OVERRIDE
+    {
+        if (type != POINT_MOTION_TYPE)
+            return;
+
+        _point = id;
+        _events.ScheduleEvent(EVENT_JAILOR_NEXT_POINT, 1000);
+    }
+
+    void UpdateAI(uint32 diff) OVERRIDE
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
             {
-                case 0:
-                {
-                    events.ScheduleEvent(EVENT_JAILOR_OPENING, 1000);
+                case EVENT_JAILOR_NEXT_POINT:
+                    switch (_point)
+                    {
+                        case POINT_JAILOR_PATH:
+                            me->GetMotionMaster()->MovePoint(POINT_JAILOR_CAGE, JailorCagePath[_pit][1]);
+                            break;
+                        case POINT_JAILOR_CAGE:
+                            me->HandleEmoteCommand(EMOTE_ONESHOT_USE_STANDING);
+                            if (Creature* scout = me->FindNearestCreature(NPC_CAPTIVE_SPITESCALE_SCOUT, 30.0f))
+                                scout->AI()->SetData(DATA_RELEASE_SCOUT, _pit);
+                            _events.ScheduleEvent(EVENT_JAILOR_LEAVE_CAGE, 2000);
+                            break;
+                        case POINT_JAILOR_BACK:
+                            me->GetMotionMaster()->MovePoint(POINT_JAILOR_HOME, me->GetHomePosition());
+                            break;
+                        case POINT_JAILOR_HOME:
+                            me->SetFacingTo(me->GetHomePosition().GetOrientation());
+                            break;
+                        default:
+                            break;
+                    }
                     break;
-                }
+                case EVENT_JAILOR_LEAVE_CAGE:
+                    me->GetMotionMaster()->MovePoint(POINT_JAILOR_BACK, JailorCagePath[_pit][0]);
+                    break;
                 default:
                     break;
             }
         }
+    }
 
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            events.Update(diff);
-            while (uint32 eventId = events.ExecuteEvent())
-            {
-                switch (eventId)
-                {
-                    case EVENT_JAILOR_OPENING:
-                    {
-                        me->HandleEmoteCommand(EMOTE_ONESHOT_USE_STANDING);
-                        events.ScheduleEvent(EVENT_JAILOR_OPEN_CAGE, 1000);
-                        break;
-                    }
-                    case EVENT_JAILOR_OPEN_CAGE:
-                    {
-                        if (GameObject* cage = me->FindNearestGameObject(201968, 5.0f))
-                            cage->UseDoorOrButton(120);
-
-                        if (Creature* monk = me->FindNearestCreature(63310, 25.0f))
-                        {
-                            if (Creature* Naga = me->FindNearestCreature(38142, 5.0f))
-                            {
-                                Naga->setFaction(14);
-                                Naga->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                                Naga->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                                Naga->GetMotionMaster()->MovePoint(0, NagaPos2);
-                                Naga->MonsterSay("I sshal ssslaughter you, Darksspear runt!", Language::LANG_UNIVERSAL, 0);
-                            }
-                        }
-                        else
-                        {
-                            if (Creature* Naga2 = me->FindNearestCreature(38142, 5.0f))
-                            {
-                                Naga2->setFaction(14);
-                                Naga2->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                                Naga2->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                                Naga2->GetMotionMaster()->MovePoint(0, NagaPos);
-                                Naga2->MonsterSay("I sshal ssslaughter you, Darksspear runt!", Language::LANG_UNIVERSAL, 0);
-                            }
-                        }
-
-                        events.ScheduleEvent(EVENT_JAILOR_RESET, 120000);
-                        break;
-                    }
-                    case EVENT_JAILOR_RESET:
-                    {
-                        me->GetMotionMaster()->MovePoint(1, me->GetHomePosition());
-                        Reset();
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
-        }
-    };
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
+    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) OVERRIDE
     {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_INFO_DEF)
+        player->CLOSE_GOSSIP_MENU();
+        player->KilledMonsterCredit(NPC_DARKSPEAR_JAILOR);
+
+        if (me->FindNearestCreature(NPC_CAPTIVE_SPITESCALE_SCOUT, 30.0f))
         {
-            player->CLOSE_GOSSIP_MENU();
-            if (Creature* monk = creature->FindNearestCreature(63310, 25.0f))
-            {
-                creature->GetMotionMaster()->MovePoint(0, DarkSpearJailorPos2);
-            }
+            Talk(SAY_JAILOR_PIT, player);
+            DoAction(ACTION_OPEN_CAGE);
+        }
+    }
+
+private:
+    EventMap _events;
+    uint8 _pit;
+    uint32 _point;
+};
+
+struct npc_captive_spitescale_scout : public ScriptedAI
+{
+    npc_captive_spitescale_scout(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() OVERRIDE
+    {
+        _events.Reset();
+
+        // When it evades, it is locked up again once it is back in the cage.
+        if (!me->IsInEvadeMode())
+            LockUp();
+    }
+
+    void JustReachedHome() OVERRIDE
+    {
+        LockUp();
+    }
+
+    void SetData(uint32 type, uint32 pit) OVERRIDE
+    {
+        if (type != DATA_RELEASE_SCOUT)
+            return;
+
+        if (GameObject* cage = me->FindNearestGameObject(GO_DARKSPEAR_CAGE, 10.0f))
+            cage->UseDoorOrButton();
+        me->GetMotionMaster()->MovePoint(POINT_SCOUT_PIT, ScoutPitPos[pit]);
+    }
+
+    void MovementInform(uint32 type, uint32 id) OVERRIDE
+    {
+        if (type == POINT_MOTION_TYPE && id == POINT_SCOUT_PIT)
+            _events.ScheduleEvent(EVENT_SCOUT_ATTACK, 1000);
+    }
+
+    void UpdateAI(uint32 diff) OVERRIDE
+    {
+        _events.Update(diff);
+
+        if (_events.ExecuteEvent() == EVENT_SCOUT_ATTACK)
+        {
+            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+            Talk(SAY_SCOUT_AGGRO);
+            if (Player* player = me->FindNearestPlayer(30.0f))
+                AttackStart(player);
             else
-            {
-                creature->GetMotionMaster()->MovePoint(0, DarkSpearJailorPos);
-            }
-            const char* text = player->getGender() == GENDER_MALE ? "Get in the pit and show us your stuff, boy." : "Get in the pit and show us your stuff, girl.";
-            creature->MonsterSay(text, Language::LANG_UNIVERSAL, creature);
-            player->KilledMonsterCredit(39062);            
+                EnterEvadeMode();
         }
-        return true;
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+private:
+    void LockUp()
     {
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, "I'm ready to face my challenge.", GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-        return true;
+        if (GameObject* cage = me->FindNearestGameObject(GO_DARKSPEAR_CAGE, 10.0f))
+            cage->ResetDoorOrButton();
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+        if (Creature* jailor = me->FindNearestCreature(NPC_DARKSPEAR_JAILOR, 30.0f))
+            jailor->AI()->SetData(DATA_SCOUT_CAGED, 0);
     }
+
+    EventMap _events;
 };
 
 
@@ -889,16 +950,385 @@ private:
     EventMap _events;
 };
 
+/*######
+## Quest: An Ancient Enemy (24814)
+## npc_voljin_ancient_enemy, npc_zarjira, npc_fire_of_the_seas
+######*/
+
+enum AncientEnemy
+{
+    NPC_VOLJIN_SPITESCALE_COVE          = 38225,
+    NPC_ZUNI_SPITESCALE_COVE            = 38423,
+    NPC_VANIRA                          = 38437,
+    NPC_ZARJIRA                         = 38306,
+    NPC_FIRE_OF_THE_SEAS                = 38542,
+    NPC_MANIFESTATION_OF_THE_SEA_WITCH  = 38302,
+
+    SPELL_SHOOT                         = 20463,
+    SPELL_SHADOW_SHOCK                  = 73087,
+    SPELL_FROSTBOLT                     = 46987,
+    SPELL_FIRE_OF_THE_SEAS              = 72250,
+    SPELL_FIRE_OF_THE_SEAS_BEAM         = 73294,
+    SPELL_STAMP_OUT_FIRE_OF_THE_SEAS    = 73296,
+
+    SAY_VOLJIN_INTRO                    = 0,
+    SAY_VOLJIN_FIRES                    = 1,
+    SAY_ZARJIRA_INTRO                   = 0,
+    SAY_ZARJIRA_FIRE_STAMPED            = 1,
+    SAY_ZARJIRA_FIRES_OUT               = 2,
+    SAY_VANIRA_ENGAGE                   = 0,
+
+    ACTION_START_ANCIENT_ENEMY          = 1,
+    ACTION_ZARJIRA_INTRO                = 2,
+    ACTION_FIRES_LIT                    = 3,
+    ACTION_FIRES_OUT                    = 4,
+    ACTION_LIGHT_FIRE                   = 5,
+    ACTION_FIRE_STAMPED                 = 6,
+};
+
+// Where Vanira, Zuni and Vol'jin stand to face Zar'jira.
+Position const AncientEnemyPos[3] =
+{
+    { -716.50f, -5597.82f, 25.56f, 1.23f },
+    { -730.68f, -5592.52f, 25.50f, 0.52f },
+    { -722.39f, -5597.65f, 25.50f, 0.89f }
+};
+
+struct npc_voljin_ancient_enemy : public ScriptedAI
+{
+    enum Events
+    {
+        EVENT_INTRO = 1,
+        EVENT_SHOOT,
+        EVENT_SHADOW_SHOCK,
+    };
+
+    npc_voljin_ancient_enemy(Creature* creature) : ScriptedAI(creature), _inProgress(false), _firesLit(false) { }
+
+    void Reset() OVERRIDE
+    {
+        _events.Reset();
+        _inProgress = false;
+        _firesLit = false;
+        me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+    }
+
+    void AttackStart(Unit* who) OVERRIDE
+    {
+        AttackStartNoMove(who);
+    }
+
+    void EnterCombat(Unit* /*who*/) OVERRIDE
+    {
+        _events.ScheduleEvent(EVENT_SHOOT, 2000);
+        _events.ScheduleEvent(EVENT_SHADOW_SHOCK, urand(20000, 30000));
+    }
+
+    void DoAction(int32 action) OVERRIDE
+    {
+        switch (action)
+        {
+            case ACTION_START_ANCIENT_ENEMY:
+                if (_inProgress)
+                    return;
+
+                _inProgress = true;
+                me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                if (Creature* vanira = me->FindNearestCreature(NPC_VANIRA, 20.0f))
+                {
+                    vanira->SetWalk(true);
+                    vanira->GetMotionMaster()->MovePoint(0, AncientEnemyPos[0]);
+                }
+                if (Creature* zuni = me->FindNearestCreature(NPC_ZUNI_SPITESCALE_COVE, 20.0f))
+                {
+                    zuni->SetWalk(true);
+                    zuni->GetMotionMaster()->MovePoint(0, AncientEnemyPos[1]);
+                }
+                me->SetWalk(true);
+                me->GetMotionMaster()->MovePoint(0, AncientEnemyPos[2]);
+                _events.ScheduleEvent(EVENT_INTRO, 10000);
+                break;
+            case ACTION_FIRES_LIT:
+                _firesLit = true;
+                Talk(SAY_VOLJIN_FIRES);
+                break;
+            case ACTION_FIRES_OUT:
+                _firesLit = false;
+                break;
+            default:
+                break;
+        }
+    }
+
+    void UpdateAI(uint32 diff) OVERRIDE
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_INTRO:
+                    Talk(SAY_VOLJIN_INTRO);
+                    if (Creature* zarjira = me->FindNearestCreature(NPC_ZARJIRA, 40.0f))
+                        zarjira->AI()->DoAction(ACTION_ZARJIRA_INTRO);
+                    break;
+                case EVENT_SHOOT:
+                    if (!_firesLit)
+                        DoCastVictim(SPELL_SHOOT);
+                    _events.ScheduleEvent(EVENT_SHOOT, urand(3000, 4000));
+                    break;
+                case EVENT_SHADOW_SHOCK:
+                    if (!_firesLit)
+                        DoCastVictim(SPELL_SHADOW_SHOCK);
+                    _events.ScheduleEvent(EVENT_SHADOW_SHOCK, urand(20000, 30000));
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        UpdateVictim();
+    }
+
+    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) OVERRIDE
+    {
+        player->CLOSE_GOSSIP_MENU();
+        player->KilledMonsterCredit(NPC_VOLJIN_SPITESCALE_COVE);
+        DoAction(ACTION_START_ANCIENT_ENEMY);
+    }
+
+private:
+    EventMap _events;
+    bool _inProgress;
+    bool _firesLit;
+};
+
+struct npc_zarjira : public ScriptedAI
+{
+    enum Events
+    {
+        EVENT_INTRO = 1,
+        EVENT_ENGAGE,
+        EVENT_FROSTBOLT,
+        EVENT_MANIFESTATION,
+        EVENT_CHECK_PLAYERS,
+    };
+
+    npc_zarjira(Creature* creature) : ScriptedAI(creature), _summons(creature), _firesLeft(0), _firesPhaseDone(false) { }
+
+    void Reset() OVERRIDE
+    {
+        _events.Reset();
+        _firesLeft = 0;
+        _firesPhaseDone = false;
+        me->SetReactState(REACT_DEFENSIVE);
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+    }
+
+    void AttackStart(Unit* who) OVERRIDE
+    {
+        AttackStartNoMove(who);
+    }
+
+    void EnterEvadeMode() OVERRIDE
+    {
+        EndEvent();
+        ScriptedAI::EnterEvadeMode();
+    }
+
+    void JustSummoned(Creature* summon) OVERRIDE
+    {
+        _summons.Summon(summon);
+    }
+
+    void DoAction(int32 action) OVERRIDE
+    {
+        switch (action)
+        {
+            case ACTION_ZARJIRA_INTRO:
+                _events.ScheduleEvent(EVENT_INTRO, 12000);
+                break;
+            case ACTION_FIRE_STAMPED:
+                if (!_firesLeft)
+                    break;
+                if (--_firesLeft)
+                {
+                    Talk(SAY_ZARJIRA_FIRE_STAMPED);
+                    break;
+                }
+                Talk(SAY_ZARJIRA_FIRES_OUT);
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                if (Creature* voljin = me->FindNearestCreature(NPC_VOLJIN_SPITESCALE_COVE, 40.0f))
+                    voljin->AI()->DoAction(ACTION_FIRES_OUT);
+                break;
+            default:
+                break;
+        }
+    }
+
+    void DamageTaken(Unit* /*attacker*/, uint32& damage) OVERRIDE
+    {
+        if (_firesPhaseDone || !me->HealthBelowPctDamaged(50, damage))
+            return;
+
+        // Below half health she draws power from the braziers and players cannot hurt her until they stamp them out.
+        _firesPhaseDone = true;
+        me->InterruptNonMeleeSpells(false);
+
+        std::list<Creature*> fires;
+        me->GetCreatureListWithEntryInGrid(fires, NPC_FIRE_OF_THE_SEAS, 30.0f);
+        for (Creature* fire : fires)
+            fire->AI()->DoAction(ACTION_LIGHT_FIRE);
+
+        _firesLeft = uint32(fires.size());
+        if (!_firesLeft)
+            return;
+
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+        if (Creature* voljin = me->FindNearestCreature(NPC_VOLJIN_SPITESCALE_COVE, 40.0f))
+            voljin->AI()->DoAction(ACTION_FIRES_LIT);
+    }
+
+    void JustDied(Unit* /*killer*/) OVERRIDE
+    {
+        // Vol'jin and his allies do much of the damage, so every player at the fight gets the credit.
+        std::list<Player*> players;
+        me->GetPlayerListInGrid(players, 50.0f);
+        for (Player* player : players)
+            player->KilledMonsterCredit(NPC_ZARJIRA);
+
+        EndEvent();
+    }
+
+    void UpdateAI(uint32 diff) OVERRIDE
+    {
+        _events.Update(diff);
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            switch (eventId)
+            {
+                case EVENT_INTRO:
+                    Talk(SAY_ZARJIRA_INTRO);
+                    _events.ScheduleEvent(EVENT_ENGAGE, 10000);
+                    break;
+                case EVENT_ENGAGE:
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
+                    if (Creature* vanira = me->FindNearestCreature(NPC_VANIRA, 40.0f))
+                        vanira->AI()->Talk(SAY_VANIRA_ENGAGE);
+                    if (Creature* zuni = me->FindNearestCreature(NPC_ZUNI_SPITESCALE_COVE, 40.0f))
+                        zuni->AI()->AttackStart(me);
+                    if (Creature* voljin = me->FindNearestCreature(NPC_VOLJIN_SPITESCALE_COVE, 40.0f))
+                    {
+                        voljin->AI()->AttackStart(me);
+                        AttackStart(voljin);
+                    }
+                    _events.ScheduleEvent(EVENT_FROSTBOLT, 3000);
+                    _events.ScheduleEvent(EVENT_MANIFESTATION, 10000);
+                    _events.ScheduleEvent(EVENT_CHECK_PLAYERS, 5000);
+                    break;
+                case EVENT_FROSTBOLT:
+                    if (Creature* voljin = me->FindNearestCreature(NPC_VOLJIN_SPITESCALE_COVE, 40.0f))
+                        DoCast(voljin, SPELL_FROSTBOLT);
+                    _events.ScheduleEvent(EVENT_FROSTBOLT, 3000);
+                    break;
+                case EVENT_MANIFESTATION:
+                {
+                    Position pos;
+                    me->GetRandomNearPosition(pos, 8.0f);
+                    me->SummonCreature(NPC_MANIFESTATION_OF_THE_SEA_WITCH, pos, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 5000);
+                    _events.ScheduleEvent(EVENT_MANIFESTATION, urand(15000, 20000));
+                    break;
+                }
+                case EVENT_CHECK_PLAYERS:
+                    if (!me->FindNearestPlayer(60.0f))
+                    {
+                        EnterEvadeMode();
+                        return;
+                    }
+                    _events.ScheduleEvent(EVENT_CHECK_PLAYERS, 5000);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+private:
+    void EndEvent()
+    {
+        _summons.DespawnAll();
+
+        std::list<Creature*> fires;
+        me->GetCreatureListWithEntryInGrid(fires, NPC_FIRE_OF_THE_SEAS, 30.0f);
+        for (Creature* fire : fires)
+            fire->AI()->EnterEvadeMode();
+
+        uint32 const allies[3] = { NPC_VOLJIN_SPITESCALE_COVE, NPC_VANIRA, NPC_ZUNI_SPITESCALE_COVE };
+        for (uint32 entry : allies)
+            if (Creature* ally = me->FindNearestCreature(entry, 60.0f))
+                ally->AI()->EnterEvadeMode();
+    }
+
+    EventMap _events;
+    SummonList _summons;
+    uint32 _firesLeft;
+    bool _firesPhaseDone;
+};
+
+struct npc_fire_of_the_seas : public ScriptedAI
+{
+    npc_fire_of_the_seas(Creature* creature) : ScriptedAI(creature) { }
+
+    void Reset() OVERRIDE
+    {
+        me->RemoveAllAuras();
+        me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
+
+    void DoAction(int32 action) OVERRIDE
+    {
+        if (action != ACTION_LIGHT_FIRE)
+            return;
+
+        DoCast(me, SPELL_FIRE_OF_THE_SEAS, true);
+        if (Creature* zarjira = me->FindNearestCreature(NPC_ZARJIRA, 30.0f))
+            DoCast(zarjira, SPELL_FIRE_OF_THE_SEAS_BEAM, true);
+        me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+    }
+
+    void SpellHit(Unit* /*caster*/, SpellInfo const* spell) OVERRIDE
+    {
+        if (spell->Id != SPELL_STAMP_OUT_FIRE_OF_THE_SEAS || me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE))
+            return;
+
+        me->InterruptNonMeleeSpells(false);
+        Reset();
+        if (Creature* zarjira = me->FindNearestCreature(NPC_ZARJIRA, 30.0f))
+            zarjira->AI()->DoAction(ACTION_FIRE_STAMPED);
+    }
+};
+
 void AddSC_durotar()
 {
     new npc_zuni_bridge();
     new npc_voljin_darkspear_hold();
     new npc_zuni();
     new npc_jinthala();
-    new npc_darkspear_jailor();
+    RegisterCreatureAI(npc_darkspear_jailor);
+    RegisterCreatureAI(npc_captive_spitescale_scout);
     new npc_lazy_peon();
     new spell_voodoo();
     new npc_clattering_scorpid();
     RegisterCreatureAI(npc_injured_razor_hill_grunt);
     RegisterSpellScript(spell_injured_razor_hill_grunt_cancel_feign_death);
+    RegisterCreatureAI(npc_voljin_ancient_enemy);
+    RegisterCreatureAI(npc_zarjira);
+    RegisterCreatureAI(npc_fire_of_the_seas);
 }
