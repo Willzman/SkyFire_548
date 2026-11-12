@@ -6,6 +6,26 @@
 #ifndef THUNDER_KING_CITADEL_SCENARIO_H_
 #define THUNDER_KING_CITADEL_SCENARIO_H_
 
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "Player.h"
+#include "GameObject.h"
+#include "AreaTrigger.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "Map.h"
+#include "MapReference.h"
+#include "Cell.h"
+#include "CellImpl.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "TemporarySummon.h"
+
 #define CHAPTERS 2
 
 const Position treasureRoomPos = { -452.01f, 1060.88f, 133.66f, 1.58f };

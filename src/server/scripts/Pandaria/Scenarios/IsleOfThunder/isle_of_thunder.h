@@ -6,6 +6,26 @@
 #ifndef ISLE_OF_THUNDER_H
 #define ISLE_OF_THUNDER_H
 
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "Player.h"
+#include "GameObject.h"
+#include "AreaTrigger.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "Map.h"
+#include "MapReference.h"
+#include "Cell.h"
+#include "CellImpl.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "TemporarySummon.h"
+
 const Position arcanitalLeave          = { 6440.34f, 5382.37f, 12.19f, 4.18f };
 const Position vereesaAmbushPoint      = { 6500.79f, 5440.40f, 6.68f,  3.53f };
 const Position arcanitalBarricadePoint = { 6326.90f, 5250.99f, 27.70f, 0.79f };
