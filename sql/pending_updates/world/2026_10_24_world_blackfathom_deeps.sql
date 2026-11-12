@@ -1,5 +1,9 @@
 -- Blackfathom Deeps (map 48, dungeon, Classic): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql already spawned Je'neu Sancrea (12736) at this spot as
+-- guid 9500063. The same spawn is added below under upstream's guid, so the older copy is removed.
+DELETE FROM `creature_addon` WHERE `guid` = 9500063;
+DELETE FROM `creature` WHERE `guid` = 9500063 AND `id` = 12736;
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `AIName`='SmartAI' WHERE `entry`=4799 AND `ScriptName`='';
