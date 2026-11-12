@@ -437,6 +437,9 @@ public:
     // Called when a player opens a gossip dialog with the gameobject.
     virtual bool OnGossipHello(Player* /*player*/, GameObject* /*go*/) { return false; }
 
+    // Called when a player reports the use of the gameobject
+    virtual bool OnReportUse(Player* /*player*/, GameObject* /*go*/) { return false; }
+
     // Called when a player selects a gossip item in the gameobject's gossip menu.
     virtual bool OnGossipSelect(Player* /*player*/, GameObject* /*go*/, uint32 /*sender*/, uint32 /*action*/) { return false; }
 
@@ -912,6 +915,7 @@ public: /* Initialization */
     /* GameObjectScript */
     bool OnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex, GameObject* target);
     bool OnGossipHello(Player* player, GameObject* go);
+    bool OnReportUse(Player* player, GameObject* go);
     bool OnGossipSelect(Player* player, GameObject* go, uint32 sender, uint32 action);
     bool OnGossipSelectCode(Player* player, GameObject* go, uint32 sender, uint32 action, const char* code);
     bool OnQuestAccept(Player* player, GameObject* go, Quest const* quest);

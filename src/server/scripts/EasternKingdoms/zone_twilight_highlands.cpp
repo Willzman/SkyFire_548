@@ -5,6 +5,8 @@
 
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "SpellScript.h"
 #include "Player.h"
 #include "SpellInfo.h"
 #include "Vehicle.h"
