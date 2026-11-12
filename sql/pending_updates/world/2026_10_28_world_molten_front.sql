@@ -1,5 +1,9 @@
 -- Molten Front (map 861, zone, zone 5733): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql (quest-giver import) already spawned two of the Molten Front creatures below at the
+-- same positions under its own guids. Those older copies are removed here so nothing is doubled.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500055,9500058);
+DELETE FROM `creature` WHERE `guid` IN (9500055,9500058);
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `gossip_menu_id`=11461 WHERE `entry`=41112;

@@ -1,5 +1,9 @@
 -- Mount Hyjal (map 1, zone, zone 616): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql (quest-giver import) already spawned two of the Mount Hyjal creatures below at the
+-- same positions under its own guids. Those older copies are removed here so nothing is doubled.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500051,9500052);
+DELETE FROM `creature` WHERE `guid` IN (9500051,9500052);
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `lootid`=721 WHERE `entry`=721;
