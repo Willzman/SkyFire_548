@@ -1,3 +1,7 @@
+-- This fork: remove our earlier quest-giver spawns that this file re-adds at the same spots.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500025, 9500026, 9500027, 9500056, 9500066);
+DELETE FROM `creature` WHERE `guid` IN (9500025, 9500026, 9500027, 9500056, 9500066);
+
 -- Twilight Highlands (map 0, zone, zone 4922): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 
