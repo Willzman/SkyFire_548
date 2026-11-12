@@ -2849,6 +2849,15 @@ GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float 
     return go;
 }
 
+GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime)
+{
+    // identity rotation: let the gameobject derive its rotation from the orientation
+    if (rotation.x == 0.0f && rotation.y == 0.0f && rotation.z == 0.0f && rotation.w == 1.0f)
+        return SummonGameObject(entry, x, y, z, ang, 0.0f, 0.0f, 0.0f, 0.0f, respawnTime);
+
+    return SummonGameObject(entry, x, y, z, ang, rotation.x, rotation.y, rotation.z, rotation.w, respawnTime);
+}
+
 Creature* WorldObject::SummonTrigger(float x, float y, float z, float ang, uint32 duration, CreatureAI* (*GetAI)(Creature*))
 {
     TempSummonType summonType = (duration == 0) ? TempSummonType::TEMPSUMMON_DEAD_DESPAWN : TempSummonType::TEMPSUMMON_TIMED_DESPAWN;
@@ -3193,6 +3202,13 @@ void WorldObject::GetRandomNearPosition(Position& pos, float radius)
 {
     GetPosition(&pos);
     MovePosition(pos, radius * (float)rand_norm(), (float)rand_norm() * static_cast<float>(2 * M_PI));
+}
+
+Position WorldObject::GetRandomNearPosition(float radius)
+{
+    Position pos;
+    GetRandomNearPosition(pos, radius);
+    return pos;
 }
 
 void WorldObject::GetContactPoint(const WorldObject* obj, float& x, float& y, float& z, float distance2d /*= CONTACT_DISTANCE*/) const

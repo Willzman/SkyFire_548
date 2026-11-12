@@ -14,6 +14,7 @@
 #include "ObjectDefines.h"
 #include "UpdateMask.h"
 
+#include <G3D/Quat.h>
 #include <set>
 #include <sstream>
 #include <string>
@@ -645,6 +646,7 @@ public:
     void MovePositionToFirstCollosionBySteps(Position& pos, float dist, float angle, float heightCheckInterval = 2.0f, bool allowInAir = false);
     void GetFirstCollisionPosition(Position& pos, float dist, float angle);
     void GetRandomNearPosition(Position& pos, float radius);
+    Position GetRandomNearPosition(float radius);
     void GetContactPoint(WorldObject const* obj, float& x, float& y, float& z, float distance2d = CONTACT_DISTANCE) const;
 
     float GetObjectSize() const;
@@ -782,6 +784,7 @@ public:
         return SummonCreature(id, x, y, z, ang, spwtype, uint32(despwtime.count()));
     }
     GameObject* SummonGameObject(uint32 entry, float x, float y, float z, float ang, float rotation0, float rotation1, float rotation2, float rotation3, uint32 respawnTime);
+    GameObject* SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime);
     Creature* SummonTrigger(float x, float y, float z, float ang, uint32 dur, CreatureAI* (*GetAI)(Creature*) = NULL);
     void SummonCreatureGroup(uint8 group, std::list<TempSummon*>* list = NULL);
 
