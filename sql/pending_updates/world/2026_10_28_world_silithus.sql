@@ -1,5 +1,9 @@
 -- Silithus (map 1, zone, zone 1377): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql (quest-giver import) already spawned some of the Silithus rows below at the
+-- same positions under its own guids. Those older copies are removed here so nothing is doubled.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500038,9500039,9500040,9500041,9500042,9500043,9500044,9500045,9500046,9500047,9500048);
+DELETE FROM `creature` WHERE `guid` IN (9500038,9500039,9500040,9500041,9500042,9500043,9500044,9500045,9500046,9500047,9500048);
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `skinloot`=11746 WHERE `entry`=11746;

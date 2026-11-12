@@ -1,5 +1,9 @@
 -- Desolace (map 1, zone, zone 405): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql (quest-giver import) already spawned some of the Desolace rows below at the
+-- same positions under its own guids. Those older copies are removed here so nothing is doubled.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500028,9500029,9500030,9500031,9500032);
+DELETE FROM `creature` WHERE `guid` IN (9500028,9500029,9500030,9500031,9500032);
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `pickpocketloot`=2283 WHERE `entry`=2283;

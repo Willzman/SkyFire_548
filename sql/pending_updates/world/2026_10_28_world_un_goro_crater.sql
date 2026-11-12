@@ -1,5 +1,10 @@
 -- Un'Goro Crater (map 1, zone, zone 490): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
+-- This fork's 2026_11_11_world_custom_05.sql (quest-giver import) already spawned some of the Un'Goro Crater rows below at the
+-- same positions under its own guids. Those older copies are removed here so nothing is doubled.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500049,9500050);
+DELETE FROM `creature` WHERE `guid` IN (9500049,9500050);
+DELETE FROM `gameobject` WHERE `guid` IN (9500001,9500002,9500003,9500004);
 
 -- creature_template updates (difficulty slots, loot ids, SmartAI)
 UPDATE `creature_template` SET `AIName`='SmartAI' WHERE `entry`=6498 AND `ScriptName`='';
