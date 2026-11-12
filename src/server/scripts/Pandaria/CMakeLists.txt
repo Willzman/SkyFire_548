@@ -21,6 +21,7 @@ set(scripts_STAT_SRCS
   Pandaria/GateOfTheSettingSun/gate_of_the_setting_sun.cpp
   Pandaria/StormstoutBrewery/boss_hoptallus.cpp
   Pandaria/StormstoutBrewery/boss_ook_ook.cpp
+  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/instance_stormstout_brewery.cpp
   Pandaria/StormstoutBrewery/stormstout_brewery.h
