@@ -7,6 +7,7 @@
 #define SF_OBJECT_H
 
 #include "Common.h"
+#include "Duration.h"
 #include "GridReference.h"
 #include "Map.h"
 #include "MapObjectCellMoveState.h"
@@ -741,6 +742,11 @@ public:
     float GetSightRange(WorldObject const* target = NULL) const;
     bool CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth = false, bool distanceCheck = false) const;
 
+    bool IsPrivateObject() const { return _privateObjectOwner != 0; }
+    uint64 GetPrivateObjectOwner() const { return _privateObjectOwner; }
+    void SetPrivateObjectOwner(uint64 owner) { _privateObjectOwner = owner; }
+    bool CheckPrivateObjectOwnerVisibility(WorldObject const* seer) const;
+
     FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealth;
     FlaggedValuesArray32<int32, uint32, StealthType, TOTAL_STEALTH_TYPES> m_stealthDetect;
 
@@ -767,6 +773,14 @@ public:
 
     TempSummon* SummonCreature(uint32 id, Position const& pos, TempSummonType spwtype = TempSummonType::TEMPSUMMON_MANUAL_DESPAWN, uint32 despwtime = 0, uint32 vehId = 0) const;
     TempSummon* SummonCreature(uint32 id, float x, float y, float z, float ang = 0, TempSummonType spwtype = TempSummonType::TEMPSUMMON_MANUAL_DESPAWN, uint32 despwtime = 0) const;
+    TempSummon* SummonCreature(uint32 id, Position const& pos, TempSummonType spwtype, Milliseconds despwtime, uint32 vehId = 0) const
+    {
+        return SummonCreature(id, pos, spwtype, uint32(despwtime.count()), vehId);
+    }
+    TempSummon* SummonCreature(uint32 id, float x, float y, float z, float ang, TempSummonType spwtype, Milliseconds despwtime) const
+    {
+        return SummonCreature(id, x, y, z, ang, spwtype, uint32(despwtime.count()));
+    }
     GameObject* SummonGameObject(uint32 entry, float x, float y, float z, float ang, float rotation0, float rotation1, float rotation2, float rotation3, uint32 respawnTime);
     Creature* SummonTrigger(float x, float y, float z, float ang, uint32 dur, CreatureAI* (*GetAI)(Creature*) = NULL);
     void SummonCreatureGroup(uint8 group, std::list<TempSummon*>* list = NULL);
@@ -863,6 +877,7 @@ private:
 
     uint16 m_notifyflags;
     uint16 m_executed_notifies;
+    uint64 _privateObjectOwner;
     virtual bool _IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D) const;
 
     bool CanNeverSee(WorldObject const* obj) const;

@@ -3,6 +3,16 @@
 * See LICENSE.md file for Copyright information
 */
 
+#include "ScriptMgr.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "Player.h"
+#include "ObjectAccessor.h"
+#include "MotionMaster.h"
+
 /**
   QUEST ID: 25407 "Forces of Nature: Wisps"
   QUEST ID: 25409 "Forces of Nature: Hyppogryphs"
