@@ -1,3 +1,7 @@
+-- This fork: remove our earlier quest-giver spawns that this file re-adds at the same spots.
+DELETE FROM `creature_addon` WHERE `guid` IN (9500070, 9500071, 9500072, 9500098, 9500099);
+DELETE FROM `creature` WHERE `guid` IN (9500070, 9500071, 9500072, 9500098, 9500099);
+
 -- The Jade Forest (map 870, zone, zone 5785): missing creatures, gameobjects, loot and scripts
 -- Idempotent: every INSERT is preceded by a DELETE of its keys.
 
