@@ -253,6 +253,7 @@ void AddSC_elwynn_forest();
 void AddSC_eversong_woods();
 void AddSC_ghostlands();
 void AddSC_gilneas();
+void AddSC_gilneas_extra();
 void AddSC_hinterlands();
 void AddSC_isle_of_queldanas();
 void AddSC_silverpine_forest();
@@ -1014,6 +1015,7 @@ void AddEasternKingdomsScripts()
     AddSC_eversong_woods();
     AddSC_ghostlands();
     AddSC_gilneas();
+    AddSC_gilneas_extra();
     AddSC_hinterlands();
     AddSC_isle_of_queldanas();
     AddSC_silverpine_forest();

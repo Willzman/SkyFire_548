@@ -1,27 +1,14 @@
--- Gilneas zone script and database support.
+-- Gilneas: later starting-zone quests (script bindings and support data). Only entries that are not already
+-- scripted in gilneas.cpp are touched. Safe to run more than once.
 
 DELETE FROM `smart_scripts`
-WHERE (`source_type` = 0 AND `entryorguid` IN (34884, 35077, 35378, 35463, 35550, 35631, 35905, 35907, 36459, 36540, 36555, 43336, 44928, 50260))
-   OR (`source_type` = 9 AND `entryorguid` IN (3488400, 3507700, 3537800, 3546300, 3555000, 3563100, 3590500, 3590700, 3645900, 3654000, 3655500, 4333600, 4492800, 5026000));
+WHERE (`source_type` = 0 AND `entryorguid` IN (34884, 35550, 35905, 35907, 36459, 36540, 36555, 43336, 44928, 50260))
+   OR (`source_type` = 9 AND `entryorguid` IN (3488400, 3555000, 3590500, 3590700, 3645900, 3654000, 3655500, 4333600, 4492800, 5026000));
 
 UPDATE `creature_template` SET `npcflag` = 3, `unit_flags` = 33280, `unit_flags2` = 2048, `flags_extra` = 2, `AIName` = '', `ScriptName` = 'npc_prince_liam_greymane' WHERE `entry` = 34850;
 UPDATE `creature_template` SET `npcflag` = 0, `unit_flags` = 32768, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_gilneas_city_guard_gate' WHERE `entry` = 34864;
 UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_rampaging_worgen' WHERE `entry` = 34884;
-UPDATE `creature_template` SET `npcflag` = 2, `AIName` = '', `ScriptName` = 'npc_lord_darius_crowley_35077' WHERE `entry` = 35077;
-UPDATE `creature_template` SET `npcflag` = 2, `unit_flags` = 33280, `unit_flags2` = 2048, `AIName` = 'SmartAI', `ScriptName` = '' WHERE `entry` = 35112;
-UPDATE `creature_template` SET `npcflag` = 2, `unit_flags` = 33280, `unit_flags2` = 2048, `AIName` = 'SmartAI', `ScriptName` = '' WHERE `entry` = 35115;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `AIName` = 'SmartAI', `ScriptName` = '' WHERE `entry` = 35118;
-UPDATE `creature_template` SET `AIName` = 'SmartAI', `ScriptName` = '' WHERE `entry` = 35124;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `flags_extra` = 64, `AIName` = '', `ScriptName` = 'npc_worgen_alpha_35167' WHERE `entry` = 35167;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `flags_extra` = 64, `AIName` = '', `ScriptName` = 'npc_worgen_alpha_35170' WHERE `entry` = 35170;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `flags_extra` = 64, `AIName` = '', `ScriptName` = 'npc_worgen_runt_35188' WHERE `entry` = 35188;
-UPDATE `creature_template` SET `npcflag` = 2, `unit_flags` = 33280, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_josiah_avery' WHERE `entry` = 35369;
-UPDATE `creature_template` SET `npcflag` = 0, `unit_flags` = 33024, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_josiah_avery_worgen_form' WHERE `entry` = 35370;
-UPDATE `creature_template` SET `npcflag` = 2, `unit_flags` = 33280, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_lorna_crowley_basement' WHERE `entry` = 35378;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `flags_extra` = 64, `AIName` = '', `ScriptName` = 'npc_worgen_runt' WHERE `entry` = 35456;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 8599, `unit_flags` = 32768, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_bloodfang_lurker' WHERE `entry` = 35463;
 UPDATE `creature_template` SET `npcflag` = 3, `unit_flags` = 33280, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_king_genn_greymane' WHERE `entry` = 35550;
-UPDATE `creature_template` SET `npcflag` = 0, `spell1` = 67805, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_gilnean_mastiff' WHERE `entry` = 35631;
 UPDATE `creature_template` SET `npcflag` = 0, `InhabitType` = 4, `AIName` = '', `ScriptName` = '' WHERE `entry` = 35753;
 UPDATE `creature_template` SET `npcflag` = 16777216, `spell1` = 68219, `VehicleId` = 494, `unit_flags` = 33536, `unit_flags2` = 2048, `AIName` = '', `ScriptName` = 'npc_vehicle_genn_horse' WHERE `entry` = 35905;
 UPDATE `creature_template` SET `npcflag` = 0, `unit_flags` = 33280, `unit_flags2` = 2080, `AIName` = '', `ScriptName` = 'npc_saved_aranas' WHERE `entry` = 35907;
@@ -39,22 +26,9 @@ UPDATE `creature_template` SET `npcflag` = 1, `VehicleId` = 959, `AIName` = '', 
 UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_gilneas_crow' WHERE `entry` = 50260;
 
 DELETE FROM `smart_scripts`
-WHERE (`source_type` = 0 AND `entryorguid` IN (35112, 35118, 36452, 36606, 38765))
-   OR (`source_type` = 9 AND `entryorguid` IN (3511200));
+WHERE `source_type` = 0 AND `entryorguid` IN (36452, 36606, 38765);
 
 INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_type`, `event_phase_mask`, `event_chance`, `event_flags`, `event_param1`, `event_param2`, `event_param3`, `event_param4`, `event_param5`, `action_type`, `action_param1`, `action_param2`, `action_param3`, `action_param4`, `action_param5`, `action_param6`, `target_type`, `target_param1`, `target_param2`, `target_param3`, `target_x`, `target_y`, `target_z`, `target_o`, `comment`) VALUES
-(35112, 0, 0, 0, 19, 0, 100, 0, 14157, 0, 0, 0, 0, 80, 3511200, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'King Genn Greymane - On Quest Accept - Start Script'),
-(35118, 0, 0, 1, 2, 0, 100, 0, 0, 30, 0, 0, 0, 11, 8599, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - At 30% HP - Cast Enrage'),
-(35118, 0, 1, 0, 61, 0, 100, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - At 30% HP - Say Text Line 0'),
-(35118, 0, 2, 0, 8, 0, 100, 0, 100, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Charge - Give Quest Credit'),
-(35118, 0, 3, 0, 8, 0, 100, 0, 56641, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Steady Shot - Give Quest Credit'),
-(35118, 0, 4, 0, 8, 0, 100, 0, 2098, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Eviscerate - Give Quest Credit'),
-(35118, 0, 5, 0, 8, 0, 100, 0, 122, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Frost Nova - Give Quest Credit'),
-(35118, 0, 6, 0, 8, 0, 100, 0, 172, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Corruption - Give Quest Credit'),
-(35118, 0, 7, 0, 8, 0, 100, 0, 589, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Shadow Word: Pain - Give Quest Credit'),
-(35118, 0, 8, 0, 8, 0, 100, 0, 8921, 0, 0, 0, 0, 33, 44175, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Spellhit - Moonfire - Give Quest Credit'),
-(35118, 0, 9, 0, 25, 0, 100, 0, 0, 0, 0, 0, 0, 49, 0, 0, 0, 0, 0, 0, 19, 35232, 35, 0, 0, 0, 0, 0, 'Bloodfang Worgen - On Reset - Attack Gilneas City Guard'),
-(35118, 0, 10, 0, 1, 0, 100, 0, 10000, 10000, 10000, 10000, 0, 49, 0, 0, 0, 0, 0, 0, 19, 35232, 35, 0, 0, 0, 0, 0, 'Bloodfang Worgen - Out of Combat - Attack Gilneas City Guard'),
 (36452, 0, 0, 0, 19, 0, 100, 0, 14465, 0, 0, 0, 0, 85, 72772, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Gwen Armstead - On Quest Accept - Summon Horse'),
 (36606, 0, 0, 0, 20, 0, 100, 0, 14465, 0, 0, 0, 0, 85, 68709, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 'Queen Mia Greymane - On Quest Rewarded - Cataclysm'),
 (38765, 0, 0, 0, 27, 0, 100, 0, 0, 0, 0, 0, 0, 53, 1, 38765, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Passenger Boarded - Start Waypoint'),
@@ -62,23 +36,13 @@ INSERT INTO `smart_scripts` (`entryorguid`, `source_type`, `id`, `link`, `event_
 (38765, 0, 2, 0, 40, 0, 100, 0, 3, 0, 0, 0, 0, 54, 1000, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Waypoint 3 - Pause'),
 (38765, 0, 3, 0, 40, 0, 100, 0, 3, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 14, 166783, 196863, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Waypoint 3 - Open Gate'),
 (38765, 0, 5, 0, 40, 0, 100, 0, 13, 0, 0, 0, 0, 54, 1000, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Waypoint 13 - Pause'),
-(38765, 0, 6, 0, 40, 0, 100, 0, 13, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 14, 166784, 196864, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Waypoint 13 - Open Gate'),
-(3511200, 9, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 81, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'King Genn Greymane - Remove Questgiver Flag'),
-(3511200, 9, 1, 0, 0, 0, 100, 0, 1000, 1000, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 19, 35115, 30, 0, 0, 0, 0, 0, 'King Genn Greymane - Lord Godfrey Says Text Line 0'),
-(3511200, 9, 2, 0, 0, 0, 100, 0, 5000, 5000, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'King Genn Greymane - Say Text Line 0'),
-(3511200, 9, 3, 0, 0, 0, 100, 0, 2000, 2000, 0, 0, 0, 81, 2, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 'King Genn Greymane - Restore Questgiver Flag');
+(38765, 0, 6, 0, 40, 0, 100, 0, 13, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 14, 166784, 196864, 0, 0, 0, 0, 0, 'Stout Mountain Horse - On Waypoint 13 - Open Gate');
 
-UPDATE `quest_template` SET `Flags` = 0 WHERE `Id` = 14204;
 UPDATE `quest_template` SET `Flags` = 8 WHERE `Id` = 14465;
 
 DELETE FROM `spell_script_names`
-WHERE `spell_id` IN (66853, 66914, 67357, 67805, 69257)
-   OR `ScriptName` IN ('spell_gen_gilneas_prison_periodic_dummy', 'spell_gilneas_prison_periodic_dummy', 'spell_gilneas_pull_to', 'spell_attack_lurker', 'spell_gilneas_test_telescope');
+WHERE `spell_id` = 69257 OR `ScriptName` = 'spell_gilneas_test_telescope';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES
-(66853, 'spell_gen_gilneas_prison_periodic_dummy'),
-(66914, 'spell_gilneas_prison_periodic_dummy'),
-(67357, 'spell_gilneas_pull_to'),
-(67805, 'spell_attack_lurker'),
 (69257, 'spell_gilneas_test_telescope');
 
 DELETE FROM `npc_spellclick_spells` WHERE `npc_entry` IN (35905, 36459, 36540, 43336, 44928);
@@ -167,7 +131,7 @@ INSERT INTO `creature_template_addon` (`entry`, `path_id`, `mount`, `bytes1`, `b
 (35753, 0, 0, 0, 1, 0, '78037'),
 (50260, 0, 0, 50331649, 1, 0, NULL);
 
-DELETE FROM `creature_text` WHERE `entry` IN (34850, 34864, 34884, 35112, 35115, 35118, 35369, 35378, 35550, 35753, 35905, 35907, 36287, 36288, 36289, 36458, 36461, 51409);
+DELETE FROM `creature_text` WHERE `entry` IN (34850, 34864, 34884, 35550, 35753, 35905, 35907, 36287, 36288, 36289, 36458, 36461, 51409);
 INSERT INTO `creature_text` (`entry`, `groupid`, `id`, `text`, `type`, `language`, `probability`, `emote`, `duration`, `sound`, `comment`) VALUES
 (34850, 0, 0, 'Stand ready, guards!  We don''t know how many intruders we''re dealing with, but the Headlands are overrun and we''re cut off from the harbor towns.  Expect to be outnumbered.', 12, 0, 100, 1, 0, 19614, 'Prince Liam Greymane - Say 0'),
 (34850, 1, 0, 'I want the perimeter secured and the gates manned by two guards at all times.  No one gets in, no one gets out.', 12, 0, 100, 1, 0, 19615, 'Prince Liam Greymane - Say 1'),
@@ -176,16 +140,6 @@ INSERT INTO `creature_text` (`entry`, `groupid`, `id`, `text`, `type`, `language
 (34864, 0, 1, 'It isn''t safe to leave, there''s something lurking out there in the woods.', 12, 0, 100, 1, 0, 0, 'Gilneas City Guard'),
 (34864, 0, 2, 'Stay calm. We have everything under control.', 12, 0, 100, 25, 0, 0, 'Gilneas City Guard'),
 (34884, 0, 0, '%s becomes enraged!', 16, 0, 100, 0, 0, 0, 'Rampaging Worgen'),
-(35112, 0, 0, 'Enough!  I''ve made up my mind.  We need Crowley on our side.', 12, 0, 100, 0, 0, 0, 'King Genn Greymane to Player'),
-(35115, 0, 0, 'We ought to leave Crowley in prison with those beasts!', 12, 0, 100, 0, 0, 0, 'Lord Godfrey to Player'),
-(35118, 0, 0, '%s becomes enraged!', 16, 0, 100, 0, 0, 0, 'Bloodfang Worgen'),
-(35369, 0, 0, 'What''s wrong with me??!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35369, 1, 0, 'My face!  What''s wrong with my face!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35369, 2, 0, 'My hands... don''t look at my hands!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35369, 3, 0, 'The pain is unbearable!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35369, 4, 0, 'Make it stop!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35369, 5, 0, 'I can''t fight it!', 14, 0, 100, 0, 0, 0, 'Josiah Avery'),
-(35378, 0, 0, 'This mastiff will help you find the hidden worgen.', 12, 0, 100, 0, 0, 19696, 'Lorna Crowley to Player'),
 (35550, 0, 0, 'Keep them back!', 14, 0, 100, 0, 0, 19712, 'King Genn Greymane'),
 (35550, 0, 1, 'Fire!', 14, 0, 100, 0, 0, 19710, 'King Genn Greymane'),
 (35550, 0, 2, 'Hold the barricades!  Do not give them an inch!', 14, 0, 100, 0, 0, 19709, 'King Genn Greymane'),
