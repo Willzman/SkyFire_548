@@ -148,9 +148,14 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ScarletHalls/boss_armsmaster_harlan.cpp
   EasternKingdoms/ScarletHalls/boss_flameweaver_koegler.cpp
   #REWORKED IN CATACLYSM
-  #EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp
-  #EasternKingdoms/ShadowfangKeep/instance_shadowfang_keep.cpp
-  #EasternKingdoms/ShadowfangKeep/shadowfang_keep.h
+  EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp
+  EasternKingdoms/ShadowfangKeep/instance_shadowfang_keep.cpp
+  EasternKingdoms/ShadowfangKeep/shadowfang_keep.h
+  EasternKingdoms/ShadowfangKeep/boss_baron_ashbury.cpp
+  EasternKingdoms/ShadowfangKeep/boss_baron_silverlaine.cpp
+  EasternKingdoms/ShadowfangKeep/boss_commander_springvale.cpp
+  EasternKingdoms/ShadowfangKeep/boss_lord_valden.cpp
+  EasternKingdoms/ShadowfangKeep/boss_lord_godfrey.cpp
   #REWORKED IN CATACLYSM
   EasternKingdoms/ZulAman/boss_halazzi.cpp
   EasternKingdoms/ZulAman/boss_hexlord.cpp

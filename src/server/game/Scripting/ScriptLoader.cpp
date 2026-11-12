@@ -195,8 +195,13 @@ void AddSC_boss_houndmaster_braun();
 void AddSC_boss_armsmaster_harlan();
 void AddSC_boss_flameweaver_koegler();
 
-//void AddSC_shadowfang_keep();                //Shadowfang keep
-//void AddSC_instance_shadowfang_keep();
+void AddSC_shadowfang_keep();                //Shadowfang keep
+void AddSC_instance_shadowfang_keep();
+void AddSC_boss_baron_ashbury();
+void AddSC_boss_baron_silverlaine();
+void AddSC_boss_commander_springvale();
+void AddSC_boss_lord_valden();
+void AddSC_boss_lord_godfrey();
 void AddSC_boss_magistrate_barthilas();      //Stratholme
 void AddSC_boss_maleki_the_pallid();
 void AddSC_boss_nerubenkan();
@@ -946,8 +951,13 @@ void AddEasternKingdomsScripts()
     AddSC_boss_armsmaster_harlan();
     AddSC_boss_flameweaver_koegler();
 
-    //AddSC_shadowfang_keep();                //Shadowfang keep
-    //AddSC_instance_shadowfang_keep();
+    AddSC_shadowfang_keep();                //Shadowfang keep
+    AddSC_instance_shadowfang_keep();
+    AddSC_boss_baron_ashbury();
+    AddSC_boss_baron_silverlaine();
+    AddSC_boss_commander_springvale();
+    AddSC_boss_lord_valden();
+    AddSC_boss_lord_godfrey();
     AddSC_boss_magistrate_barthilas();      //Stratholme
     AddSC_boss_maleki_the_pallid();
     AddSC_boss_nerubenkan();
