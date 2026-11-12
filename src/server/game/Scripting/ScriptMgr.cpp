@@ -806,6 +806,16 @@ bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
     return tmpscript->OnGossipHello(player, go);
 }
 
+bool ScriptMgr::OnReportUse(Player* player, GameObject* go)
+{
+    ASSERT(player);
+    ASSERT(go);
+
+    GET_SCRIPT_RET(GameObjectScript, go->GetScriptId(), tmpscript, false);
+    player->PlayerTalkClass->ClearMenus();
+    return tmpscript->OnReportUse(player, go);
+}
+
 bool ScriptMgr::OnGossipSelect(Player* player, GameObject* go, uint32 sender, uint32 action)
 {
     ASSERT(player);
