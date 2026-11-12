@@ -469,6 +469,8 @@ public:
     // Runtime copy of the template's InhabitType, so scripts can land a flyer or lift a walker (reset on respawn).
     uint32 GetInhabitType() const { return m_inhabitType; }
     void SetInhabitType(uint32 inhabitType) { m_inhabitType = inhabitType; }
+    // Name used by scripts ported from upstream SkyFire and Legends of Azeroth.
+    void OverrideInhabitType(uint32 inhabitType) { SetInhabitType(inhabitType); }
     bool CanWalk() const { return m_inhabitType & INHABIT_GROUND; }
     bool CanSwim() const { return m_inhabitType & INHABIT_WATER || IsPet(); }
     bool CanFly()  const OVERRIDE { return m_inhabitType & INHABIT_AIR; }

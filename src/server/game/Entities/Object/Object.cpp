@@ -2931,6 +2931,11 @@ void WorldObject::GetCreatureListWithEntryInGrid(std::list<Creature*>& creatureL
     cell.Visit(pair, visitor, *(this->GetMap()), *this, maxSearchRange);
 }
 
+void WorldObject::GetCreatureListWithEntryInGridAppend(std::list<Creature*>& creatureList, uint32 entry, float maxSearchRange) const
+{
+    GetCreatureListWithEntryInGrid(creatureList, entry, maxSearchRange);
+}
+
 void WorldObject::GetPlayerListInGrid(std::list<Player*>& playerList, float maxSearchRange) const
 {
     Skyfire::AnyPlayerInObjectRangeCheck checker(this, maxSearchRange);
