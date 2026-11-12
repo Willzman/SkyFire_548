@@ -13103,8 +13103,6 @@ DELETE FROM `gameobject_queststarter` WHERE `id`=187961 AND `quest`=11773;
 DELETE FROM `gameobject_queststarter` WHERE `id`=190053 AND `quest`=12350;
 DELETE FROM `gameobject_queststarter` WHERE `id`=208116 AND `quest`=28952;
 INSERT INTO `gameobject_queststarter` (`id`,`quest`) VALUES
-(171939,2878),
-(174594,2878),
 (187929,11746),
 (187961,11773),
 (190053,12350),
@@ -13113,9 +13111,6 @@ INSERT INTO `gameobject_queststarter` (`id`,`quest`) VALUES
 -- gameobject_questender
 DELETE FROM `gameobject_questender` WHERE `id`=171939 AND `quest`=2878;
 DELETE FROM `gameobject_questender` WHERE `id`=174594 AND `quest`=2878;
-INSERT INTO `gameobject_questender` (`id`,`quest`) VALUES
-(171939,2878),
-(174594,2878);
 
 -- gossip_menu
 DELETE FROM `gossip_menu` WHERE `MenuID` IN (50075,50085,50089,50111,50405);
