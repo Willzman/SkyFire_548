@@ -45,12 +45,6 @@ set(scripts_STAT_SRCS
   Pandaria/MogushanPalace/instance_mogu_shan_palace.cpp
   Pandaria/MogushanPalace/mogu_shan_palace.h
   Pandaria/pandaria_loa_compat.h
-  Pandaria/StormstoutBrewery/boss_hoptallus.cpp
-  Pandaria/StormstoutBrewery/boss_ook_ook.cpp
-  Pandaria/StormstoutBrewery/boss_yanzhu_the_uncasked.cpp
-  Pandaria/StormstoutBrewery/stormstout_brewery.cpp
-  Pandaria/StormstoutBrewery/instance_stormstout_brewery.cpp
-  Pandaria/StormstoutBrewery/stormstout_brewery.h
   Pandaria/TerraceOfEndlessSpring/boss_lei_shi.cpp
   Pandaria/TerraceOfEndlessSpring/boss_protectors_of_the_endless.cpp
   Pandaria/TerraceOfEndlessSpring/boss_sha_of_fear.cpp
@@ -58,12 +52,6 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/instance_terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.h
-  Pandaria/TempleOfJadeSerpent/temple_of_jade_serpent.h
-  Pandaria/TempleOfJadeSerpent/instance_temple_of_jade_serpent.cpp
-  Pandaria/TempleOfJadeSerpent/boss_wise_mari.cpp
-  Pandaria/TempleOfJadeSerpent/boss_lorewalker_stonestep.cpp
-  Pandaria/TempleOfJadeSerpent/boss_liu_flameheart.cpp
-  Pandaria/TempleOfJadeSerpent/boss_sha_of_doubt.cpp
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
   Pandaria/zone_wandering_island_loa.cpp

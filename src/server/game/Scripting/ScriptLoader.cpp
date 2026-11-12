@@ -671,6 +671,7 @@ void AddSC_boss_hoptallus();
 void AddSC_boss_ook_ook();
 void AddSC_instance_stormstout_brewery();
 void AddSC_stormstout_brewery();
+// Terrace of Endless Spring
 void AddSC_boss_lei_shi();
 void AddSC_boss_protectors_of_the_endless();
 void AddSC_boss_sha_of_fear();
@@ -1441,6 +1442,7 @@ void AddPandariaScripts()
     AddSC_boss_ook_ook();
     AddSC_instance_stormstout_brewery();
     AddSC_stormstout_brewery();
+    // Terrace of Endless Spring
     AddSC_boss_lei_shi();
     AddSC_boss_protectors_of_the_endless();
     AddSC_boss_sha_of_fear();
