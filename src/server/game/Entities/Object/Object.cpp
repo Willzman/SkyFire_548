@@ -1559,7 +1559,7 @@ void MovementInfo::OutDebug()
 WorldObject::WorldObject(bool isWorldObject) : WorldLocation(),
 m_name(""), m_isActive(false), m_isWorldObject(isWorldObject), m_zoneScript(NULL),
 m_transport(NULL), m_currMap(NULL), m_InstanceId(0),
-m_phaseMask(PHASEMASK_NORMAL), m_notifyflags(0), m_executed_notifies(0)
+m_phaseMask(PHASEMASK_NORMAL), m_notifyflags(0), m_executed_notifies(0), _privateObjectOwner(0)
 {
     m_serverSideVisibility.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE | GHOST_VISIBILITY_GHOST);
     m_serverSideVisibilityDetect.SetValue(SERVERSIDE_VISIBILITY_GHOST, GHOST_VISIBILITY_ALIVE);
@@ -2155,6 +2155,22 @@ float WorldObject::GetSightRange(const WorldObject* target) const
     return 0.0f;
 }
 
+bool WorldObject::CheckPrivateObjectOwnerVisibility(WorldObject const* seer) const
+{
+    if (!IsPrivateObject())
+        return true;
+
+    if (_privateObjectOwner == seer->GetGUID() || _privateObjectOwner == seer->GetPrivateObjectOwner())
+        return true;
+
+    if (Player const* playerSeer = seer->ToPlayer())
+        if (Group const* group = playerSeer->GetGroup())
+            if (group->IsMember(_privateObjectOwner))
+                return true;
+
+    return false;
+}
+
 bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, bool distanceCheck) const
 {
     if (this == obj)
@@ -2165,6 +2181,9 @@ bool WorldObject::CanSeeOrDetect(WorldObject const* obj, bool ignoreStealth, boo
 
     if (obj->IsAlwaysVisibleFor(this) || CanAlwaysSee(obj))
         return true;
+
+    if (!obj->CheckPrivateObjectOwnerVisibility(this))
+        return false;
 
     bool corpseVisibility = false;
     if (distanceCheck)
