@@ -541,6 +541,10 @@ public:
                 if (AuraEffect const* auraEffect = caster->GetDummyAuraEffect(SPELLFAMILY_ROGUE, ICON_ROGUE_IMPROVED_RECUPERATE, EFFECT_0))
                     baseAmount += auraEffect->GetAmount();
 
+                // Glyph of Recuperate (56806): an additional 1% of maximum health (amount in thousandths)
+                if (AuraEffect const* glyph = caster->GetAuraEffect(56806, EFFECT_0))
+                    baseAmount += glyph->GetAmount();
+
                 amount = CalculatePct(caster->GetMaxHealth(), float(baseAmount) / 1000.0f);
             }
         }
@@ -1011,8 +1015,17 @@ public:
                 targets.push_back(preferred);
         }
 
+        // Glyph of Sharpened Knives (146628): Fan of Knives applies one Weakened Armor to each target.
+        // As in Legends of Azeroth.
+        void HandleDamage(SpellEffIndex /*effIndex*/)
+        {
+            if (GetCaster()->HasAura(146628))
+                GetCaster()->CastSpell(GetHitUnit(), SPELL_ROGUE_WEAKENED_ARMOR, true);
+        }
+
         void Register() OVERRIDE
         {
+            OnEffectHitTarget += SpellEffectFn(spell_rog_fan_of_knives_SpellScript::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_rog_fan_of_knives_SpellScript::FilterComboTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
         }
     };
