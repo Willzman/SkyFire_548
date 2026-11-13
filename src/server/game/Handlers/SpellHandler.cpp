@@ -1614,6 +1614,24 @@ void WorldSession::HandleCastSpellOpcode(WorldPacket& recvPacket)
         }
     }
 
+    // Glyphs that teach a replacement spell: the client can still send the base spell.
+    // Hand of Gul'dan -> ground-targeted version (Glyph of Hand of Gul'dan), Shadow Bolt -> Glyph of Shadow Bolt version.
+    {
+        static uint32 const glyphSwaps[2][2] = { { 105174, 123194 }, { 686, 112092 } };
+        for (uint8 i = 0; i < 2; ++i)
+        {
+            if (spellId != glyphSwaps[i][0] || !caster->ToPlayer()->HasSpell(glyphSwaps[i][1]))
+                continue;
+
+            if (SpellInfo const* newInfo = sSpellMgr->GetSpellInfo(glyphSwaps[i][1]))
+            {
+                spellInfo = newInfo;
+                spellId = newInfo->Id;
+            }
+            break;
+        }
+    }
+
     // Aura Overriden Spells, applied to the spell the specialization and talents resolved: the client sends the
     // replaced spell (Shadow Bolt for a Destruction Incinerate), and Fire and Brimstone overrides Incinerate.
     Unit::AuraEffectList swaps = mover->GetAuraEffectsByType(SPELL_AURA_OVERRIDE_ACTIONBAR_SPELLS);

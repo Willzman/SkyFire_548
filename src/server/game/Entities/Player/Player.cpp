@@ -17997,8 +17997,9 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
         if (rec <= 0 && catrec <= 0 && (cat == 76 || (spellInfo->IsAutoRepeatRangedSpell() && spellInfo->Id != 75)))
             rec = GetAttackTime(WeaponAttackType::RANGED_ATTACK);
 
-        // Now we have cooldown data (if found any), time to apply mods
-        if (rec > 0)
+        // Now we have cooldown data (if found any), time to apply mods.
+        // Also for a spell with no cooldown of its own: a glyph can add one (Glyph of Soul Swap).
+        if (rec >= 0)
             ApplySpellMod(spellInfo->Id, SPELLMOD_COOLDOWN, rec, spell);
 
         if (catrec > 0 && !(spellInfo->AttributesEx6 & SPELL_ATTR6_IGNORE_CATEGORY_COOLDOWN_MODS))
