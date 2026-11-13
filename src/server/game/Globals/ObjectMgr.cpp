@@ -2593,6 +2593,10 @@ void ObjectMgr::LoadItemTemplates()
             itemTemplate.Spells[i].SpellCooldown = sparse->SpellCooldown[i];
             itemTemplate.Spells[i].SpellCategory = sparse->SpellCategory[i];
             itemTemplate.Spells[i].SpellCategoryCooldown = sparse->SpellCategoryCooldown[i];
+
+            // item-defined spell categories share cooldowns too (e.g. potions): register the spell in its category
+            if (itemTemplate.Spells[i].SpellId > 0 && itemTemplate.Spells[i].SpellCategory && sSpellStore.LookupEntry(itemTemplate.Spells[i].SpellId))
+                sSpellsByCategoryStore[itemTemplate.Spells[i].SpellCategory].insert(itemTemplate.Spells[i].SpellId);
         }
 
         itemTemplate.SpellPPMRate = 0.0f;
@@ -2750,6 +2754,10 @@ void ObjectMgr::LoadItemTemplates()
                 itemTemplate.Spells[i].SpellCooldown = fields[74 + 6 * i + 3].GetInt32();
                 itemTemplate.Spells[i].SpellCategory = uint32(fields[74 + 6 * i + 4].GetUInt16());
                 itemTemplate.Spells[i].SpellCategoryCooldown = fields[74 + 6 * i + 5].GetInt32();
+
+                // item-defined spell categories share cooldowns too (e.g. potions): register the spell in its category
+                if (itemTemplate.Spells[i].SpellId > 0 && itemTemplate.Spells[i].SpellCategory && sSpellStore.LookupEntry(itemTemplate.Spells[i].SpellId))
+                    sSpellsByCategoryStore[itemTemplate.Spells[i].SpellCategory].insert(itemTemplate.Spells[i].SpellId);
             }
 
             itemTemplate.SpellPPMRate = 0.0f;
