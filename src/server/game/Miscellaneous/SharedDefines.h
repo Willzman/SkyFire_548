@@ -1068,7 +1068,7 @@ enum SpellEffects
     SPELL_EFFECT_171 = 171, // Summons gamebject
     SPELL_EFFECT_RESURRECT_WITH_AURA = 172,
     SPELL_EFFECT_UNLOCK_GUILD_VAULT_TAB = 173, // Guild tab unlocked (guild perk)
-    SPELL_EFFECT_174 = 174,
+    SPELL_EFFECT_APPLY_AURA_ON_PET = 174, // the aura is applied to the pet of the unit that owns it
     SPELL_EFFECT_175 = 175, // Unused (4.3.4)
     SPELL_EFFECT_176 = 176, // Some kind of sanctuary effect (Vanish)
     SPELL_EFFECT_177 = 177,
@@ -1079,6 +1079,7 @@ enum SpellEffects
     SPELL_EFFECT_182 = 182,
     SPELL_EFFECT_HEAL_BATTLEPET_PCT = 200,
     SPELL_EFFECT_BATTLE_PET_UNLOCK = 201,
+    SPELL_EFFECT_REMOVE_AURA_2 = 203,
     TOTAL_SPELL_EFFECTS = 214,
 };
 

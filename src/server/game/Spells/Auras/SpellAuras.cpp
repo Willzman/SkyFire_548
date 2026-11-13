@@ -18,6 +18,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellMgr.h"
 #include "SpellScript.h"
+#include "TemporarySummon.h"
 #include "Unit.h"
 #include "Util.h"
 #include "Vehicle.h"
@@ -298,6 +299,14 @@ void UnitAura::FillTargetMap(std::map<Unit*, uint32>& targets, Unit* caster)
                         if (Unit* owner = GetUnitOwner()->GetCharmerOrOwner())
                             if (GetUnitOwner()->IsWithinDistInMap(owner, radius))
                                 targetList.push_back(owner);
+                        break;
+                    }
+                    case SPELL_EFFECT_APPLY_AURA_ON_PET:
+                    {
+                        // only the pet gets the effect, not the unit that owns the aura
+                        if (Guardian* pet = GetUnitOwner()->GetGuardianPet())
+                            if (pet->IsInWorld())
+                                targetList.push_back(pet);
                         break;
                     }
                 }
