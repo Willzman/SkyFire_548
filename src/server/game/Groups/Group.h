@@ -297,7 +297,7 @@ public:
     void MasterLoot(Loot* loot, WorldObject* pLootedObject);
     Rolls::iterator GetRoll(uint64 Guid);
     void CountTheRoll(Rolls::iterator roll);
-    void CountRollVote(uint64 playerGUID, uint64 Guid, RollType Choise);
+    bool CountRollVote(uint64 playerGUID, uint64 Guid, RollType Choise);
     void EndRoll(Loot* loot);
 
     // related to disenchant rolls

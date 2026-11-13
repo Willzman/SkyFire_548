@@ -1092,7 +1092,7 @@ public:                                                 // constructors
     Item* GetItem(TradeSlots slot) const;
     bool HasItem(uint64 itemGuid) const;
     TradeSlots GetTradeSlotForItem(uint64 itemGuid) const;
-    void SetItem(TradeSlots slot, Item* item);
+    void SetItem(TradeSlots slot, Item* item, bool update = false);
 
     uint32 GetSpell() const
     {

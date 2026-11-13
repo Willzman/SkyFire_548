@@ -539,6 +539,22 @@ Player* Item::GetOwner()const
     return ObjectAccessor::FindPlayer(GetOwnerGUID());
 }
 
+void Item::SetCount(uint32 value)
+{
+    SetUInt32Value(ITEM_FIELD_STACK_COUNT, value);
+
+    // if the item is in an open trade, show the new count to the trader and reset both accepts
+    if (Player* player = GetOwner())
+    {
+        if (TradeData* tradeData = player->GetTradeData())
+        {
+            TradeSlots slot = tradeData->GetTradeSlotForItem(GetGUID());
+            if (slot != TRADE_SLOT_INVALID)
+                tradeData->SetItem(slot, this, true);
+        }
+    }
+}
+
 uint32 Item::GetSkill()
 {
     const static uint32 item_weapon_skills[MAX_ITEM_SUBCLASS_WEAPON] =
