@@ -1547,21 +1547,22 @@ void Group::MasterLoot(Loot* /*loot*/, WorldObject* pLootedObject)
     }
 }
 
-void Group::CountRollVote(uint64 playerGUID, uint64 Guid, RollType Choice)
+bool Group::CountRollVote(uint64 playerGUID, uint64 Guid, RollType Choice)
 {
     Rolls::iterator rollI = GetRoll(Guid);
     if (rollI == RollId.end())
-        return;
+        return false;
     Roll* roll = *rollI;
 
     Roll::PlayerVote::iterator itr = roll->playerVote.find(playerGUID);
     // this condition means that player joins to the party after roll begins
-    if (itr == roll->playerVote.end())
-        return;
+    // a player who already voted (or was auto-passed) can't vote again
+    if (itr == roll->playerVote.end() || itr->second != RollType::MAX_ROLL_TYPE)
+        return false;
 
     if (roll->getLoot())
         if (roll->getLoot()->items.empty())
-            return;
+            return false;
 
     switch (Choice)
     {
@@ -1585,10 +1586,14 @@ void Group::CountRollVote(uint64 playerGUID, uint64 Guid, RollType Choice)
             ++roll->totalGreed;
             itr->second = RollType::ROLL_DISENCHANT;
             break;
+        default:                                                      // not a valid vote
+            return false;
     }
 
     if (roll->totalPass + roll->totalNeed + roll->totalGreed >= roll->totalPlayersRolling)
         CountTheRoll(rollI);
+
+    return true;
 }
 
 //called when roll timer expires
@@ -2616,7 +2621,42 @@ void Group::ResetInstances(InstanceResetMethod method, bool isRaid, Player* Send
         {
             // do not reset the instance, just unbind if others are permanently bound to it
             if (instanceSave->CanReset())
+            {
+                // offline raid members saved inside the instance would log in to a fresh copy of it:
+                // move them to the graveyard nearest to the entrance instead
+                if (map && isRaidGroup() && map->IsDungeon() && SendMsgTo)
+                {
+                    if (AreaTriggerStruct const* instanceEntrance = sObjectMgr->GetGoBackTrigger(map->GetId()))
+                    {
+                        if (WorldSafeLocsEntry const* graveyard = sObjectMgr->GetClosestGraveYard(instanceEntrance->target_X, instanceEntrance->target_Y,
+                            instanceEntrance->target_Z, instanceEntrance->target_mapId, SendMsgTo->GetTeam()))
+                        {
+                            uint32 const zoneId = sMapMgr->GetZoneId(graveyard->map_id, graveyard->x, graveyard->y, graveyard->z);
+
+                            for (MemberSlot const& member : GetMemberSlots())
+                            {
+                                if (ObjectAccessor::FindPlayerInOrOutOfWorld(member.guid))
+                                    continue;
+
+                                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_POSITION_BY_MAPID);
+                                stmt->setFloat(0, graveyard->x);
+                                stmt->setFloat(1, graveyard->y);
+                                stmt->setFloat(2, graveyard->z);
+                                stmt->setFloat(3, instanceEntrance->target_Orientation);
+                                stmt->setUInt16(4, uint16(graveyard->map_id));
+                                stmt->setUInt16(5, uint16(zoneId));
+                                stmt->setUInt32(6, GUID_LOPART(member.guid));
+                                stmt->setUInt16(7, uint16(map->GetId()));
+                                CharacterDatabase.Execute(stmt);
+                            }
+                        }
+                    }
+                    else
+                        SF_LOG_DEBUG("maps", "Group::ResetInstances: no entrance found for map %u", map->GetId());
+                }
+
                 instanceSave->DeleteFromDB();
+            }
             else
             {
                 PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_INSTANCE_BY_INSTANCE);

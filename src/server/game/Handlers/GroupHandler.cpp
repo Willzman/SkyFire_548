@@ -559,7 +559,8 @@ void WorldSession::HandleLootRoll(WorldPacket& recvData)
         return;
 
     RollType type = RollType(rollType);
-    group->CountRollVote(GetPlayer()->GetGUID(), rollGuid, type);
+    if (!group->CountRollVote(GetPlayer()->GetGUID(), rollGuid, type))
+        return;
 
     switch (type)
     {
