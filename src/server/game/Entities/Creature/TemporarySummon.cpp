@@ -189,7 +189,15 @@ void TempSummon::InitStats(uint32 duration)
             {
                 Creature* oldSummon = GetMap()->GetCreature(owner->m_SummonSlot[slot]);
                 if (oldSummon && oldSummon->IsSummon())
-                    oldSummon->ToTempSummon()->UnSummon();
+                {
+                    // Totemic Persistence: a second Earth, Water or Air totem does not replace the first one.
+                    // One extra totem at a time, never a Fire totem. As in Legends of Azeroth.
+                    if (slot > SUMMON_SLOT_TOTEM && slot < MAX_TOTEM_SLOT && oldSummon->IsTotem() &&
+                        owner->HasAura(108284) && !owner->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA])
+                        owner->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA] = oldSummon->GetGUID();
+                    else
+                        oldSummon->ToTempSummon()->UnSummon();
+                }
             }
             owner->m_SummonSlot[slot] = GetGUID();
         }
@@ -280,8 +288,12 @@ void TempSummon::RemoveFromWorld()
         int32 slot = m_Properties->Slot;
         if (slot > 0)
             if (Unit* owner = GetSummoner())
+            {
                 if (owner->m_SummonSlot[slot] == GetGUID())
                     owner->m_SummonSlot[slot] = 0;
+                else if (owner->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA] == GetGUID())
+                    owner->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA] = 0;
+            }
     }
 
     if (Unit* owner = GetSummoner())

@@ -97,6 +97,9 @@ void Totem::UnSummon(uint32 msTime)
         }
     }
 
+    if (GetOwner()->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA] == GetGUID())
+        GetOwner()->m_SummonSlot[SUMMON_SLOT_TOTEM_EXTRA] = 0;
+
     GetOwner()->RemoveAurasDueToSpell(GetSpell(), GetGUID());
 
     // remove aura all party members too
