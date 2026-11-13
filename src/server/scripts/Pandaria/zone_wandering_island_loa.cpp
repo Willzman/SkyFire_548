@@ -404,10 +404,188 @@ class npc_shen_healer : public CreatureScript
         }
 };
 
+// From LoA zone_wandering_island_south.cpp (AreaTrigger_at_mandori). Areatrigger 7710, quest 29792 Bidden to Greatness.
+// Aysa, Ji and Jojo are driven by SmartAI rows taken from LoA's world DB.
+class AreaTrigger_at_mandori_village_escort : public AreaTriggerScript
+{
+    public:
+        AreaTrigger_at_mandori_village_escort() : AreaTriggerScript("at_mandori_village_escort") { }
+
+        bool OnTrigger(Player* player, AreaTriggerEntry const* /*trigger*/) OVERRIDE
+        {
+            if (player->GetPositionX() < 710.0f)
+                return true;
+
+            if (player->GetQuestStatus(29792) != QUEST_STATUS_INCOMPLETE)
+                return true;
+
+            // not in LoA: one escort per player at a time
+            if (Creature* oldAysa = player->FindNearestCreature(59986, 150.0f, true))
+                if (oldAysa->GetPrivateObjectOwner() == player->GetGUID())
+                    return true;
+
+            Creature* aysa = player->SummonCreature(59986, 698.04f, 3601.79f, 142.82f, 3.254830f, TempSummonType::TEMPSUMMON_MANUAL_DESPAWN, 0); // Aysa
+            Creature* ji   = player->SummonCreature(59988, 698.06f, 3599.34f, 142.62f, 2.668790f, TempSummonType::TEMPSUMMON_MANUAL_DESPAWN, 0); // Ji
+            Creature* jojo = player->SummonCreature(59989, 702.78f, 3603.58f, 142.01f, 3.433610f, TempSummonType::TEMPSUMMON_MANUAL_DESPAWN, 0); // Jojo
+
+            if (!aysa || !ji || !jojo)
+                return true;
+
+            // LoA: SetExplicitSeerGuid. Only the player (and their group) sees this escort.
+            aysa->SetPrivateObjectOwner(player->GetGUID());
+            ji->SetPrivateObjectOwner(player->GetGUID());
+            jojo->SetPrivateObjectOwner(player->GetGUID());
+
+            // safety net: the SmartAI paths despawn them at the end
+            aysa->DespawnOrUnsummon(300000);
+            ji->DespawnOrUnsummon(300000);
+            jojo->DespawnOrUnsummon(300000);
+
+            return true;
+        }
+};
+
+// From LoA zone_wandering_island_south.cpp. Quest 29798 An Ancient Evil.
+class boss_vordraka : public CreatureScript
+{
+public:
+    boss_vordraka() : CreatureScript("boss_vordraka") { }
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        return new boss_vordrakaAI(creature);
+    }
+
+    struct boss_vordrakaAI : public ScriptedAI
+    {
+        boss_vordrakaAI(Creature* creature) : ScriptedAI(creature) { }
+
+        bool summonedAllies;
+        bool lowHealthTalk;
+        EventMap _events;
+
+        enum eVordraka
+        {
+            EVENT_DEEP_ATTACK       = 1,
+            EVENT_DEEP_SEA_RUPTURE  = 2,
+
+            SPELL_DEEP_ATTACK       = 117287,
+            SPELL_DEEP_SEA_RUPTURE  = 117456,
+
+            NPC_DEEPSCALE_AGGRESSOR = 60685,
+            NPC_AYSA                = 56416,
+
+            QUEST_AN_ANCIENT_EVIL   = 29798,
+
+            // SetData(0, x) on Aysa, handled by her SmartAI rows
+            AYSA_DATA_ENGAGE        = 1,
+            AYSA_DATA_ALLIES        = 3,
+            AYSA_DATA_LOW_HEALTH    = 4,
+            AYSA_DATA_DEAD          = 5
+        };
+
+        void Reset() OVERRIDE
+        {
+            summonedAllies = false;
+            lowHealthTalk = false;
+            _events.Reset();
+        }
+
+        void InformAysa(uint32 data)
+        {
+            if (Creature* aysa = GetClosestCreatureWithEntry(me, NPC_AYSA, 40.0f))
+                aysa->AI()->SetData(0, data);
+        }
+
+        void EnterCombat(Unit* /*who*/) OVERRIDE
+        {
+            _events.ScheduleEvent(EVENT_DEEP_ATTACK, 10000);
+            // LoA scheduled this under the spell id, so it never fired
+            _events.ScheduleEvent(EVENT_DEEP_SEA_RUPTURE, 15000);
+            InformAysa(AYSA_DATA_ENGAGE);
+        }
+
+        void DamageTaken(Unit* attacker, uint32& damage) OVERRIDE
+        {
+            if (attacker && attacker->GetEntry() == NPC_AYSA)
+                damage /= 2;
+        }
+
+        void JustSummoned(Creature* summon) OVERRIDE
+        {
+            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 50.0f, true))
+                summon->AI()->AttackStart(target);
+        }
+
+        void JustDied(Unit* /*killer*/) OVERRIDE
+        {
+            InformAysa(AYSA_DATA_DEAD);
+
+            std::list<Player*> playerList;
+            GetPlayerListInGrid(playerList, me, 30.0f);
+
+            for (std::list<Player*>::iterator itr = playerList.begin(); itr != playerList.end(); ++itr)
+                if ((*itr)->IsAlive() && (*itr)->GetQuestStatus(QUEST_AN_ANCIENT_EVIL) == QUEST_STATUS_INCOMPLETE)
+                    (*itr)->KilledMonsterCredit(me->GetEntry());
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            if (!UpdateVictim())
+                return;
+
+            if (!summonedAllies && me->HealthBelowPct(50))
+            {
+                summonedAllies = true;
+                InformAysa(AYSA_DATA_ALLIES);
+
+                for (int i = 0; i < 3; ++i)
+                {
+                    Position pos = me->GetRandomNearPosition(10.0f);
+                    me->SummonCreature(NPC_DEEPSCALE_AGGRESSOR, pos, TempSummonType::TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 120000);
+                }
+            }
+
+            if (!lowHealthTalk && me->HealthBelowPct(10))
+            {
+                lowHealthTalk = true;
+                InformAysa(AYSA_DATA_LOW_HEALTH);
+            }
+
+            _events.Update(diff);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            switch (_events.ExecuteEvent())
+            {
+                case EVENT_DEEP_ATTACK:
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 25.0f, true))
+                        me->CastSpell(target, SPELL_DEEP_ATTACK, false);
+
+                    _events.ScheduleEvent(EVENT_DEEP_ATTACK, 12000);
+                    break;
+                case EVENT_DEEP_SEA_RUPTURE:
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 25.0f, true))
+                        me->CastSpell(target, SPELL_DEEP_SEA_RUPTURE, false);
+
+                    _events.ScheduleEvent(EVENT_DEEP_SEA_RUPTURE, 17000);
+                    break;
+                default:
+                    break;
+            }
+
+            DoMeleeAttackIfReady();
+        }
+    };
+};
+
 } // namespace
 
 void AddSC_wandering_island_loa()
 {
+    new AreaTrigger_at_mandori_village_escort();
+    new boss_vordraka();
     new boss_li_fei();
     new npc_nourished_yak();
     new npc_korga();
