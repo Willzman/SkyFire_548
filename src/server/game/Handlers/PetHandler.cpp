@@ -1262,7 +1262,11 @@ void WorldSession::HandlePetAbandon(WorldPacket& recvData)
     if (pet)
     {
         if (pet->IsPet())
-            _player->RemovePet((Pet*)pet, PET_SAVE_AS_DELETED);
+        {
+            // only the player's own hunter pet can be abandoned (deleted)
+            if (pet->GetGUID() == _player->GetPetGUID() && pet->ToPet()->getPetType() == PetType::HUNTER_PET)
+                _player->RemovePet(pet->ToPet(), PET_SAVE_AS_DELETED);
+        }
         else if (pet->GetGUID() == _player->GetCharmGUID())
             _player->StopCastingCharm();
     }

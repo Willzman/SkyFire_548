@@ -592,6 +592,7 @@ Spell::Spell(Unit* caster, SpellInfo const* info, TriggerCastFlags triggerFlags,
     itemTarget = NULL;
     gameObjTarget = NULL;
     focusObject = NULL;
+    m_focusObjectGUID = 0;
     m_cast_count = 0;
     m_glyphIndex = 0;
     m_researchData = NULL;
@@ -5948,7 +5949,9 @@ SpellCastResult Spell::CheckCast(bool strict)
     if (m_spellInfo->RequiresSpellFocus && !(m_spellInfo->Id == SPELL_DARKMOON_RING_TOSS_THROW && m_caster->HasAura(SPELL_DARKMOON_RING_TOSS_ACTION)))
     {
         focusObject = SearchSpellFocus();
-        if (!focusObject)
+        if (focusObject)
+            m_focusObjectGUID = focusObject->GetGUID();
+        else
             return SpellCastResult::SPELL_FAILED_REQUIRES_SPELL_FOCUS;
     }
 
@@ -7424,6 +7427,10 @@ void Spell::UpdatePointers()
         if (m_originalCaster && !m_originalCaster->IsInWorld())
             m_originalCaster = NULL;
     }
+
+    // the focus object can be deleted between cast start and launch
+    if (m_focusObjectGUID)
+        focusObject = ObjectAccessor::GetGameObject(*m_caster, m_focusObjectGUID);
 
     if (m_castItemGUID && m_caster->GetTypeId() == TypeID::TYPEID_PLAYER)
         m_CastItem = m_caster->ToPlayer()->GetItemByGuid(m_castItemGUID);

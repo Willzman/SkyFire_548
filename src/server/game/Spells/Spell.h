@@ -649,6 +649,7 @@ protected:
     DiminishingGroup m_diminishGroup;
 
     // -------------------------------------------
+    uint64 m_focusObjectGUID;
     GameObject* focusObject;
 
     // Damage and healing in effects need just calculate

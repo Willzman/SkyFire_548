@@ -42,6 +42,7 @@
 #include "WaypointMovementGenerator.h"
 #include "World.h"
 #include "WorldPacket.h"
+#include <limits>
 
 #include "Transport.h"
 
@@ -552,7 +553,18 @@ void Creature::Update(uint32 diff)
                     if (targetGuid == dbtableHighGuid) // if linking self, never respawn (check delayed to next day)
                         SetRespawnTime(DAY);
                     else
-                        m_respawnTime = (now > linkedRespawntime ? now : linkedRespawntime) + urand(5, MINUTE); // else copy time from master and add a little
+                    {
+                        // else copy time from master and add a little
+                        time_t baseRespawnTime = linkedRespawntime > now ? linkedRespawntime : now;
+                        time_t const offset = urand(5, MINUTE);
+
+                        // the master can be a boss that never respawns in this instance (time_t max):
+                        // inherit that instead of adding to it and overflowing
+                        if (baseRespawnTime <= (std::numeric_limits<time_t>::max)() - offset)
+                            m_respawnTime = baseRespawnTime + offset;
+                        else
+                            m_respawnTime = (std::numeric_limits<time_t>::max)();
+                    }
                     SaveRespawnTime(); // also save to DB immediately
                 }
             }

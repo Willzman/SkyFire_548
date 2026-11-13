@@ -6770,6 +6770,10 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
             creature->SetLootRecipient(NULL);
     }
 
+    // no rewards for killing a player's pet
+    if (creature && creature->IsPet() && IS_PLAYER_GUID(creature->GetOwnerGUID()))
+        isRewardAllowed = false;
+
     if (isRewardAllowed && creature && creature->GetLootRecipient())
         player = creature->GetLootRecipient();
 
