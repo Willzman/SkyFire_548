@@ -21803,6 +21803,12 @@ void Player::HandleFall(MovementInfo const& movementInfo)
         //Safe fall, fall height reduction
         int32 safe_fall = GetTotalAuraModifier(SPELL_AURA_SAFE_FALL);
 
+        // Feline Grace (125972) is a dummy aura: less falling damage while in Cat Form.
+        // Out of Cat Form only Glyph of Grace (114295) gives it, and that glyph is a real safe fall aura.
+        if (GetShapeshiftForm() == FORM_CAT && !HasAura(114295))
+            if (AuraEffect const* felineGrace = GetAuraEffect(125972, EFFECT_0))
+                safe_fall += felineGrace->GetAmount();
+
         float damageperc = 0.018f * (z_diff - safe_fall) - 0.2426f;
 
         if (damageperc > 0)
