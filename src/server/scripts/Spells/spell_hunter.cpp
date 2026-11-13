@@ -3258,6 +3258,269 @@ public:
     }
 };
 
+// 109259 - Powershot
+// The target takes the weapon damage of both damage effects (600%), enemies between the hunter and the
+// target take that of one (300%); all of them are knocked back. The spell's own target types cannot do
+// this (effects 1-3 use an unimplemented type, effects 4-6 hit everything around the target), and the core
+// multiplies the two percentages, so both are put right here. Target rule from Legends of Azeroth.
+class spell_hun_powershot : public SpellScriptLoader
+{
+public:
+    spell_hun_powershot() : SpellScriptLoader("spell_hun_powershot") { }
+
+    class spell_hun_powershot_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_hun_powershot_SpellScript);
+
+        bool Load() OVERRIDE
+        {
+            _selected = false;
+            return true;
+        }
+
+        void SelectTargets(std::list<WorldObject*>& targets)
+        {
+            if (!_selected)
+            {
+                _selected = true;
+
+                Unit* caster = GetCaster();
+                Unit* mainTarget = GetExplTargetUnit();
+                if (mainTarget)
+                {
+                    std::list<Unit*> nearby;
+                    caster->GetAttackableUnitListInRange(nearby, caster->GetDistance(mainTarget) + 5.0f);
+                    for (std::list<Unit*>::const_iterator itr = nearby.begin(); itr != nearby.end(); ++itr)
+                        if (*itr != mainTarget && caster->IsValidAttackTarget(*itr) && (*itr)->IsInBetween(caster, mainTarget, 2.5f))
+                            _targets.push_back(*itr);
+
+                    _targets.push_back(mainTarget);
+                }
+            }
+
+            targets = _targets;
+        }
+
+        void HandleHit()
+        {
+            float const first = float(GetSpellInfo()->Effects[EFFECT_2].CalcValue(GetCaster()));
+            float const second = float(GetSpellInfo()->Effects[EFFECT_5].CalcValue(GetCaster()));
+            if (first <= 0.0f || second <= 0.0f)
+                return;
+
+            // the core has dealt first% x second% (900%)
+            float const wanted = GetHitUnit() == GetExplTargetUnit() ? first + second : second;
+            SetHitDamage(int32(GetHitDamage() * wanted * 100.0f / (first * second)));
+        }
+
+        void Register() OVERRIDE
+        {
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_powershot_SpellScript::SelectTargets, EFFECT_4, TARGET_UNIT_DEST_AREA_ENEMY);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_powershot_SpellScript::SelectTargets, EFFECT_5, TARGET_UNIT_DEST_AREA_ENEMY);
+            OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_hun_powershot_SpellScript::SelectTargets, EFFECT_6, TARGET_UNIT_DEST_AREA_ENEMY);
+            OnHit += SpellHitFn(spell_hun_powershot_SpellScript::HandleHit);
+        }
+
+    private:
+        bool _selected;
+        std::list<WorldObject*> _targets;
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_hun_powershot_SpellScript();
+    }
+};
+
+// 3355 - Freezing Trap, 19503 - Scatter Shot
+// Glyph of Solace (119407): also removes all damage over time effects from the target. As in Legends of Azeroth.
+class spell_hun_glyph_of_solace : public SpellScriptLoader
+{
+public:
+    spell_hun_glyph_of_solace() : SpellScriptLoader("spell_hun_glyph_of_solace") { }
+
+    class spell_hun_glyph_of_solace_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_hun_glyph_of_solace_SpellScript);
+
+        void HandleHit()
+        {
+            Unit* target = GetHitUnit();
+            if (!target || !GetCaster()->GetCharmerOrOwnerOrSelf()->HasAura(119407))
+                return;
+
+            target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE, 0, target->GetAura(32409)); // not the Shadow Word: Death backlash
+            target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+            target->RemoveAurasByType(SPELL_AURA_PERIODIC_LEECH);
+        }
+
+        void Register() OVERRIDE
+        {
+            OnHit += SpellHitFn(spell_hun_glyph_of_solace_SpellScript::HandleHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_hun_glyph_of_solace_SpellScript();
+    }
+};
+
+// 20736 - Distracting Shot
+// Glyph of Distracting Shot (123632): the target is distracted to attack the hunter's pet instead.
+// From Legends of Azeroth.
+class spell_hun_distracting_shot : public SpellScriptLoader
+{
+public:
+    spell_hun_distracting_shot() : SpellScriptLoader("spell_hun_distracting_shot") { }
+
+    class spell_hun_distracting_shot_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_hun_distracting_shot_SpellScript);
+
+        void HandleThreat(SpellEffIndex effIndex)
+        {
+            Unit* caster = GetCaster();
+            Unit* target = GetHitUnit();
+            Unit* pet = caster->GetGuardianPet();
+            if (!pet || !pet->IsAlive() || !caster->HasAura(123632) || !target->CanHaveThreatList())
+                return;
+
+            PreventHitDefaultEffect(effIndex);
+            target->getThreatManager().addThreat(pet, float(GetEffectValue()));
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_hun_distracting_shot_SpellScript::HandleThreat, EFFECT_0, SPELL_EFFECT_THREAT);
+        }
+    };
+
+    class spell_hun_distracting_shot_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_hun_distracting_shot_AuraScript);
+
+        bool Load() OVERRIDE
+        {
+            _glyphed = false;
+            return true;
+        }
+
+        void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            Unit* target = GetTarget();
+            Unit* hunter = GetCaster();
+            if (target->GetTypeId() != TypeID::TYPEID_UNIT || !hunter || !hunter->HasAura(123632))
+                return;
+
+            Unit* pet = hunter->GetGuardianPet();
+            if (!pet || !pet->IsAlive())
+                return;
+
+            PreventDefaultAction();
+            _glyphed = true;
+            target->TauntApply(pet);
+        }
+
+        void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            if (!_glyphed)
+                return;
+
+            PreventDefaultAction();
+            if (Unit* hunter = GetCaster())
+                if (Unit* pet = hunter->GetGuardianPet())
+                    GetTarget()->TauntFadeOut(pet);
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectApply += AuraEffectApplyFn(spell_hun_distracting_shot_AuraScript::HandleApply, EFFECT_1, SPELL_AURA_MOD_TAUNT, AURA_EFFECT_HANDLE_REAL);
+            OnEffectRemove += AuraEffectRemoveFn(spell_hun_distracting_shot_AuraScript::HandleRemove, EFFECT_1, SPELL_AURA_MOD_TAUNT, AURA_EFFECT_HANDLE_REAL);
+        }
+
+    private:
+        bool _glyphed;
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_hun_distracting_shot_SpellScript();
+    }
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_hun_distracting_shot_AuraScript();
+    }
+};
+
+// 20895 - Glyph of Animal Bond
+// The glyph is a dummy; its effect is spell 24529 (healing taken +10% for the hunter and the pet).
+class spell_hun_glyph_of_animal_bond : public SpellScriptLoader
+{
+public:
+    spell_hun_glyph_of_animal_bond() : SpellScriptLoader("spell_hun_glyph_of_animal_bond") { }
+
+    class spell_hun_glyph_of_animal_bond_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_hun_glyph_of_animal_bond_AuraScript);
+
+        void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            GetTarget()->CastSpell(GetTarget(), 24529, true);
+        }
+
+        void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            GetTarget()->RemoveAurasDueToSpell(24529);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterEffectApply += AuraEffectApplyFn(spell_hun_glyph_of_animal_bond_AuraScript::HandleApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            AfterEffectRemove += AuraEffectRemoveFn(spell_hun_glyph_of_animal_bond_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+        }
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_hun_glyph_of_animal_bond_AuraScript();
+    }
+};
+
+// 24529 - Glyph of Animal Bond (effect)
+// Only while the hunter's pet is active.
+class spell_hun_glyph_of_animal_bond_effect : public SpellScriptLoader
+{
+public:
+    spell_hun_glyph_of_animal_bond_effect() : SpellScriptLoader("spell_hun_glyph_of_animal_bond_effect") { }
+
+    class spell_hun_glyph_of_animal_bond_effect_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_hun_glyph_of_animal_bond_effect_AuraScript);
+
+        bool CheckAreaTarget(Unit* /*target*/)
+        {
+            Unit* hunter = GetCaster();
+            if (!hunter)
+                return false;
+
+            Unit* pet = hunter->GetGuardianPet();
+            return pet && pet->IsAlive();
+        }
+
+        void Register() OVERRIDE
+        {
+            DoCheckAreaTarget += AuraCheckAreaTargetFn(spell_hun_glyph_of_animal_bond_effect_AuraScript::CheckAreaTarget);
+        }
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_hun_glyph_of_animal_bond_effect_AuraScript();
+    }
+};
+
 // 19263, 67801, 110617, 110618, 148467 - Deterrence
 class spell_hun_deterrence : public SpellScriptLoader
 {
@@ -3879,6 +4142,11 @@ class sat_hun_flare : public IAreaTriggerAura
 
 void AddSC_hunter_spell_scripts()
 {
+    new spell_hun_powershot();
+    new spell_hun_glyph_of_solace();
+    new spell_hun_distracting_shot();
+    new spell_hun_glyph_of_animal_bond();
+    new spell_hun_glyph_of_animal_bond_effect();
     new spell_hun_a_murder_of_crows();
     new spell_hun_chimera_shot();
     new spell_hun_cobra_shot();
