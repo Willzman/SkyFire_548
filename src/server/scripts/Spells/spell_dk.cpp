@@ -440,8 +440,36 @@ public:
             target->CastCustomSpell(target, SPELL_DK_RUNIC_POWER_ENERGIZE, &bp, NULL, NULL, true, NULL, aurEff);
         }
 
+        // Glyph of Regenerative Magic (146648): if Anti-Magic Shell runs its full duration, its cooldown is
+        // reduced by up to 50%, in proportion to the absorption left. As in Legends of Azeroth.
+        void HandleApply(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+        {
+            _fullAmount = aurEff->GetAmount();
+        }
+
+        void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes /*mode*/)
+        {
+            if (GetTargetApplication()->GetRemoveMode() != AURA_REMOVE_BY_EXPIRE || _fullAmount <= 0)
+                return;
+
+            Player* player = GetTarget()->ToPlayer();
+            AuraEffect const* glyph = GetTarget()->GetAuraEffect(146648, EFFECT_0);
+            if (!player || !glyph)
+                return;
+
+            float const pct = float(aurEff->GetAmount()) / float(_fullAmount) * float(glyph->GetAmount());
+            int32 const reduction = int32(player->GetSpellCooldownDelay(GetId()) * IN_MILLISECONDS * pct / 100.0f);
+            if (reduction > 0)
+                player->ModifySpellCooldown(GetId(), -reduction);
+        }
+
         void Register() OVERRIDE
         {
+            if (m_scriptSpellId == 48707)
+            {
+                AfterEffectApply += AuraEffectApplyFn(spell_dk_anti_magic_shell_self_AuraScript::HandleApply, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_dk_anti_magic_shell_self_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB, AURA_EFFECT_HANDLE_REAL);
+            }
             DoEffectCalcAmount += AuraEffectCalcAmountFn(spell_dk_anti_magic_shell_self_AuraScript::CalculateAmount, EFFECT_0, SPELL_AURA_SCHOOL_ABSORB);
             OnEffectAbsorb += AuraEffectAbsorbFn(spell_dk_anti_magic_shell_self_AuraScript::Absorb, EFFECT_0);
             if (m_scriptSpellId == 48707)
@@ -450,6 +478,7 @@ public:
     private:
         uint32 absorbPct = 0;
         uint32 hpPct = 0;
+        int32 _fullAmount = 0;
     };
 
     AuraScript* GetAuraScript() const OVERRIDE
@@ -620,8 +649,20 @@ public:
             {
                 if (caster->IsFriendlyTo(target))
                 {
-                    int32 bp = int32(damage * 1.5f);
-                    caster->CastCustomSpell(target, SPELL_DK_DEATH_COIL_HEAL, &bp, NULL, NULL, true);
+                    if (target->GetCreatureType() == CREATURE_TYPE_UNDEAD)
+                    {
+                        int32 bp = int32(damage * 1.5f);
+                        caster->CastCustomSpell(target, SPELL_DK_DEATH_COIL_HEAL, &bp, NULL, NULL, true);
+                    }
+                    else
+                    {
+                        // Glyph of Death Coil (63333): a non-undead ally gets an absorb shield (Death Barrier, 115635).
+                        // Amount as in Legends of Azeroth.
+                        int32 absorb = int32(damage + caster->GetTotalAttackPowerValue(WeaponAttackType::BASE_ATTACK) * 0.514f);
+                        if (AuraEffect const* mastery = caster->GetAuraEffect(SPELL_DK_MASTERY_DREADBLADE, EFFECT_0))
+                            AddPct(absorb, mastery->GetAmount());
+                        caster->CastCustomSpell(target, 115635, &absorb, NULL, NULL, true);
+                    }
                 }
                 else
                     caster->CastCustomSpell(target, SPELL_DK_DEATH_COIL_DAMAGE, &damage, NULL, NULL, true);
@@ -636,7 +677,7 @@ public:
                 if (!caster->IsFriendlyTo(target) && !caster->isInFront(target))
                     return SpellCastResult::SPELL_FAILED_UNIT_NOT_INFRONT;
 
-                if (target->IsFriendlyTo(caster) && target->GetCreatureType() != CREATURE_TYPE_UNDEAD)
+                if (target->IsFriendlyTo(caster) && target->GetCreatureType() != CREATURE_TYPE_UNDEAD && !caster->HasAura(63333))
                     return SpellCastResult::SPELL_FAILED_BAD_TARGETS;
             }
             else
@@ -720,8 +761,23 @@ public:
             }
         }
 
+        // Glyph of Tranquil Grip (63335): Death Grip no longer taunts the target. As in Legends of Azeroth.
+        void HandleBeforeHit()
+        {
+            if (GetCaster()->HasAura(63335))
+                PreventHitAura();
+        }
+
+        void HandleTaunt(SpellEffIndex effIndex)
+        {
+            if (GetCaster()->HasAura(63335))
+                PreventHitDefaultEffect(effIndex);
+        }
+
         void Register() OVERRIDE
         {
+            BeforeHit += SpellHitFn(spell_dk_death_grip_SpellScript::HandleBeforeHit);
+            OnEffectHitTarget += SpellEffectFn(spell_dk_death_grip_SpellScript::HandleTaunt, EFFECT_2, SPELL_EFFECT_ATTACK_ME);
             OnEffectHitTarget += SpellEffectFn(spell_dk_death_grip_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
         }
     };
@@ -808,6 +864,21 @@ public:
             return true;
         }
 
+        bool Load() OVERRIDE
+        {
+            _darkSuccor = false;
+            return true;
+        }
+
+        // Dark Succor (101568, from Glyph of Dark Succor): in Frost or Unholy Presence the Death Strike
+        // heals for at least 20% of maximum health. The buff's charge is used up by the cast, so it is
+        // noted before the cast. As in Legends of Azeroth.
+        void HandleBeforeCast()
+        {
+            Unit* caster = GetCaster();
+            _darkSuccor = caster->HasAura(101568) && (caster->HasAura(SPELL_DK_FROST_PRESENCE) || caster->HasAura(SPELL_DK_UNHOLY_PRESENCE));
+        }
+
         void HandleDummy(SpellEffIndex /*effIndex*/)
         {
             if (AuraEffect* enabler = GetCaster()->GetAuraEffect(SPELL_DK_DEATH_STRIKE_ENABLER, EFFECT_0, GetCaster()->GetGUID()))
@@ -818,7 +889,12 @@ public:
                 if (AuraEffect const* aurEff = GetCaster()->GetAuraEffectOfRankedSpell(SPELL_DK_IMPROVED_DEATH_STRIKE, EFFECT_2))
                     heal = AddPct(heal, aurEff->GetAmount());
 
-                int32 minimumHeal = int32(GetCaster()->CountPctFromMaxHealth(GetEffectValue()));
+                int32 minimumPct = GetEffectValue();
+                if (_darkSuccor)
+                    if (SpellInfo const* darkSuccor = sSpellMgr->GetSpellInfo(101568))
+                        minimumPct = std::max(minimumPct, darkSuccor->Effects[EFFECT_0].CalcValue(GetCaster()));
+
+                int32 minimumHeal = int32(GetCaster()->CountPctFromMaxHealth(minimumPct));
 
                 if (Aura* scentOfBlood = GetCaster()->GetAura(SPELL_DK_SCENT_OF_BLOOD))
                 {
@@ -841,8 +917,12 @@ public:
 
         void Register() OVERRIDE
         {
+            BeforeCast += SpellCastFn(spell_dk_death_strike_SpellScript::HandleBeforeCast);
             OnEffectHitTarget += SpellEffectFn(spell_dk_death_strike_SpellScript::HandleDummy, EFFECT_2, SPELL_EFFECT_DUMMY);
         }
+
+    private:
+        bool _darkSuccor;
     };
 
     SpellScript* GetSpellScript() const OVERRIDE
