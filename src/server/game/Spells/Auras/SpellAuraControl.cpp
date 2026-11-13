@@ -291,6 +291,15 @@ void AuraEffect::HandleAuraModRoot(AuraApplication const* aurApp, uint8 mode, bo
 
     Unit* target = aurApp->GetTarget();
 
+    // Intimidating Shout (5246) carries both a fear and a root. The root is only for
+    // Glyph of Intimidating Shout (63327): targets tremble in place instead of fleeing. As in Legends of Azeroth.
+    if (apply && GetId() == 5246)
+    {
+        Unit* caster = GetCaster();
+        if (!caster || !caster->HasAura(63327))
+            return;
+    }
+
     target->SetControlled(apply, UNIT_STATE_ROOT);
 }
 

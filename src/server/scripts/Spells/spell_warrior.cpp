@@ -982,6 +982,10 @@ public:
             if (!_procTarget)
                 return;
 
+            // Glyph of Sweeping Strikes (58384): rage when Sweeping Strikes hits a target. As in Legends of Azeroth.
+            if (caster->HasAura(58384))
+                caster->CastSpell(caster, 124333, true);
+
             int32 damage = CalculatePct(damageInfo->GetDamage(), aurEff->GetAmount());
             caster->CastCustomSpell(SPELL_WARRIOR_SWEEPING_STRIKES_EXTRA_ATTACK, SPELLVALUE_BASE_POINT0, damage, _procTarget, true, NULL, aurEff);
         }
@@ -3115,8 +3119,105 @@ public:
     }
 };
 
+// 6552 - Pummel, 57755 - Heroic Throw
+// Glyph of Gag Order (58357): also silences the target (18498). Does not work against players.
+class spell_warr_glyph_of_gag_order : public SpellScriptLoader
+{
+public:
+    spell_warr_glyph_of_gag_order() : SpellScriptLoader("spell_warr_glyph_of_gag_order") { }
+
+    class spell_warr_glyph_of_gag_order_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_warr_glyph_of_gag_order_SpellScript);
+
+        void HandleHit()
+        {
+            Unit* target = GetHitUnit();
+            if (!target || target->GetTypeId() == TypeID::TYPEID_PLAYER || !GetCaster()->HasAura(58357))
+                return;
+
+            GetCaster()->CastSpell(target, 18498, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterHit += SpellHitFn(spell_warr_glyph_of_gag_order_SpellScript::HandleHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_warr_glyph_of_gag_order_SpellScript();
+    }
+};
+
+// 5308 - Execute
+// Glyph of the Executor (146971): killing an enemy with Execute grants rage (147352).
+class spell_warr_glyph_of_the_executor : public SpellScriptLoader
+{
+public:
+    spell_warr_glyph_of_the_executor() : SpellScriptLoader("spell_warr_glyph_of_the_executor") { }
+
+    class spell_warr_glyph_of_the_executor_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_warr_glyph_of_the_executor_SpellScript);
+
+        void HandleHit()
+        {
+            Unit* target = GetHitUnit();
+            if (!target || target->IsAlive() || !GetCaster()->HasAura(146971))
+                return;
+
+            GetCaster()->CastSpell(GetCaster(), 147352, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterHit += SpellHitFn(spell_warr_glyph_of_the_executor_SpellScript::HandleHit);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_warr_glyph_of_the_executor_SpellScript();
+    }
+};
+
+// 1680 - Whirlwind
+// Glyph of the Raging Whirlwind (146968): Whirlwind gives rage over time (147297), during which
+// auto attacks generate no rage (both are auras of 147297).
+class spell_warr_glyph_of_the_raging_whirlwind : public SpellScriptLoader
+{
+public:
+    spell_warr_glyph_of_the_raging_whirlwind() : SpellScriptLoader("spell_warr_glyph_of_the_raging_whirlwind") { }
+
+    class spell_warr_glyph_of_the_raging_whirlwind_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_warr_glyph_of_the_raging_whirlwind_SpellScript);
+
+        void HandleAfterCast()
+        {
+            if (GetCaster()->HasAura(146968))
+                GetCaster()->CastSpell(GetCaster(), 147297, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterCast += SpellCastFn(spell_warr_glyph_of_the_raging_whirlwind_SpellScript::HandleAfterCast);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_warr_glyph_of_the_raging_whirlwind_SpellScript();
+    }
+};
+
 void AddSC_warrior_spell_scripts()
 {
+    new spell_warr_glyph_of_gag_order();
+    new spell_warr_glyph_of_the_executor();
+    new spell_warr_glyph_of_the_raging_whirlwind();
     new spell_warr_bloodthirst();
     new spell_warr_charge();
     new spell_warr_concussion_blow();
