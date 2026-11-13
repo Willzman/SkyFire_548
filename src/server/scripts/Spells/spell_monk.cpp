@@ -444,6 +444,15 @@ public:
                             aura->GetBase()->SetMaxDuration(newDuration);
                         }
                     }
+
+                    // Glyph of Paralysis (125755): also removes all damage over time effects from the target.
+                    // As in Legends of Azeroth.
+                    if (caster->HasAura(125755))
+                    {
+                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE, 0, target->GetAura(32409)); // not the Shadow Word: Death backlash
+                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_DAMAGE_PERCENT);
+                        target->RemoveAurasByType(SPELL_AURA_PERIODIC_LEECH);
+                    }
                 }
             }
         }
@@ -570,6 +579,15 @@ public:
             return true;
         }
 
+        // The client lets Roll be cast while dead; only Glyph of Spirit Roll (125154) allows it
+        SpellCastResult CheckCast()
+        {
+            if (!GetCaster()->IsAlive() && !GetCaster()->HasAura(125154))
+                return SpellCastResult::SPELL_FAILED_CASTER_DEAD;
+
+            return SpellCastResult::SPELL_CAST_OK;
+        }
+
         void HandleBeforeCast()
         {
             Aura* aur = GetCaster()->AddAura(SPELL_MONK_ROLL_TRIGGER, GetCaster());
@@ -597,6 +615,7 @@ public:
 
         void Register()
         {
+            OnCheckCast += SpellCheckCastFn(spell_monk_roll_SpellScript::CheckCast);
             BeforeCast += SpellCastFn(spell_monk_roll_SpellScript::HandleBeforeCast);
             AfterCast += SpellCastFn(spell_monk_roll_SpellScript::HandleAfterCast);
         }
@@ -1739,10 +1758,13 @@ class spell_monk_guard : public SpellScriptLoader
     {
         PrepareAuraScript(spell_monk_guard_AuraScript);
 
-        void CalculateAmount(AuraEffect const* /*aurEff*/, int32 & amount, bool & /*canBeRecalculated*/)
+        void CalculateAmount(AuraEffect const* /*aurEff*/, int32 & amount, bool & canBeRecalculated)
         {
             if (!GetCaster())
                 return;
+
+            // the Power Guard bonus is used up here, so the amount must not be worked out again
+            canBeRecalculated = false;
 
             if (Player* _plr = GetCaster()->ToPlayer())
                 amount += int32(_plr->GetTotalAttackPowerValue(WeaponAttackType::BASE_ATTACK) * 1.971f);
@@ -1750,6 +1772,14 @@ class spell_monk_guard : public SpellScriptLoader
             {
                 if (Player* _plr = GetCaster()->GetOwner()->ToPlayer())
                     amount += int32(_plr->GetTotalAttackPowerValue(WeaponAttackType::BASE_ATTACK) * 1.971f);
+            }
+
+            // Power Guard (118636): Tiger Palm with Brewmaster Training makes the next Guard 15% stronger.
+            // As in Legends of Azeroth.
+            if (AuraEffect const* powerGuard = GetCaster()->GetAuraEffect(118636, EFFECT_0))
+            {
+                AddPct(amount, powerGuard->GetAmount());
+                powerGuard->GetBase()->Remove();
             }
         }
 
@@ -2161,6 +2191,7 @@ class spell_monk_zen_flight_check : public SpellScriptLoader
 enum PowerStrikes
 {
     SPELL_MONK_POWER_STRIKES_TALENT = 121817,
+    SPELL_MONK_POWER_STRIKES = 129914,
     SPELL_MONK_CREATE_CHI_SPHERE = 121286
 };
 
@@ -2178,28 +2209,26 @@ class spell_monk_power_strikes : public SpellScriptLoader
 
             void HandleOnHit()
         {
-            if (Player* _player = GetCaster()->ToPlayer())
-            {
-                if (Unit* target = GetHitUnit())
-                {
-                    if (target->GetGUID() != _player->GetGUID())
-                    {
-                        if (_player->HasAura(SPELL_MONK_POWER_STRIKES_TALENT))
-                        {
-                            if (!_player->HasSpellCooldown(SPELL_MONK_POWER_STRIKES_TALENT))
-                            {
-                                if (_player->GetPower(POWER_CHI) < _player->GetMaxPower(POWER_CHI))
-                                {
-                                    _player->EnergizeBySpell(_player, GetSpellInfo()->Id, 1, POWER_CHI);
-                                    _player->AddSpellCooldown(SPELL_MONK_POWER_STRIKES_TALENT, 0, time(NULL) + 20);
-                                }
-                                else
-                                    _player->CastSpell(_player, SPELL_MONK_CREATE_CHI_SPHERE, true);
-                            }
-                        }
-                    }
-                }
-            }
+            Player* monk = GetCaster()->ToPlayer();
+            if (!monk)
+                return;
+
+            // Power Strikes (129914) is granted by the talent's periodic effect and used up by
+            // the next Jab, Soothing Mist, Spinning Crane Kick, Expel Harm or Crackling Jade Lightning.
+            // As in Legends of Azeroth.
+            Aura* powerStrikes = monk->GetAura(SPELL_MONK_POWER_STRIKES);
+            if (!powerStrikes)
+                return;
+
+            if (monk->GetPower(POWER_CHI) < monk->GetMaxPower(POWER_CHI))
+                monk->EnergizeBySpell(monk, GetSpellInfo()->Id, 1, POWER_CHI);
+            else
+                monk->CastSpell(monk, SPELL_MONK_CREATE_CHI_SPHERE, true);
+
+            powerStrikes->Remove();
+
+            if (AuraEffect* talent = monk->GetAuraEffect(SPELL_MONK_POWER_STRIKES_TALENT, EFFECT_0))
+                talent->ResetPeriodic(true);
         }
 
         void Register()
@@ -2786,6 +2815,10 @@ class spell_monk_chi_torpedo : public SpellScript
     {
         if (GetCaster()->HasUnitState(UNIT_STATE_ROOT))
             return SpellCastResult::SPELL_FAILED_ROOTED;
+
+        // only Glyph of Spirit Roll (125154) allows Chi Torpedo while dead
+        if (!GetCaster()->IsAlive() && !GetCaster()->HasAura(125154))
+            return SpellCastResult::SPELL_FAILED_CASTER_DEAD;
 
         return SpellCastResult::SPELL_CAST_OK;
     }
