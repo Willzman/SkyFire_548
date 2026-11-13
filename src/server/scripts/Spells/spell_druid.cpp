@@ -5797,7 +5797,16 @@ public:
         void HandleHit()
         {
             Unit* target = GetHitUnit();
-            if (!target || !target->HasAuraState(AURA_STATE_BLEEDING))
+            if (!target)
+                return;
+
+            // Glyph of Maul (54811): the additional target takes 50% damage
+            if (GetSpellInfo()->Id == 6807 && target != GetExplTargetUnit())
+                if (GetCaster()->HasAura(54811))
+                    if (SpellInfo const* glyph = sSpellMgr->GetSpellInfo(54811))
+                        SetHitDamage(CalculatePct(GetHitDamage(), glyph->Effects[EFFECT_2].CalcValue()));
+
+            if (!target->HasAuraState(AURA_STATE_BLEEDING))
                 return;
 
             int32 bonusPct = 20;

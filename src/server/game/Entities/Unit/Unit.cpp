@@ -1273,6 +1273,17 @@ float Unit::GetUnitBlockChance() const
     }
 }
 
+// Glyph of Barkskin (63057): the chance to be critically hit is lower while Barkskin (22812) is active.
+// The glyph is a dummy aura, so the value is read here. Returns a negative number or 0.
+static float GetBarkskinGlyphCritReduction(Unit const* victim)
+{
+    if (victim->HasAura(22812))
+        if (AuraEffect const* glyph = victim->GetAuraEffect(63057, EFFECT_0))
+            return -float(glyph->GetAmount());
+
+    return 0.0f;
+}
+
 float Unit::GetUnitCriticalChance(WeaponAttackType attackType, const Unit* victim) const
 {
     float crit;
@@ -1307,6 +1318,7 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, const Unit* victi
     crit += victim->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_MELEE_CRIT_CHANCE);
 
     crit += victim->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE);
+    crit += GetBarkskinGlyphCritReduction(victim);
 
     if (crit < 0.0f)
         crit = 0.0f;
@@ -3417,6 +3429,7 @@ bool Unit::isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMas
                     crit_chance += victim->GetTotalAuraModifierByMiscMask(SPELL_AURA_MOD_ATTACKER_SPELL_CRIT_CHANCE, schoolMask);
                     // Modify critical chance by victim SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE
                     crit_chance += victim->GetTotalAuraModifier(SPELL_AURA_MOD_ATTACKER_SPELL_AND_WEAPON_CRIT_CHANCE);
+                    crit_chance += GetBarkskinGlyphCritReduction(victim);
                 }
                 // scripted (increase crit chance ... against ... target by x%
                 AuraEffectList const& mOverrideClassScript = GetAuraEffectsByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
@@ -8432,6 +8445,11 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                 }
                 break; // Glyph of Stars / unknown race: SpellShapeshiftForm model
             }
+            case FORM_AQUA:
+                // Glyph of the Orca
+                if (HasAura(114333))
+                    return 4591;
+                break;
             case FORM_TRAVEL:
                 if (Player::TeamForRace(getRace()) == ALLIANCE)
                     return 40816;
