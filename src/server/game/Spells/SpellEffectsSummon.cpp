@@ -251,6 +251,10 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
 
                     if (damage)                                            // if not spell info, DB values used
                     {
+                        // Glyph of Totemic Vigor: totems gain 5% of the shaman's health
+                        if (AuraEffect const* totemicVigor = m_caster->GetAuraEffect(63298, EFFECT_0))
+                            damage += m_caster->CountPctFromMaxHealth(totemicVigor->GetAmount());
+
                         summon->SetMaxHealth(damage);
                         summon->SetHealth(damage);
                     }
@@ -853,8 +857,12 @@ void Spell::EffectDestroyAllTotems(SpellEffIndex /*effIndex*/)
         return;
 
     int32 mana = 0;
-    for (uint8 slot = SUMMON_SLOT_TOTEM; slot < MAX_TOTEM_SLOT; ++slot)
+    // the four totem slots, then the extra totem kept by Totemic Persistence
+    for (uint8 slot = SUMMON_SLOT_TOTEM; slot <= SUMMON_SLOT_TOTEM_EXTRA; ++slot)
     {
+        if (slot >= MAX_TOTEM_SLOT && slot != SUMMON_SLOT_TOTEM_EXTRA)
+            continue;
+
         if (!m_caster->m_SummonSlot[slot])
             continue;
 

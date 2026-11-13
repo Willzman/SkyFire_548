@@ -1350,7 +1350,8 @@ enum ReactiveType
 #define MAX_TOTEM_SLOT      5
 #define SUMMON_SLOT_MINIPET 5
 #define SUMMON_SLOT_QUEST   6
-#define MAX_SUMMON_SLOT     7
+#define SUMMON_SLOT_TOTEM_EXTRA 7   // second totem of one element kept by Totemic Persistence (108284)
+#define MAX_SUMMON_SLOT     8
 
 #define MAX_GAMEOBJECT_SLOT 4
 

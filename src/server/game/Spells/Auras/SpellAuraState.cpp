@@ -704,6 +704,12 @@ void AuraEffect::HandleAuraTransform(AuraApplication const* aurApp, uint8 mode, 
                             if (caster->HasAura(Skyfire::Spells::GetGlyphOfPenguinAuraSpellId()))
                                 model_id = Skyfire::Spells::GetGlyphOfPenguinDisplayId();
 
+                    // Hex with Glyph of the Compy
+                    if (GetId() == 51514)
+                        if (Unit* caster = GetCaster())
+                            if (caster->HasAura(147785))
+                                model_id = 29454;
+
                     target->SetDisplayId(model_id);
 
                     // Dragonmaw Illusion (set mount model also)
