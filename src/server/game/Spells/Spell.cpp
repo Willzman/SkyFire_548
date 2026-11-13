@@ -3193,7 +3193,8 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
         m_powerType = m_caster->getPowerType();
 
     // Fill cost data (not use power for item casts)
-    m_powerCost = (m_CastItem || m_darkSimulacrum) ? 0 : tmpPowerCost;
+    // A dead caster pays nothing: Ghost Wolf as a ghost (Glyph of Spirit Wolf). As in Legends of Azeroth.
+    m_powerCost = (m_CastItem || m_darkSimulacrum || !m_caster->IsAlive()) ? 0 : tmpPowerCost;
     m_periodicPowerCost = m_darkSimulacrum ? 0 : tmpPeriodicPowerCost;
 
 

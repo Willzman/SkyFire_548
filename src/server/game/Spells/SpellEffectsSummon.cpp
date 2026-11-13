@@ -258,6 +258,14 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                         summon->SetMaxHealth(damage);
                         summon->SetHealth(damage);
                     }
+
+                    // Glyph of Flaming Serpents: the Searing Totem looks like a Serpent Ward (creature 67906).
+                    // 147786 scales it down and swaps the Searing Bolt visual.
+                    if (entry == 2523 && m_caster->HasAura(147772))
+                    {
+                        summon->SetDisplayId(46820);
+                        summon->CastSpell(summon, 147786, true);
+                    }
                     break;
                 }
                 case SUMMON_TYPE_MINIPET:
@@ -1170,6 +1178,14 @@ void Spell::SummonGuardian(uint32 i, uint32 entry, SummonPropertiesEntry const* 
             }
             else
                 summon->SetDisplayId(1126);
+        }
+
+        // Glyph of Spirit Raptors: the Feral Spirit wolves look like Spirit Raptors (creature 73504).
+        // The model is set directly; 147908 would transform into 73504 at -25% scale, but that creature has no template here.
+        if (summon->GetEntry() == 29264 && caster->HasAura(147783))
+        {
+            summon->SetDisplayId(949);
+            summon->SetObjectScale(summon->GetObjectScale() * 0.75f);
         }
 
         summon->AI()->EnterEvadeMode();
