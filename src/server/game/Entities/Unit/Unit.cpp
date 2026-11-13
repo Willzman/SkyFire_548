@@ -5627,6 +5627,31 @@ void Unit::SetPower(Powers power, int32 val)
         }
     }
 
+    // Shadow Orbs: the orbs around the priest (ravens with Glyph of Shadow Ravens, 57985) and the
+    // Devouring Plague alert at full orbs. As in Legends of Azeroth.
+    if (power == POWER_SHADOW_ORBS && val != oldVal && GetTypeId() == TypeID::TYPEID_PLAYER)
+    {
+        if (val > 0)
+        {
+            uint32 const visual = HasAura(57985) ? 127850 : 77487;
+            RemoveAurasDueToSpell(visual == 77487 ? 127850 : 77487);
+            if (Aura* aura = GetAura(visual))
+                aura->RefreshDuration();
+            else
+                CastSpell(this, visual, true);
+        }
+        else
+        {
+            RemoveAurasDueToSpell(77487);
+            RemoveAurasDueToSpell(127850);
+        }
+
+        if (val == maxPower)
+            CastSpell(this, 124495, true);
+        else
+            RemoveAurasDueToSpell(124495);
+    }
+
     // SPELL_AURA_TRIGGER_ON_POWER_LEVEL (396): cast the trigger spell when this power crosses the aura's
     // amount, going up (misc value B 0) or down (1). Warlock T16 4P (Ember Master), ember/shard
     // visuals; Pursuit of Justice is scripted on its own (C2, ported from Legends of Azeroth Pandaria's Unit::SetPower).
@@ -6934,6 +6959,9 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
 
                 // FORM_SPIRITOFREDEMPTION and related auras
                 victim->CastSpell(victim, 27827, true, NULL, aurEff);
+                // Glyph of the Val'kyr: the Spirit of Redemption looks like a Val'kyr (as in Legends of Azeroth)
+                if (victim->HasAura(126094))
+                    victim->SetDisplayId(43573);
                 spiritOfRedemption = true;
                 break;
             }

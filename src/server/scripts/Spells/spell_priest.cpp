@@ -12,6 +12,7 @@
 #include <array>
 #include <map>
 #include <set>
+#include "BattlePetMgr.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "SpellScript.h"
@@ -1101,6 +1102,110 @@ public:
     }
 };
 
+// Glyph of Shadowy Friends (126745): Shadowform extends to the priest's non-combat pet.
+// Returns the companion to copy the Shadowform visual to, if any. From Legends of Azeroth.
+static Unit* GetShadowyFriend(Unit* priest)
+{
+    Player* player = priest->ToPlayer();
+    if (!player || !player->HasAura(126745) || !player->GetBattlePetMgr())
+        return NULL;
+
+    return player->GetBattlePetMgr()->GetCurrentSummon();
+}
+
+// 126123 - Confession (Glyph of Confession)
+// The friendly target confesses a random secret. Texts as listed in Legends of Azeroth (English only).
+class spell_pri_confession : public SpellScriptLoader
+{
+public:
+    spell_pri_confession() : SpellScriptLoader("spell_pri_confession") { }
+
+    class spell_pri_confession_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_pri_confession_SpellScript);
+
+        void HandleScript(SpellEffIndex /*effIndex*/)
+        {
+            static char const* const confessions[] =
+            {
+                "confesses: I once took a bow that a hunter wanted.",
+                "confesses: I have \"borrowed\" things from my guild bank.",
+                "confesses: I always forget to gem my gear.",
+                "confesses: I spent six months chasing the Time-Lost Proto-Drake.",
+                "confesses: I went into Alterac Valley and didn't help my team at all.",
+                "confesses: I died to an elevator once. Maybe more than once.",
+                "confesses: I never use the Lightwell.",
+                "confesses: I always wanted to be a paladin.",
+                "confesses: Troll toes sort of creep me out.",
+                "confesses: I have stood in the fire.",
+                "confesses: I told my raid leader that I was ready, but I wasn't really ready.",
+                "confesses: I fell off of Dalaran.",
+                "confesses: I asked a friend for gold to buy my first mount.",
+                "confesses: I said I had been in the dungeon before, but I had no idea what I was doing. It was embarassing.",
+                "confesses: I once punched a gnome. No reason. I was just having a bad day.",
+                "confesses: I outbid a friend on an auction for something I didn't really want.",
+                "confesses: I go into dungeons not to make Azeroth a better place, but just for loot.",
+                "confesses: I wasn't really at the opening of Ahn'Qiraj. I just read about it.",
+                "confesses: I don't really have a clue who the Sin'dorei are.",
+                "confesses: I don't treat all of my mounts equally.",
+                "confesses: I dabble in archaeology, but I'm just not that interested in history.",
+                "confesses: The draenei laugh really annoys me.",
+                "confesses: I haven't been in a barber shop in months. Goblins with scissors. Shudder.",
+                "confesses: I thought pandaren were a type of furbolg.",
+                "confesses: Oh, I took the candle.",
+                "confesses: This is just a setback.",
+                "confesses: I light things on fire and yell BY FIRE BE PURGED when nobody is looking.",
+                "confesses: I don't really remember you in the mountains.",
+                "confesses: I sometimes forget if Northrend is north or south of here.",
+                "confesses: I find all these names with so many apostrophes so confusing.",
+                "confesses: I forgot the Sunwell.",
+                "confesses: I really wasn't prepared. Who knew?",
+                "confesses: I sometimes wonder if tauren taste like... you know.",
+                "confesses: I ask for the Light to give me strength, but I'm not sure if it really does.",
+                "confesses: I sometimes use my mount to travel really short distances. I mean REALLY short.",
+                "confesses: I don't know if Milhouse is a good guy or not.",
+                "confesses: I know he's a jerk, but there's something about Garrosh....",
+                "confesses: I saw a mage cast a spell once and my jaw really did drop at the damage.",
+                "confesses: For a long time, I thought the plural of anecdote WAS data.",
+                "confesses: Sometimes I ask for a warlock to summon me when I'm really not that far away.",
+                "confesses: Sometimes when I'm questing, I want to be alone, so I pretend I can't hear my friends.",
+                "confesses: When my allies get mind controlled, I try really hard to kill them.",
+                "confesses: I don't use the strongest battle pets. Just the cutest ones.",
+                "confesses: I get heart of the wild and the other heart of the wild confused.",
+                "confesses: I always ask someone else how to reforge my gear.",
+                "confesses: I inspect others to see if they are inspecting me.",
+                "confesses: When pandaren tell me to slooow doooown, I just want to punch them.",
+                "confesses: I always sell all of my old gear to the same vendor. Dude's rich or something.",
+                "confesses: I care more about transmogrification gear than upgrade gear.",
+                "confesses: I can't decide between Horde and Alliance. Horde has goblin mages with quad-pigtails but Alliance has dwarf priests with twirly braids.",
+                "confesses: I haven't visited Sunsong Ranch in months. I can just imagine weeds and virmen everywhere.",
+                "confesses: I think one time I tried to kill Lei Shi instead of Lei Shen.",
+                "confesses: I used to think Medivh was a druid because of all the feathers.",
+                "confesses: I still carry around Argent Crusade Scorugestones. You never know when they'll be useful again.",
+                "confesses: I feel bad for my ground mounts. I hardly ever use them anymore.",
+                "confesses: I'm going to totally ninja that hunter's loot.",
+                "confesses: I am confused why female draenei like gnomes.",
+            };
+
+            Player* target = GetHitPlayer();
+            if (!target || target == GetCaster())
+                return;
+
+            target->TextEmote(confessions[urand(0, sizeof(confessions) / sizeof(confessions[0]) - 1)]);
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_pri_confession_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_pri_confession_SpellScript();
+    }
+};
+
 // 15473 - Shadowform
 class spell_pri_shadowform : public SpellScriptLoader
 {
@@ -1121,13 +1226,21 @@ public:
 
         void HandleEffectApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
-            GetTarget()->CastSpell(GetTarget(), GetTarget()->HasAura(SPELL_PRIEST_GLYPH_OF_SHADOW) ? SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH : SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH, true);
+            uint32 const visual = GetTarget()->HasAura(SPELL_PRIEST_GLYPH_OF_SHADOW) ? SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH : SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH;
+            GetTarget()->CastSpell(GetTarget(), visual, true);
+            if (Unit* friendPet = GetShadowyFriend(GetTarget()))
+                friendPet->CastSpell(friendPet, visual, true);
         }
 
         void HandleEffectRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
         {
             GetTarget()->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH);
             GetTarget()->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH);
+            if (Unit* friendPet = GetShadowyFriend(GetTarget()))
+            {
+                friendPet->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH);
+                friendPet->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH);
+            }
         }
 
         void Register() OVERRIDE
@@ -1165,6 +1278,11 @@ public:
             {
                 priest->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH);
                 priest->CastSpell(priest, SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH, true);
+                if (Unit* friendPet = GetShadowyFriend(priest))
+                {
+                    friendPet->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH);
+                    friendPet->CastSpell(friendPet, SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH, true);
+                }
             }
         }
 
@@ -1175,6 +1293,11 @@ public:
             {
                 priest->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH);
                 priest->CastSpell(priest, SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH, true);
+                if (Unit* friendPet = GetShadowyFriend(priest))
+                {
+                    friendPet->RemoveAurasDueToSpell(SPELL_PRIEST_SHADOWFORM_VISUAL_WITH_GLYPH);
+                    friendPet->CastSpell(friendPet, SPELL_PRIEST_SHADOWFORM_VISUAL_WITHOUT_GLYPH, true);
+                }
             }
         }
 
@@ -2217,6 +2340,15 @@ public:
 
             if (Guardian* pet = player->GetGuardianPet())
             {
+                // Glyph of the Sha (147776): the Shadowfiend or Mindbender looks like a Sha Beast
+                // (models of creatures 67235 and 67236, summoned by the glyph's own spells 132603 and 132604)
+                if (player->HasAura(147776) && (pet->GetEntry() == 19668 || pet->GetEntry() == 62982))
+                {
+                    uint32 const display = pet->GetEntry() == 62982 ? 46021 : 46020;
+                    pet->SetDisplayId(display);
+                    pet->SetNativeDisplayId(display);
+                }
+
                 pet->InitCharmInfo();
                 pet->SetReactState(REACT_DEFENSIVE);
                 if (pet->AI())
@@ -4526,6 +4658,7 @@ public:
 
 void AddSC_priest_spell_scripts()
 {
+    new spell_pri_confession();
     new spell_pri_prayer_of_healing();
     new spell_pri_greater_heal();
     new spell_pri_flash_heal();
