@@ -5157,6 +5157,12 @@ void Unit::ModSpellCastTime(SpellInfo const* spellProto, int32& castTime, Spell*
         castTime = int32(float(castTime) * m_modAttackSpeedPct[uint8(WeaponAttackType::RANGED_ATTACK)]);
     else if (spellProto->SpellVisual[0] == 3881 && HasAura(67556)) // cooking with Chef Hat.
         castTime = 500;
+
+    // Glyph of Righteous Retreat (115933): during Divine Shield (642) the Hearthstone (8690) is
+    // invoked 50% faster. As in Legends of Azeroth.
+    if (spellProto->Id == 8690 && HasAura(642))
+        if (AuraEffect const* righteousRetreat = GetAuraEffect(115933, EFFECT_0))
+            AddPct(castTime, righteousRetreat->GetAmount());
 }
 
 DiminishingLevels Unit::GetDiminishing(DiminishingGroup group)
