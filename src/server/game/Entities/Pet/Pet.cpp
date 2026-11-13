@@ -14,6 +14,7 @@
 #include "Pet.h"
 #include "PetTransportController.h"
 #include "PetTransportSupport.h"
+#include "Spell.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
 #include "SpellMgr.h"
@@ -628,6 +629,22 @@ void Pet::setDeathState(DeathState s)                       // overwrite virtual
     {
         //RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
         CastPetAuras(true);
+    }
+
+    // Demonic Rebirth (108559): when the demon dies the warlock's next demon summon is instant.
+    // 89140 marks the cooldown. Not when the demon was sacrificed. As in Legends of Azeroth.
+    if (s == DeathState::JUST_DIED)
+    {
+        Player* owner = GetOwner();
+        if (owner && owner->HasAura(108559) && !owner->HasAura(89140))
+        {
+            Spell* spell = owner->GetCurrentSpell(CURRENT_GENERIC_SPELL);
+            if (!spell || spell->GetSpellInfo()->Id != 108503)
+            {
+                owner->CastSpell(owner, 88448, true);
+                owner->CastSpell(owner, 89140, true);
+            }
+        }
     }
 }
 
