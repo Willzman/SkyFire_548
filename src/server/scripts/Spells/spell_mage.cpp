@@ -4155,8 +4155,91 @@ public:
     }
 };
 
+// 111264 - Ice Ward
+// When an enemy strikes the warded target, all enemies around it are frozen in place (111340).
+// The aura is a dummy with a proc and one charge; nothing cast the nova.
+class spell_mage_ice_ward : public SpellScriptLoader
+{
+public:
+    spell_mage_ice_ward() : SpellScriptLoader("spell_mage_ice_ward") { }
+
+    class spell_mage_ice_ward_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_mage_ice_ward_AuraScript);
+
+        void HandleProc(AuraEffect const* aurEff, ProcEventInfo& /*eventInfo*/)
+        {
+            PreventDefaultAction();
+            GetTarget()->CastSpell(GetTarget(), 111340, true, NULL, aurEff, GetCasterGUID());
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectProc += AuraEffectProcFn(spell_mage_ice_ward_AuraScript::HandleProc, EFFECT_0, SPELL_AURA_DUMMY);
+        }
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_mage_ice_ward_AuraScript();
+    }
+};
+
+// 475 - Remove Curse
+// Glyph of Remove Curse (115700): damage dealt is increased (115701) after a curse is successfully removed.
+class spell_mage_glyph_of_remove_curse : public SpellScriptLoader
+{
+public:
+    spell_mage_glyph_of_remove_curse() : SpellScriptLoader("spell_mage_glyph_of_remove_curse") { }
+
+    class spell_mage_glyph_of_remove_curse_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_mage_glyph_of_remove_curse_SpellScript);
+
+        bool Load() OVERRIDE
+        {
+            _hadCurse = false;
+            return true;
+        }
+
+        // runs before the dispel itself
+        void HandleDispel(SpellEffIndex /*effIndex*/)
+        {
+            Unit* target = GetHitUnit();
+            if (!target || !GetCaster()->HasAura(115700))
+                return;
+
+            DispelChargesList curses;
+            target->GetDispellableAuraList(GetCaster(), 1 << DISPEL_CURSE, curses);
+            _hadCurse = !curses.empty();
+        }
+
+        void HandleAfterHit()
+        {
+            if (_hadCurse)
+                GetCaster()->CastSpell(GetCaster(), 115701, true);
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_mage_glyph_of_remove_curse_SpellScript::HandleDispel, EFFECT_0, SPELL_EFFECT_DISPEL);
+            AfterHit += SpellHitFn(spell_mage_glyph_of_remove_curse_SpellScript::HandleAfterHit);
+        }
+
+    private:
+        bool _hadCurse;
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_mage_glyph_of_remove_curse_SpellScript();
+    }
+};
+
 void AddSC_mage_spell_scripts()
 {
+    new spell_mage_ice_ward();
+    new spell_mage_glyph_of_remove_curse();
     new spell_mage_frostjaw(); // 5.4.8 18414
     new spell_mage_pyroblast(); // 5.4.8 18414
     new spell_mage_time_warp(); // 5.4.8 18414
