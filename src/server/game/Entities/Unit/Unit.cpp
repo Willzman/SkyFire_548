@@ -1111,7 +1111,15 @@ SpellMissInfo Unit::MagicSpellHitResult(Unit* victim, SpellInfo const* spellInfo
         int32 deflect_chance = victim->GetTotalAuraModifier(SPELL_AURA_DEFLECT_SPELLS) * 100;
         tmp += deflect_chance;
         if (rand < tmp)
+        {
+            // Glyph of Mirrored Blades (83495): a single-target spell deflected by Deterrence is reflected instead
+            if (spellInfo->NeedsExplicitUnitTarget() && !spellInfo->IsAffectingArea())
+                if (AuraEffect const* mirroredBlades = victim->GetAuraEffect(83495, EFFECT_0))
+                    if (roll_chance_i(mirroredBlades->GetAmount()))
+                        return SPELL_MISS_REFLECT;
+
             return SPELL_MISS_DEFLECT;
+        }
     }
 
     return SPELL_MISS_NONE;
