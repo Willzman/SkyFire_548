@@ -18045,6 +18045,23 @@ void Player::AddSpellAndCategoryCooldowns(SpellInfo const* spellInfo, uint32 ite
             break;                                                  // only one applies
         }
 
+        // SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE: spell haste shortens the cooldown of the affected spells
+        // (Frost Bomb, Glyph of Imp Swarm), as in TrinityCore (SpellHistory::GetCooldownDurations)
+        Unit::AuraEffectList const& cooldownBySpellHaste = GetAuraEffectsByType(SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE);
+        for (Unit::AuraEffectList::const_iterator itr = cooldownBySpellHaste.begin(); itr != cooldownBySpellHaste.end(); ++itr)
+        {
+            if (!(*itr)->IsAffectingSpell(spellInfo))
+                continue;
+
+            float hasteMod = GetFloatValue(UNIT_FIELD_MOD_SPELL_HASTE); // time multiplier, below 1.0 when hasted
+            if (hasteMod > 0.0f && hasteMod < 1.0f)
+            {
+                rec = int32(rec * hasteMod);
+                catrec = int32(catrec * hasteMod);
+            }
+            break;                                                  // only one applies
+        }
+
         // Category charges own the long recharge (e.g. Charge + Double Time). Applying
         // RecoveryTime as a normal spell CD locks the button for ~20s and makes the client
         // look like both charges were spent. SPELL_GO also uses CAST_FLAG_NO_COOLDOWN so the
@@ -21760,6 +21777,9 @@ void Player::HandleFall(MovementInfo const& movementInfo)
 
             if (damage > 0)
             {
+                // Bouncy (Pandaren), Zen and other fall damage percent auras
+                damage = uint32(damage * std::max(GetTotalAuraMultiplier(SPELL_AURA_MODIFY_FALL_DAMAGE_PCT), 0.0f));
+
                 //Prevent fall damage from being more than the player maximum health
                 if (damage > GetMaxHealth())
                     damage = GetMaxHealth();

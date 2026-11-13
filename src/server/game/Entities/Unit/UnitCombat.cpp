@@ -1413,6 +1413,10 @@ void Unit::AttackerStateUpdate(Unit* victim, WeaponAttackType attType, bool extr
     if (HasUnitState(UNIT_STATE_CANNOT_AUTOATTACK) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
         return;
 
+    // Deterrence, Felstorm, Wrathstorm: no auto-attacks while the aura lasts
+    if (HasAuraType(SPELL_AURA_DISABLE_ATTACKING_EXCEPT_ABILITIES) || HasAuraType(SPELL_AURA_DISABLE_AUTOATTACK))
+        return;
+
     if (!victim->IsAlive())
         return;
 
