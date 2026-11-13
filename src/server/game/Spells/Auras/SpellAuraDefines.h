@@ -308,7 +308,7 @@ enum AuraType
     SPELL_AURA_PHASE = 261,
     SPELL_AURA_ABILITY_IGNORE_AURASTATE = 262,
     SPELL_AURA_ALLOW_ONLY_ABILITY = 263,
-    SPELL_AURA_264 = 264,
+    SPELL_AURA_DISABLE_ATTACKING_EXCEPT_ABILITIES = 264,  // no auto-attacks (Deterrence, Felstorm)
     SPELL_AURA_265 = 265,
     SPELL_AURA_266 = 266,
     SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL = 267,
@@ -391,14 +391,14 @@ enum AuraType
     SPELL_AURA_MOD_AUTOATTACK_DAMAGE = 344,  // NYI
     SPELL_AURA_BYPASS_ARMOR_FOR_CASTER = 345,
     SPELL_AURA_ENABLE_ALT_POWER = 346,  // NYI
-    SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE = 347,  // NYI
+    SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE = 347,  // spell haste shortens the cooldown of the affected spells
     SPELL_AURA_DEPOSIT_BONUS_MONEY_IN_GUILD_BANK_ON_LOOT = 348,  // NYI
     SPELL_AURA_MOD_CURRENCY_GAIN = 349,
     SPELL_AURA_MOD_GATHERING_ITEMS_GAINED_PERCENT = 350,  // NYI
     SPELL_AURA_351 = 351,
     SPELL_AURA_ENABLE_WORGER_ALTERED_FORM = 352,
     SPELL_AURA_MOD_CAMOUFLAGE = 353,  // NYI
-    SPELL_AURA_354 = 354,  // Restoration Shaman mastery - mod healing based on target's health (less = more healing)
+    SPELL_AURA_MOD_HEALING_DONE_PCT_VERSUS_TARGET_HEALTH = 354,  // Restoration Shaman mastery - mod healing based on target's health (less = more healing)
     SPELL_AURA_355 = 355,
     SPELL_AURA_MOD_DAMAGE_DONE_BY_MANA_PCT = 356,  // Arcane Mage mastery - mod damage based on current mana
     SPELL_AURA_ENABLE_BOSS1_UNIT_FRAME = 357,
@@ -416,7 +416,7 @@ enum AuraType
     SPELL_AURA_ENABLE_POWER_BAR_TIMER = 369,
     SPELL_AURA_SET_FAIR_FAR_CLIP = 370,  // Overrides client's View Distance setting to max("Fair", current_setting)
     // Pandaria
-    SPELL_AURA_371 = 371,
+    SPELL_AURA_DISABLE_AUTOATTACK = 371,  // no auto-attacks (Felstorm, Wrathstorm)
     SPELL_AURA_372 = 372,
     SPELL_AURA_373 = 373,  // SPELL_AURA_ALLOW_ONLY_ABILITY2 ??
     SPELL_AURA_MODIFY_FALL_DAMAGE_PCT = 374,

@@ -311,7 +311,7 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandlePhase,                                     //261 SPELL_AURA_PHASE
     &AuraEffect::HandleNoImmediateEffect,                         //262 SPELL_AURA_ABILITY_IGNORE_AURASTATE implemented in spell::cancast
     &AuraEffect::HandleAuraAllowOnlyAbility,                      //263 SPELL_AURA_ALLOW_ONLY_ABILITY player can use only abilities set in SpellClassMask
-    &AuraEffect::HandleUnused,                                    //264 unused (3.2.0)
+    &AuraEffect::HandleNoImmediateEffect,                         //264 SPELL_AURA_DISABLE_ATTACKING_EXCEPT_ABILITIES implemented in Unit::AttackerStateUpdate
     &AuraEffect::HandleUnused,                                    //265 unused (4.3.4)
     &AuraEffect::HandleUnused,                                    //266 unused (4.3.4)
     &AuraEffect::HandleNoImmediateEffect,                         //267 SPELL_AURA_MOD_IMMUNE_AURA_APPLY_SCHOOL         implemented in Unit::IsImmunedToSpellEffect
@@ -394,14 +394,14 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleModAutoAttackDamage,                       //344 SPELL_AURA_MOD_AUTOATTACK_DAMAGE implemented in Player::CalculateMinMaxDamage
     &AuraEffect::HandleNoImmediateEffect,                         //345 SPELL_AURA_BYPASS_ARMOR_FOR_CASTER
     &AuraEffect::HandleEnableAltPower,                            //346 SPELL_AURA_ENABLE_ALT_POWER
-    &AuraEffect::HandleNULL,                                      //347 SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE
+    &AuraEffect::HandleNoImmediateEffect,                         //347 SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE implemented in Player::AddSpellAndCategoryCooldowns
     &AuraEffect::HandleNoImmediateEffect,                         //348 SPELL_AURA_DEPOSIT_BONUS_MONEY_IN_GUILD_BANK_ON_LOOT implemented in WorldSession::HandleLootMoneyOpcode
     &AuraEffect::HandleNoImmediateEffect,                         //349 SPELL_AURA_MOD_CURRENCY_GAIN implemented in Player::ModifyCurrency
     &AuraEffect::HandleNULL,                                      //350 SPELL_AURA_MOD_GATHERING_ITEMS_GAINED_PERCENT
     &AuraEffect::HandleNULL,                                      //351 SPELL_AURA_351
     &AuraEffect::HandleNoImmediateEffect,                         //352 SPELL_AURA_ENABLE_WORGER_ALTERED_FORM
     &AuraEffect::HandleNULL,                                      //353 SPELL_AURA_MOD_CAMOUFLAGE
-    &AuraEffect::HandleNULL,                                      //354 SPELL_AURA_354
+    &AuraEffect::HandleNoImmediateEffect,                         //354 SPELL_AURA_MOD_HEALING_DONE_PCT_VERSUS_TARGET_HEALTH implemented in Unit::SpellHealingBonusDone
     &AuraEffect::HandleUnused,                                    //355 unused (4.3.4)
     &AuraEffect::HandleNoImmediateEffect,                         //356 SPELL_AURA_MOD_DAMAGE_DONE_BY_MANA_PCT implemented in Unit::SpellDamageBonusDone
     &AuraEffect::HandleNULL,                                      //357 SPELL_AURA_ENABLE_BOSS1_UNIT_FRAME
@@ -420,10 +420,10 @@ pAuraEffectHandler AuraEffectHandler[TOTAL_AURAS] =
     &AuraEffect::HandleNULL,                                      //370 SPELL_AURA_SET_FAIR_FAR_CLIP
 
     // Auras < 371 Need Recheck.
-    &AuraEffect::HandleNULL,                                      //371 SPELL_AURA_371
+    &AuraEffect::HandleNoImmediateEffect,                         //371 SPELL_AURA_DISABLE_AUTOATTACK implemented in Unit::AttackerStateUpdate
     &AuraEffect::HandleNULL,                                      //372 SPELL_AURA_372 (used in spell 130041) (5.4.2)
     &AuraEffect::HandleNULL,                                      //373 SPELL_AURA_373
-    &AuraEffect::HandleNULL,                                      //374 SPELL_AURA_374
+    &AuraEffect::HandleNoImmediateEffect,                         //374 SPELL_AURA_MODIFY_FALL_DAMAGE_PCT implemented in Player::HandleFall
     &AuraEffect::HandleUnused,                                    //375 unused (5.4.2)
     &AuraEffect::HandleNULL,                                      //376 SPELL_AURA_376
     &AuraEffect::HandleNULL,                                      //377 SPELL_AURA_377

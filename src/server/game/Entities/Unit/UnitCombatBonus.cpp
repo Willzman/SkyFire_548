@@ -407,6 +407,17 @@ uint32 Unit::SpellHealingBonusDone(Unit* victim, SpellInfo const* spellProto, ui
     for (AuraEffectList::const_iterator i = mHealingDonePct.begin(); i != mHealingDonePct.end(); ++i)
         AddPct(DoneTotalMod, (*i)->GetAmount());
 
+    // Mastery: Deep Healing (SPELL_AURA_MOD_HEALING_DONE_PCT_VERSUS_TARGET_HEALTH): the amount is the bonus on a target
+    // with no health left and scales down linearly to nothing at full health
+    if (victim)
+    {
+        float const missingHealthPct = 100.0f - std::floor(victim->GetHealthPct());
+        AuraEffectList const& mHealingVsHealth = GetAuraEffectsByType(SPELL_AURA_MOD_HEALING_DONE_PCT_VERSUS_TARGET_HEALTH);
+        for (AuraEffectList::const_iterator i = mHealingVsHealth.begin(); i != mHealingVsHealth.end(); ++i)
+            if ((*i)->IsAffectingSpell(spellProto))
+                AddPct(DoneTotalMod, CalculatePct(float((*i)->GetAmount()), missingHealthPct));
+    }
+
     // done scripted mod (take it from owner)
     Unit const* owner = GetOwner() ? GetOwner() : this;
     AuraEffectList const& mOverrideClassScript = owner->GetAuraEffectsByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
