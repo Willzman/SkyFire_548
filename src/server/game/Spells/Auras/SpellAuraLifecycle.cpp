@@ -389,6 +389,7 @@ void Aura::RefreshDuration()
 void Aura::RefreshTimers()
 {
     m_maxDuration = CalcMaxDuration();
+    int32 const baseDuration = m_maxDuration;
     bool resetPeriodic = true;
     if (m_spellInfo->AttributesEx8 & SPELL_ATTR8_DONT_RESET_PERIODIC_TIMER)
     {
@@ -406,8 +407,27 @@ void Aura::RefreshTimers()
         }
     }
 
-    RefreshDuration();
     Unit* caster = GetCaster();
+
+    // Pandemic (131973): refreshing a periodic damage effect adds the time that was left to the new
+    // duration, up to 50% of the base duration. As in Legends of Azeroth.
+    if (caster && baseDuration > 0 && GetDuration() > 0 && GetId() != 116858)   // not Chaos Bolt (cumulative periodic, attribute not loaded here)
+    {
+        if (AuraEffect const* pandemic = caster->GetAuraEffect(131973, EFFECT_0))
+        {
+            bool periodicDamage = false;
+            for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+                if (AuraEffect const* eff = GetEffect(i))
+                    if (eff->GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE || eff->GetAuraType() == SPELL_AURA_PERIODIC_LEECH ||
+                        eff->GetAuraType() == SPELL_AURA_PERIODIC_DAMAGE_PERCENT)
+                        periodicDamage = true;
+
+            if (periodicDamage)
+                m_maxDuration = std::min(baseDuration + GetDuration(), baseDuration + CalculatePct(baseDuration, pandemic->GetAmount()));
+        }
+    }
+
+    RefreshDuration();
     for (uint32 i = 0; i < MAX_SPELL_EFFECTS; ++i)
         if (HasEffect(i))
             GetEffect(i)->CalculatePeriodic(caster, resetPeriodic, false);
