@@ -1664,6 +1664,9 @@ void Unit::UpdateUnderwaterState(Map* m, float x, float y, float z)
         if (_lastLiquid && _lastLiquid->SpellId && _lastLiquid->Id != liqEntry)
             RemoveAurasDueToSpell(_lastLiquid->SpellId);
 
+        // set before the liquid spell is cast: the cast can move the unit and re-enter this function
+        _lastLiquid = liquid;
+
         if (liquid && liquid->SpellId)
         {
             if (res & (LIQUID_MAP_UNDER_WATER | LIQUID_MAP_IN_WATER))
@@ -1676,7 +1679,6 @@ void Unit::UpdateUnderwaterState(Map* m, float x, float y, float z)
         }
 
         RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_NOT_ABOVEWATER);
-        _lastLiquid = liquid;
     }
     else if (_lastLiquid && _lastLiquid->SpellId)
     {
