@@ -234,9 +234,14 @@ void CalendarMgr::UpdateInvite(CalendarInvite* invite)
 
 void CalendarMgr::RemoveAllPlayerEventsAndInvites(uint64 guid)
 {
-    for (CalendarEventStore::const_iterator itr = _events.begin(); itr != _events.end(); ++itr)
-        if ((*itr)->GetCreatorGUID() == guid)
-            RemoveEvent((*itr)->GetEventId(), 0); // don't send mail if removing a character
+    for (CalendarEventStore::const_iterator itr = _events.begin(); itr != _events.end();)
+    {
+        // RemoveEvent erases the event from _events: step past it first
+        CalendarEvent* calendarEvent = *itr;
+        ++itr;
+        if (calendarEvent->GetCreatorGUID() == guid)
+            RemoveEvent(calendarEvent->GetEventId(), 0); // don't send mail if removing a character
+    }
 
     CalendarInviteStore playerInvites = GetPlayerInvites(guid);
     for (CalendarInviteStore::const_iterator itr = playerInvites.begin(); itr != playerInvites.end(); ++itr)
@@ -245,9 +250,14 @@ void CalendarMgr::RemoveAllPlayerEventsAndInvites(uint64 guid)
 
 void CalendarMgr::RemovePlayerGuildEventsAndSignups(uint64 guid, uint32 guildId)
 {
-    for (CalendarEventStore::const_iterator itr = _events.begin(); itr != _events.end(); ++itr)
-        if ((*itr)->GetCreatorGUID() == guid && ((*itr)->IsGuildEvent() || (*itr)->IsGuildAnnouncement()))
-            RemoveEvent((*itr)->GetEventId(), guid);
+    for (CalendarEventStore::const_iterator itr = _events.begin(); itr != _events.end();)
+    {
+        // RemoveEvent erases the event from _events: step past it first
+        CalendarEvent* calendarEvent = *itr;
+        ++itr;
+        if (calendarEvent->GetCreatorGUID() == guid && (calendarEvent->IsGuildEvent() || calendarEvent->IsGuildAnnouncement()))
+            RemoveEvent(calendarEvent->GetEventId(), guid);
+    }
 
     CalendarInviteStore playerInvites = GetPlayerInvites(guid);
     for (CalendarInviteStore::const_iterator itr = playerInvites.begin(); itr != playerInvites.end(); ++itr)

@@ -101,8 +101,11 @@ void WorldSession::HandleGuildDeclineOpcode(WorldPacket& /*recvPacket*/)
 {
     SF_LOG_DEBUG("guild", "CMSG_GUILD_DECLINE [%s]", GetPlayerInfo().c_str());
 
+    // only a player who is not in a guild can decline an invite
+    if (GetPlayer()->GetGuildId())
+        return;
+
     GetPlayer()->SetGuildIdInvited(0);
-    GetPlayer()->SetInGuild(0);
 
     if (GetPlayer()->GetLastGuildInviterGUID())
     {
