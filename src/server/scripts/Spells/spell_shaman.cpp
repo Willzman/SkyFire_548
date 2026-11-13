@@ -20,6 +20,7 @@
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
 #include "TemporarySummon.h"
+#include "VMapFactory.h"
 
 enum ShamanSpells
 {
@@ -71,6 +72,9 @@ enum ShamanSpells
     SPELL_SHAMAN_GLYPH_OF_LIGHTNING_SHIELD_MOD  = 142912,
     SPELL_SHAMAN_GLYPH_OF_PURGING               = 147762,
     SPELL_SHAMAN_GLYPH_OF_SHAMANISTIC_RAGE      = 63280,
+    SPELL_SHAMAN_GLYPH_OF_ASTRAL_FIXATION       = 147787,
+    SPELL_SHAMAN_GLYPH_OF_FAR_SIGHT             = 58059,
+    SPELL_SHAMAN_GLYPH_OF_SPIRIT_WOLF           = 147770,
 
     SPELL_SHAMAN_GLYPH_OF_THUNDERSTORM          = 62132,
     SPELL_SHAMAN_GROUNDING_TOTEM_EFFECT         = 8178,
@@ -1109,6 +1113,109 @@ public:
     SpellScript* GetSpellScript() const OVERRIDE
     {
         return new spell_sha_glyph_of_lakestrider_SpellScript();
+    }
+};
+
+// 2645 - Ghost Wolf
+// The client lets Ghost Wolf be cast while dead; only Glyph of Spirit Wolf (147770) allows it.
+class spell_sha_glyph_of_spirit_wolf : public SpellScriptLoader
+{
+public:
+    spell_sha_glyph_of_spirit_wolf() : SpellScriptLoader("spell_sha_glyph_of_spirit_wolf") { }
+
+    class spell_sha_glyph_of_spirit_wolf_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_glyph_of_spirit_wolf_SpellScript);
+
+        SpellCastResult CheckCast()
+        {
+            if (!GetCaster()->IsAlive() && !GetCaster()->HasAura(SPELL_SHAMAN_GLYPH_OF_SPIRIT_WOLF))
+                return SpellCastResult::SPELL_FAILED_CASTER_DEAD;
+
+            return SpellCastResult::SPELL_CAST_OK;
+        }
+
+        void Register() OVERRIDE
+        {
+            OnCheckCast += SpellCheckCastFn(spell_sha_glyph_of_spirit_wolf_SpellScript::CheckCast);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_sha_glyph_of_spirit_wolf_SpellScript();
+    }
+};
+
+// 6196 - Far Sight
+// Only usable outdoors unless the shaman has Glyph of Far Sight (58059). The spell has no outdoors attribute.
+class spell_sha_far_sight : public SpellScriptLoader
+{
+public:
+    spell_sha_far_sight() : SpellScriptLoader("spell_sha_far_sight") { }
+
+    class spell_sha_far_sight_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_far_sight_SpellScript);
+
+        SpellCastResult CheckCast()
+        {
+            Unit* caster = GetCaster();
+            if (caster->GetTypeId() == TypeID::TYPEID_PLAYER && !caster->HasAura(SPELL_SHAMAN_GLYPH_OF_FAR_SIGHT) &&
+                VMAP::VMapFactory::createOrGetVMapManager()->isLineOfSightCalcEnabled() &&
+                !caster->GetMap()->IsOutdoors(caster->GetPositionX(), caster->GetPositionY(), caster->GetPositionZ()))
+                return SpellCastResult::SPELL_FAILED_ONLY_OUTDOORS;
+
+            return SpellCastResult::SPELL_CAST_OK;
+        }
+
+        void Register() OVERRIDE
+        {
+            OnCheckCast += SpellCheckCastFn(spell_sha_far_sight_SpellScript::CheckCast);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_sha_far_sight_SpellScript();
+    }
+};
+
+// 556 - Astral Recall
+// Glyph of Astral Fixation (147787): go to the capital's Earthshrine instead of the home location.
+// No spell_target_position data exists for the glyph's own teleports (147901, 147902), so the
+// destination is the middle of the Earthshrine's portal ring (portal gameobject spawns).
+class spell_sha_astral_recall : public SpellScriptLoader
+{
+public:
+    spell_sha_astral_recall() : SpellScriptLoader("spell_sha_astral_recall") { }
+
+    class spell_sha_astral_recall_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_sha_astral_recall_SpellScript);
+
+        void HandleTeleport(SpellEffIndex effIndex)
+        {
+            Player* player = GetHitPlayer();
+            if (!player || !player->HasAura(SPELL_SHAMAN_GLYPH_OF_ASTRAL_FIXATION))
+                return;
+
+            PreventHitDefaultEffect(effIndex);
+            if (player->GetTeam() == ALLIANCE)
+                player->TeleportTo(0, -8209.24f, 425.82f, 118.0f, 0.0f);    // Stormwind, Eastern Earthshrine
+            else
+                player->TeleportTo(1, 2048.13f, -4376.94f, 98.5f, 0.0f);    // Orgrimmar, Western Earthshrine
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_sha_astral_recall_SpellScript::HandleTeleport, EFFECT_0, SPELL_EFFECT_TELEPORT_UNITS);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_sha_astral_recall_SpellScript();
     }
 };
 
@@ -4041,6 +4148,9 @@ void AddSC_shaman_spell_scripts()
     new spell_sha_glyph_of_lakestrider();
     new spell_sha_glyph_of_purging();
     new spell_sha_glyph_of_shamanistic_rage();
+    new spell_sha_glyph_of_spirit_wolf();
+    new spell_sha_far_sight();
+    new spell_sha_astral_recall();
     new spell_sha_healing_rain();
     new spell_sha_healing_stream();
     new spell_sha_heroism();
