@@ -1420,6 +1420,8 @@ public:
     void InitStatsForLevel(bool reapplyMods = false);
     // Drops spells of the class's other specializations
     void RemoveSpecializationSpells();
+    // Grimoire of Service (108501): keeps the five Grimoire summon spells in step with the talent and spec
+    void UpdateGrimoireOfServiceSpells();
 
     // .cheat command related
     bool GetCommandStatus(uint32 command) const

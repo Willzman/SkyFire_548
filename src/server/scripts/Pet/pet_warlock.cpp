@@ -10,10 +10,12 @@
 
 #include "ObjectAccessor.h"
 #include "Pet.h"
+#include "Player.h"
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
+#include "SpellMgr.h"
 
 enum WarlockPetSpells
 {
@@ -136,6 +138,132 @@ public:
     CreatureAI* GetAI(Creature* creature) const OVERRIDE
     {
         return new npc_warl_infernalAI(creature);
+    }
+};
+
+// 416 - Imp, 1860 - Voidwalker, 1863 - Succubus, 417 - Felhunter, 17252 - Felguard
+// Only the guardians summoned by Grimoire of Service (111859, 111895, 111896, 111897, 111898);
+// the warlock's real pet uses PetAI. From Legends of Azeroth, with the basic attack repeated on its cooldown.
+class npc_grimoire_of_service_pet : public CreatureScript
+{
+public:
+    npc_grimoire_of_service_pet() : CreatureScript("npc_grimoire_of_service_pet") { }
+
+    struct npc_grimoire_of_service_petAI : public ScriptedAI
+    {
+        npc_grimoire_of_service_petAI(Creature* creature) : ScriptedAI(creature)
+        {
+            _basicAttack = 0;
+            _specialAbility = 0;
+            _basicAttackTimer = 0;
+            _started = false;
+            _needFelstorm = false;
+
+            switch (me->GetEntry())
+            {
+                case 416:   _basicAttack = 3110;  _specialAbility = 89808; break; // Firebolt, Singe Magic
+                case 1860:  _basicAttack = 3716;  _specialAbility = 17735; break; // Torment, Suffering
+                case 417:   _basicAttack = 54049; _specialAbility = 19647; break; // Shadow Bite, Spell Lock
+                case 1863:  _basicAttack = 7814;  _specialAbility = 6358;  break; // Lash of Pain, Seduction
+                case 17252: _basicAttack = 30213; _specialAbility = 89766; _needFelstorm = true; break; // Legion Strike, Axe Toss
+                default:
+                    break;
+            }
+        }
+
+        void Reset() OVERRIDE
+        {
+            ApplyWarlockGuardianAuras(me);
+        }
+
+        void AttackStart(Unit* victim) OVERRIDE
+        {
+            if (me->GetEntry() == 416)
+                AttackStartCaster(victim, 30.0f);
+            else
+                ScriptedAI::AttackStart(victim);
+        }
+
+        // The demon uses its special ability once, on the warlock's target (the Imp on the warlock)
+        void Start()
+        {
+            _started = true;
+
+            Unit* owner = me->GetOwner();
+            if (!owner)
+                return;
+
+            Unit* victim = ObjectAccessor::GetUnit(*me, owner->GetTarget());
+            if (victim && !me->IsValidAttackTarget(victim))
+                victim = NULL;
+
+            if (victim)
+                AttackStart(victim);
+
+            Unit* abilityTarget = me->GetEntry() == 416 ? owner : victim;
+            if (abilityTarget && _specialAbility)
+            {
+                me->CastSpell(abilityTarget, _specialAbility, false);
+                if (me->GetEntry() == 417)
+                    me->CastSpell(abilityTarget, 19505, true); // Devour Magic
+            }
+        }
+
+        void UpdateAI(uint32 diff) OVERRIDE
+        {
+            if (!_started)
+                Start();
+
+            if (_basicAttackTimer > diff)
+                _basicAttackTimer -= diff;
+            else
+                _basicAttackTimer = 0;
+
+            if (!UpdateVictim())
+                return;
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+
+            if (_needFelstorm && me->IsWithinMeleeRange(me->GetVictim()))
+            {
+                me->CastSpell(me, 89751, true); // Felstorm
+                _needFelstorm = false;
+            }
+
+            if (_basicAttack && !_basicAttackTimer)
+            {
+                if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(_basicAttack))
+                {
+                    DoCastVictim(_basicAttack);
+                    _basicAttackTimer = std::max<uint32>(spellInfo->GetRecoveryTime(), 1500);
+                }
+            }
+
+            DoMeleeAttackIfReady();
+        }
+
+    private:
+        uint32 _basicAttack;
+        uint32 _specialAbility;
+        uint32 _basicAttackTimer;
+        bool _started;
+        bool _needFelstorm;
+    };
+
+    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    {
+        switch (creature->GetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL))
+        {
+            case 111859:
+            case 111895:
+            case 111896:
+            case 111897:
+            case 111898:
+                return new npc_grimoire_of_service_petAI(creature);
+            default:
+                return NULL;    // anything else with these entries keeps its normal AI
+        }
     }
 };
 
@@ -325,6 +453,7 @@ public:
 void AddSC_warlock_pet_scripts()
 {
     new npc_doomguard();
+    new npc_grimoire_of_service_pet();
     new npc_warl_infernal();
     new npc_wild_imp();
     new npc_demonic_gateway();
