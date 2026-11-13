@@ -3448,10 +3448,14 @@ bool Unit::isSpellCrit(Unit* victim, SpellInfo const* spellProto, SpellSchoolMas
 
                     switch ((*i)->GetMiscValue())
                     {
-                        // Shatter // 5.4.8
+                        // Shatter (12982): doubles the critical strike chance against frozen targets
+                        // plus an additional 50% (the spell's dummy effect). As in Legends of Azeroth.
                         case 911:
                             if (victim->HasAuraState(AURA_STATE_FROZEN, spellProto, this))
-                                ApplyPct(crit_chance, (*i)->GetAmount() * 25);
+                            {
+                                crit_chance *= 2.0f;
+                                crit_chance += float((*i)->GetSpellInfo()->Effects[EFFECT_1].CalcValue(this));
+                            }
                             break;
                         default:
                             break;
