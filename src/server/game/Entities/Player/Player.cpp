@@ -3400,6 +3400,7 @@ void Player::LearnSpecialization(uint32 specializationId)
         if (!HasSpell(*iter))
             learnSpell(*iter, true);
 
+    UpdateGrimoireOfServiceSpells();
     SendTalentsInfoData();
 }
 
@@ -3426,6 +3427,26 @@ void Player::InitTalentForLevel()
 
     if (!GetSession()->PlayerLoading())
         SendTalentsInfoData();                         // update at client
+}
+
+void Player::UpdateGrimoireOfServiceSpells()
+{
+    if (getClass() != CLASS_WARLOCK)
+        return;
+
+    // The talent's own effect is a dummy; the client expects the server to teach these.
+    // Grimoire: Imp, Voidwalker, Succubus, Felhunter, and Felguard for Demonology only.
+    static uint32 const grimoireSpells[5] = { 111859, 111895, 111896, 111897, 111898 };
+    bool const hasTalent = HasSpell(108501);
+    for (uint8 i = 0; i < 5; ++i)
+    {
+        uint32 const spellId = grimoireSpells[i];
+        bool const wanted = hasTalent && (spellId != 111898 || GetTalentSpecialization(GetActiveSpec()) == SPEC_WARLOCK_DEMONOLOGY);
+        if (wanted && !HasSpell(spellId))
+            learnSpell(spellId, true);
+        else if (!wanted && HasSpell(spellId))
+            removeSpell(spellId);
+    }
 }
 
 void Player::RemoveSpecializationSpells()
@@ -4152,6 +4173,9 @@ void Player::learnSpell(uint32 spell_id, bool dependent)
     if (spell_id == SPELL_BATTLE_PET_TRAINING_PASSIVE && !HasSpell(SPELL_TRACK_PETS))
         learnSpell(SPELL_TRACK_PETS, true);
 
+    if (spell_id == 108501)
+        UpdateGrimoireOfServiceSpells();
+
     // learn all disabled higher ranks and required spells (recursive)
     if (disabled)
     {
@@ -4384,6 +4408,9 @@ void Player::removeSpell(uint32 spell_id, bool disabled, bool learn_low_rank)
         data << uint32(spell_id);
         GetSession()->SendPacket(&data);
     }
+
+    if (spell_id == 108501)
+        UpdateGrimoireOfServiceSpells();
 }
 
 void Player::RemoveSpellCooldown(uint32 spell_id, bool update /* = false */)
@@ -4764,6 +4791,8 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         SetUInt32Value(PLAYER_FIELD_CURRENT_SPEC_ID, 0);
         UpdateTalentSpecializationManaBonus();
     }
+
+    UpdateGrimoireOfServiceSpells();
 
     SQLTransaction trans = CharacterDatabase.BeginTransaction();
     _SaveTalents(trans);
@@ -13041,6 +13070,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder* holder)
     InitTalentForLevel();
     learnDefaultSpells();
     RemoveSpecializationSpells();
+    UpdateGrimoireOfServiceSpells();
 
     // must be before inventory (some items required reputation check)
     m_reputationMgr->LoadFromDB(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_REPUTATION));
