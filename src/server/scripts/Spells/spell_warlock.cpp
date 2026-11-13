@@ -60,6 +60,8 @@ enum WarlockSpells
     SPELL_WARLOCK_FEL_FLAME                         = 77799,
     SPELL_WARLOCK_FIRE_AND_BRIMSTONE                = 108683,
     SPELL_WARLOCK_GLYPH_OF_CONFLAGRATE              = 56235,
+    SPELL_WARLOCK_GLYPH_OF_NIGHTMARES               = 56232,
+    SPELL_WARLOCK_GLYPH_OF_SOUL_SWAP                = 56226,
     SPELL_WARLOCK_GLYPH_OF_EMBER_TAP                = 63304,
     SPELL_WARLOCK_HAVOC                             = 80240,
     SPELL_WARLOCK_IMMOLATE                          = 348,
@@ -900,7 +902,8 @@ public:
             for (std::list<uint32>::const_iterator itr = dotList.begin(); itr != dotList.end(); ++itr)
             {
                 GetCaster()->AddAura(*itr, GetHitUnit());
-                if (swapSource)
+                // Glyph of Soul Swap: the effects stay on the first target
+                if (swapSource && !GetCaster()->HasAura(SPELL_WARLOCK_GLYPH_OF_SOUL_SWAP))
                     swapSource->RemoveAurasDueToSpell(*itr);
             }
 
@@ -1579,6 +1582,89 @@ public:
     AuraScript* GetAuraScript() const OVERRIDE
     {
         return new spell_warl_rain_of_fire_AuraScript();
+    }
+};
+
+// 42223, 104233 - Rain of Fire (damage)
+// Deals 50% additional damage if the target is immolated.
+class spell_warl_rain_of_fire_damage : public SpellScriptLoader
+{
+public:
+    spell_warl_rain_of_fire_damage() : SpellScriptLoader("spell_warl_rain_of_fire_damage") { }
+
+    class spell_warl_rain_of_fire_damage_SpellScript : public SpellScript
+    {
+        PrepareSpellScript(spell_warl_rain_of_fire_damage_SpellScript);
+
+        void HandleDamage(SpellEffIndex /*effIndex*/)
+        {
+            Unit* target = GetHitUnit();
+            uint64 const casterGuid = GetCaster()->GetGUID();
+            if (target->HasAura(SPELL_WARLOCK_IMMOLATE, casterGuid) || target->HasAura(SPELL_WARLOCK_IMMOLATE_FNB, casterGuid))
+                SetHitDamage(GetHitDamage() + GetHitDamage() / 2);
+        }
+
+        void Register() OVERRIDE
+        {
+            OnEffectHitTarget += SpellEffectFn(spell_warl_rain_of_fire_damage_SpellScript::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+        }
+    };
+
+    SpellScript* GetSpellScript() const OVERRIDE
+    {
+        return new spell_warl_rain_of_fire_damage_SpellScript();
+    }
+};
+
+// 5784 - Felsteed, 23161 - Dreadsteed
+// Glyph of Nightmares (56232): the mount can cross water and leaves a trail of flames. The flaming models are
+// those of the glyph's own mount spells (148970, 148972: creatures 73965, 73966).
+// Not done: the tooltip's "until damage is taken".
+class spell_warl_glyph_of_nightmares : public SpellScriptLoader
+{
+public:
+    spell_warl_glyph_of_nightmares() : SpellScriptLoader("spell_warl_glyph_of_nightmares") { }
+
+    class spell_warl_glyph_of_nightmares_AuraScript : public AuraScript
+    {
+        PrepareAuraScript(spell_warl_glyph_of_nightmares_AuraScript);
+
+        bool Load() OVERRIDE
+        {
+            _waterWalking = false;
+            return true;
+        }
+
+        void HandleApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            Unit* target = GetTarget();
+            if (!target->HasAura(SPELL_WARLOCK_GLYPH_OF_NIGHTMARES))
+                return;
+
+            target->SetUInt32Value(UNIT_FIELD_MOUNT_DISPLAY_ID, GetId() == 5784 ? 51651 : 51652);
+            target->SetWaterWalking(true);
+            _waterWalking = true;
+        }
+
+        void HandleRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+        {
+            if (_waterWalking && !GetTarget()->HasAuraType(SPELL_AURA_WATER_WALK))
+                GetTarget()->SetWaterWalking(false);
+        }
+
+        void Register() OVERRIDE
+        {
+            AfterEffectApply += AuraEffectApplyFn(spell_warl_glyph_of_nightmares_AuraScript::HandleApply, EFFECT_0, SPELL_AURA_MOUNTED, AURA_EFFECT_HANDLE_REAL);
+            AfterEffectRemove += AuraEffectRemoveFn(spell_warl_glyph_of_nightmares_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_MOUNTED, AURA_EFFECT_HANDLE_REAL);
+        }
+
+    private:
+        bool _waterWalking;
+    };
+
+    AuraScript* GetAuraScript() const OVERRIDE
+    {
+        return new spell_warl_glyph_of_nightmares_AuraScript();
     }
 };
 
@@ -5507,6 +5593,8 @@ void AddSC_warlock_spell_scripts()
     new spell_warl_havoc();
     new spell_warl_havoc_target_selector();
     new spell_warl_rain_of_fire();
+    new spell_warl_rain_of_fire_damage();
+    new spell_warl_glyph_of_nightmares();
 
     // Demonology
     new spell_warl_mastery_master_demonologist();
