@@ -148,6 +148,14 @@ set(scripts_STAT_SRCS
   EasternKingdoms/ScarletHalls/boss_houndmaster_braun.cpp
   EasternKingdoms/ScarletHalls/boss_armsmaster_harlan.cpp
   EasternKingdoms/ScarletHalls/boss_flameweaver_koegler.cpp
+  EasternKingdoms/Scholomance/scholomance.h
+  EasternKingdoms/Scholomance/scholomance.cpp
+  EasternKingdoms/Scholomance/instance_scholomance.cpp
+  EasternKingdoms/Scholomance/boss_instructor_chillheart.cpp
+  EasternKingdoms/Scholomance/boss_jandice_barov.cpp
+  EasternKingdoms/Scholomance/boss_rattlegore.cpp
+  EasternKingdoms/Scholomance/boss_lilian_voss.cpp
+  EasternKingdoms/Scholomance/boss_grandmaster_gandling.cpp
   #REWORKED IN CATACLYSM
   EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp
   EasternKingdoms/ShadowfangKeep/instance_shadowfang_keep.cpp

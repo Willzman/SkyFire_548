@@ -3757,6 +3757,40 @@ void SpellMgr::LoadSpellInfoCorrections()
                         spellInfo->Effects[i].TargetA = SpellImplicitTargetInfo(TARGET_DEST_TARGET_ANY);
                 break;
             // Terrace of Endless Spring
+            // Scholomance (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 114062: // Wondrous Rapidity
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 114061;
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 122449: // Ice wall
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
+            case 120027: // Burn
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                break;
+            case 114874: // Potion of Brutish Force
+                spellInfo->Attributes &= ~SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+                break;
+            case 111585: // Dark Blaze
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 113312: // Explosive Pain
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_DEST_AREA_ENTRY);
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_DEST_AREA_ENTRY);
+                break;
+            case 114048: // Whirl of Illusion
+                spellInfo->Effects[0].ApplyAuraTickCount = 1500;
+                break;
+            case 113866:
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REFLECTED | SPELL_ATTR1_CANT_BE_REDIRECTED;
+                break;
+            case 113996: // Bone Armor
+                spellInfo->ProcChance = 0;
+                spellInfo->Effects[0].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            case 111669: // Summon Books (textures fix)
+                spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
             case 107145: // Light Wall Active
                 spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
                 spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENTRY);
