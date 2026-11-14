@@ -30,7 +30,7 @@
 uint32 const encounternumber = 4;
 
 #include "SpellScript.h"
-#include "../pandaria_loa_compat.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "Map.h"
 #include "Creature.h"
 #include "CreatureAIImpl.h"

@@ -22,7 +22,7 @@
  */
 
 #include "ScriptMgr.h"
-#include "../pandaria_loa_compat.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "InstanceScript.h"
