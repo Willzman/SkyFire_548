@@ -3815,6 +3815,42 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->Effects[EFFECT_0].BasePoints = -10;
                 spellInfo->Effects[EFFECT_1].BasePoints = -10;
                 break;
+            // Siege of Niuzao Temple (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 119990: // Summon Sappling
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(0);
+                break;
+            case 120095: // Detonate Visual
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            case 120270: // Drain Barrel (Top)
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENTRY);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(0);
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENTRY);
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(0);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                spellInfo->ExplicitTargetMask = TARGET_FLAG_UNIT_MASK;
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(285); // 1s
+                break;
+            case 124277: // Blade Rush Summon forcecast
+            case 120561: // Bombard
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 121442: // Caustic Pitch
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_DEST);
+                spellInfo->ExplicitTargetMask = TARGET_FLAG_DEST_LOCATION;
+                break;
+            case 121448: // Encased in Resin
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_STUN;
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(0);
+                spellInfo->ExplicitTargetMask = TARGET_FLAG_UNIT_MASK;
+                break;
+            case 122376: // Barrel Drop
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_CASTABLE_WHILE_ON_VEHICLE;
+                break;
             default:
                 break;
         }

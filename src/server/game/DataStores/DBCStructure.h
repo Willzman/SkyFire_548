@@ -2956,7 +2956,7 @@ struct VehicleSeatEntry
 
 struct WMOAreaTableEntry
 {
-    //uint32 Id;                                              // 0 index
+    uint32 Id;                                              // 0 index
     int32 rootId;                                           // 1 used in root WMO
     int32 adtId;                                            // 2 used in adt file
     int32 groupId;                                          // 3 used in group WMO

@@ -12,6 +12,13 @@ set(scripts_STAT_SRCS
   Pandaria/ShadopanMonastery/instance_shadopan_monastery.cpp
   Pandaria/ShadopanMonastery/shadopan_monastery.cpp
   Pandaria/ShadopanMonastery/shadopan_monastery.h
+  Pandaria/SiegeOfNiuzaoTemple/boss_commander_vojak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_general_pavalak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_vizier_jinbak.cpp
+  Pandaria/SiegeOfNiuzaoTemple/boss_wing_leader_neronok.cpp
+  Pandaria/SiegeOfNiuzaoTemple/instance_siege_of_niuzao_temple.cpp
+  Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.cpp
+  Pandaria/SiegeOfNiuzaoTemple/siege_of_niuzao_temple.h
   Pandaria/GateOfTheSettingSun/gate_of_the_setting_sun.h
   Pandaria/GateOfTheSettingSun/instance_gate_of_the_setting_sun.cpp
   Pandaria/GateOfTheSettingSun/boss_saboteur_kiptilak.cpp
