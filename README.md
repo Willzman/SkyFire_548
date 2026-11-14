@@ -124,7 +124,11 @@ sudo ldconfig
 ```
 
 ### 4. Get the source and build
-Each realm gets its own clone and install folder (`PREFIX`), so build both.
+Each realm gets its own clone and install folder (`CMAKE_INSTALL_PREFIX`), so
+build both. Use `-DCMAKE_INSTALL_PREFIX`, not `-DPREFIX`: on a fresh build
+folder, a `PREFIX` cache variable breaks CMake's compiler detection
+(CMake 3.28 reads `PREFIX` in its compiler-ID template), and the configure
+then fails later with "Readline library not found".
 
 **Development realm:**
 ```bash
@@ -133,7 +137,7 @@ cd ~/skyfire/src-dev
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-  -DPREFIX=$HOME/skyfire/dev -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
+  -DCMAKE_INSTALL_PREFIX=$HOME/skyfire/dev -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
   -DBOOST_ROOT=$HOME/skyfire/deps/boost -DOPENSSL_ROOT_DIR=$HOME/skyfire/deps/openssl
 cmake --build build --parallel "$(nproc)"
 cmake --install build
@@ -148,7 +152,7 @@ cd ~/skyfire/src-stable
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 \
   -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-  -DPREFIX=$HOME/skyfire/stable -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
+  -DCMAKE_INSTALL_PREFIX=$HOME/skyfire/stable -DTOOLS=ON -DUSE_COREPCH=ON -DUSE_SCRIPTPCH=ON \
   -DBOOST_ROOT=$HOME/skyfire/deps/boost -DOPENSSL_ROOT_DIR=$HOME/skyfire/deps/openssl
 cmake --build build --parallel "$(nproc)"
 cmake --install build

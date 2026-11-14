@@ -12,8 +12,8 @@ databases, its own source checkout and its own install folder.
 ## One-time setup
 
 1. Clone and build each branch into its own prefix, e.g. `~/skyfire/src-stable`
-   installed with `-DPREFIX=$HOME/skyfire/stable`, and `~/skyfire/src-dev`
-   with `-DPREFIX=$HOME/skyfire/dev`.
+   installed with `-DCMAKE_INSTALL_PREFIX=$HOME/skyfire/stable`, and `~/skyfire/src-dev`
+   with `-DCMAKE_INSTALL_PREFIX=$HOME/skyfire/dev`.
 
 2. Create the databases and the `skyfire` MySQL user (needs MySQL's root
    account, which on Ubuntu you reach with `sudo`; once):
