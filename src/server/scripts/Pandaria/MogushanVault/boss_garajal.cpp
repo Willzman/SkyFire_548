@@ -130,6 +130,12 @@ enum eSpells
     SPELL_SORRY_WERE_YOU_LOOKING_FOR_THIS_CRITERIA  = 125986,
 };
 
+enum ePhases
+{
+    // Phase id of Crossed Over (116161) and Banishment (116272), from SpellEffect.dbc
+    PHASE_SPIRIT_REALM                              = 173,
+};
+
 enum eEvents
 {
     EVENT_SECONDARY_ATTACK                          = 1,
@@ -552,7 +558,7 @@ class boss_garajal : public CreatureScript
                                         if (IsHeroic() && i == 0)
                                             soulCutter->CastSpell(soulCutter, SPELL_COSMETIC_RED_AURA, true);
 
-                                        soulCutter->SetPhaseMask(i == 0 ? 4 : 6, true);
+                                        soulCutter->SetPhased(PHASE_SPIRIT_REALM, true, true);
                                         soulCutter->AI()->AttackStart(target);
                                         soulCutter->SetInCombatWith(target);
                                         soulCutter->AddThreat(target, 10000.0f);
@@ -821,7 +827,7 @@ class npc_shadowy_minion : public CreatureScript
                     if (Creature* spirit = me->SummonCreature(NPC_SHADOWY_MINION_SPIRIT, me->GetPositionX(), me->GetPositionY(), me->GetPositionZ(), me->GetOrientation(), TempSummonType::TEMPSUMMON_DEAD_DESPAWN))
                     {
                         spiritGuid = spirit->GetGUID();
-                        spirit->SetPhaseMask(2, true);
+                        spirit->SetPhased(PHASE_SPIRIT_REALM, true, true);
                     }
 
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE|UNIT_FLAG_NOT_SELECTABLE);
@@ -871,7 +877,7 @@ class npc_shadowy_minion : public CreatureScript
                             std::list<Player*> playerList;
                             GetPlayerListInGrid(playerList, me, 150.0f);
 
-                            playerList.remove_if([=](Player* target) { return target->GetPhaseMask() != 2; });
+                            playerList.remove_if([=](Player* target) { return !target->HasAura(SPELL_CROSSED_OVER); });
 
                             if (playerList.empty())
                                 return;
@@ -888,7 +894,7 @@ class npc_shadowy_minion : public CreatureScript
                             std::list<Player*> playerList;
                             GetPlayerListInGrid(playerList, me, 150.0f);
 
-                            playerList.remove_if([=](Player* target) { return target->GetPhaseMask() != 1; });
+                            playerList.remove_if([=](Player* target) { return target->IsPhased(PHASE_SPIRIT_REALM); });
 
                             if (playerList.empty())
                                 return;

@@ -4157,7 +4157,7 @@ class spell_summon_lorthemar_isle_intro : public AuraScript
     void OnAuraEffectRemove(AuraEffect const* aurEff, AuraEffectHandleModes mode)
     {
         if (Unit* owner = GetUnitOwner())
-            owner->SetPhaseMask(2, true);
+            owner->SetPhaseMask(1, true);
     }
 
     void Register() OVERRIDE

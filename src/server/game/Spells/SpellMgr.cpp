@@ -3059,7 +3059,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case SPELL_EFFECT_JUMP_DEST:
                 case SPELL_EFFECT_LEAP_BACK:
                     if (!spellInfo->Speed && !spellInfo->SpellFamilyName)
-                        spellInfo->Speed = SPEED_CHARGE;
+                        spellInfo->Speed = 42.0f; // SPEED_CHARGE
                     break;
             }
         }
@@ -3815,6 +3815,387 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->Effects[EFFECT_0].BasePoints = -10;
                 spellInfo->Effects[EFFECT_1].BasePoints = -10;
                 break;
+            // Mogu'shan Vaults (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 116227: // Life's Fragile Thread
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
+            case 116000: // Voodoo Dolls
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 130774:// Amethyst Pool - Periodic damage
+                spellInfo->Attributes |= SPELL_ATTR0_CANT_CANCEL;
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 118566: // Lifestream
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 116161: // Crossed Over
+                spellInfo->Effects[EFFECT_3].Effect    = 0; // No need to summon
+                break;
+            case 116525: // Focused Assault
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                break;
+            case 117921: // Massive Attacks
+                spellInfo->Attributes |= SPELL_ATTR0_IMPOSSIBLE_DODGE_PARRY_BLOCK;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_HIT_RESULT;
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_IGNORE_RESISTANCES;
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 116829: // Focalised Energy
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 118303: // Fixate
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            case 116711: // Draw Flame
+                spellInfo->ChannelInterruptFlags = 0;
+                spellInfo->AuraInterruptFlags = 0;
+                break;
+            case 118443: // Instantly Death
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                spellInfo->Effects[0].TargetB = SpellImplicitTargetInfo();
+                break;
+            case 116989: // Overloaded Missile
+            case 117220: // Overloaded Triggered
+            case 118430: // Core Beam
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                break;
+            case 129724: // Grasping Energy Tendrils
+                spellInfo->Effects[0].Effect = SPELL_EFFECT_DUMMY;
+                break;
+            case 117960: // Celestial Breathe
+                spellInfo->AttributesEx5 &= ~SPELL_ATTR5_START_PERIODIC_AT_APPLY;
+                break;
+            case 118018: // Draw Power (Summons)
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[3].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[4].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[5].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 116661: // Draw Power (lightning damage for activated focus)
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 117558:
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13); // 10 yards
+                break;
+            case 117829: // Cowardice (DoT)
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 117833: // Crazy Thought
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_FEARED;
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 117708: // Maddening Shout
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_FEARED;
+                break;
+            case 117222: // Sweeping kick
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_CASTER_FRONT);
+                break;
+            case 125092: // Petrification
+                spellInfo->StackAmount = 100; // max
+                break;
+            case 116980: // Fortify Stone Aura
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ALLY);
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ALLY);
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                spellInfo->ExplicitTargetMask = TARGET_FLAG_UNIT_MASK;
+                break;
+            case 121247: // Impale
+                spellInfo->Attributes &= ~SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+                break;
+            case 115877: // fully petrified
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(28); // 5s
+                break;
+            case 117918: // Overhand Strike
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_5_YARDS);
+                break;
+            case 116835: // Devastating Arc Players aura
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 116815: // Magnetize Armor
+            case 117193:
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            case 116818: // Magnetize
+            case 117195:
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 116561: // Energized Tiles
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENTRY);
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_1_YARD);
+                break;
+            case 116510: // Explosion
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ALLY);
+                break;
+            case 117961: // Impervious Shield
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_NOT_STEALABLE;
+                spellInfo->InterruptFlags = 0;
+                break;
+            case 118047: // Pillage
+                spellInfo->Speed = 42.0f; // SPEED_CHARGE
+                break;
+            case 116803: // Titan Gas
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 116365: // Arcane Velocity
+            case 116223: // Jade Shards
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                break;
+            case 117203: // Siphoning Shield [issue with geodata, without it shield could`ve pull from area, it result - no effect/remove mechanic]
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_DEST_RANDOM);
+                break;
+            case 125206: // Rend Flesh
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                break;
+            case 126816: // Dampening Field
+                spellInfo->Effects[EFFECT_0].BasePoints = -10;
+                spellInfo->Effects[EFFECT_1].BasePoints = -10;
+                break;
+            // Mogu'shan Palace (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 119922: //Shockwave
+            case 119929:
+            case 119931:
+            case 119932:
+            case 119933:
+                spellInfo->Speed = 5.f;
+                break;
+            case 119930:
+                spellInfo->Speed = 5.f;
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 119684: // Ground Slam
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CONE_ENEMY_24);
+                spellInfo->Effects[0].TargetB = SpellImplicitTargetInfo();
+                spellInfo->Effects[1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CONE_ENEMY_24);
+                spellInfo->Effects[1].TargetB = SpellImplicitTargetInfo();
+                break;
+            case 123654: // Lightning bolt
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 120499: // Shockwave pick targets
+                spellInfo->Effects[EFFECT_0].BasePoints = 0;
+                break;
+            // Shado-Pan Monastery (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 106332: // Tornado Slam
+                spellInfo->Effects[1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_NEARBY_ENTRY);
+                break;
+            case 128245: // Flip Out
+                spellInfo->Effects[1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 106827: // Smoke blades
+                spellInfo->Effects[1].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            case 112060: // Apparitions
+                spellInfo->Effects[0].TargetB = SpellImplicitTargetInfo();
+                break;
+            case 106992: // Fire Arrow
+                spellInfo->Effects[EFFECT_0].ApplyAuraTickCount = 1500;
+                break;
+            case 106871: //  Sha Spike (unk_138 don`t implemented)
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_DEST_TARGET_ENEMY);
+                spellInfo->Effects[1].TargetA = SpellImplicitTargetInfo(TARGET_DEST_TARGET_ENEMY);
+                break;
+            case 106979: // Fire Arrow Hit
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            // Temple of the Jade Serpent (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 106267: // Hydrolance Pulse
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
+                break;
+            case 106113: // Touch of Nothingness
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                spellInfo->Effects[0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 106736: // Wither Will
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                spellInfo->Effects[0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 115167: // Corrupted Waters
+                spellInfo->Effects[EFFECT_2].Effect = 0;
+                break;
+            case 107223: // Sunfire Rays
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
+            case 106762: // Summon Corrupt Droplet
+            case 113394: // Intensity
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 106334: // Wash Away
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                spellInfo->AttributesEx3 &= ~ SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 106331:
+                spellInfo->AttributesEx6 |= 0x00200000; // SPELL_ATTR6_CLIENT_UI_TARGET_EFFECTS
+                break;
+            case 106959: // Serpent Wave Periodic
+                spellInfo->Effects[0].ApplyAuraTickCount = 400;
+                break;
+            case 106105: // Hydrolance Pulse
+            case 106104: // Hydrolance Pulse
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
+                break;
+            case 106112: // Release Doubt
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(22); // 200 yards
+                break;
+            case 113315: // Intensity
+            case 106909: // Jade Soul
+                if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(113379))
+                    spellInfo->DurationEntry = spell->DurationEntry;
+                break;
+            // Gate of the Setting Sun (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 118787: // Resin Burst
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 111671: // Battering Headbutt
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 124656: // Great wall corner B
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                break;
+            case 107078: // Viscous Fluid
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                spellInfo->Effects[EFFECT_0].ApplyAuraTickCount = 1500;
+                break;
+            case 107215: // Mution Explosion
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 113645: // Sabotage
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            // Scarlet Halls (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 113364: // Book Burner
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                spellInfo->AttributesEx2 &= ~SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 113366: // Book Burner Cosmetic
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                break;
+            case 113641: // Dragon Breath
+                spellInfo->AttributesEx &= ~0x00004000; // SPELL_ATTR1_CHANNEL_TRACK_TARGET
+                break;
+            case 113653: // Dragon Breath eff
+                spellInfo->AttributesEx3 &= ~SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 125492: // Shield Breaker [temp till vehicle on players doesn`t work...]
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
+            case 112955: // Light Blades
+                spellInfo->Effects[EFFECT_1].Mechanic = MECHANIC_NONE;
+                break;
+            case 113719: // Cannon Blast
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                break;
+            case 111894: // Dog food
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            // Shadowfang Keep (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 93720: // Wracking Pain
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93810: // Calamity dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93423: // Asphyxiate
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93468: // Stay of Execution
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93706: // Stay of Execution t
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93956: // Cursed Veil
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 93722: // Shield of Perfidious dmg
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CONE_ENEMY_24);
+                break;
+            case 93697: // Conjure Poisonous Mixture
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 93505: // Conjure Frost Mixture
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 93617: // Toxic Coagulant dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 93689: // Toxic Catalyst dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 93527: // Ice Shards
+                spellInfo->AttributesEx &= ~0x10000000; // SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            // Stormstout Brewery (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 106847: // Barrel Toss
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_DEST_AREA_ENEMY);
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(16);
+                break;
+            case 106614: // Barrel Ride
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                break;
+            case 94465: // Brew Barrel Aura Canceller
+            case 106647: // Rolling Barrel Cosmetic
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_CASTABLE_WHILE_ON_VEHICLE;
+                break;
+            // Terrace of Endless Spring (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 117230: // Overpowered
+                spellInfo->Effects[0].Effect = SPELL_EFFECT_APPLY_AURA;
+                break;
+            case 125736: // Night Terrors (missile)
+                spellInfo->Effects[0].Effect = SPELL_EFFECT_DUMMY;
+                break;
+            case 117999: // Light of Wall Buff
+            case 117866: // Champion of the Light
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB;
+                break;
+            // Isle of Thunder (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 140244: // Lightning Crack
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 137263: // Jump on pterrorwing
+                spellInfo->Effects[EFFECT_1].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            case 140639: // Infiltrating Stormsea
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 139221: // Blood Drip
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(1); // 10 secs
+                break;
+            case 137889: // Siphon Essence (conditions doesn`t work anyway)
+                spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_SUMMONER);
+                break;
+            case 140001: // Event Cleanup (unk effect 426)
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
             // Siege of Niuzao Temple (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 119990: // Summon Sappling
                 spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
@@ -3948,7 +4329,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
                 break;
             case 126450: // Clash (Symbiosis)
-                spellInfo->Speed = SPEED_CHARGE;
+                spellInfo->Speed = 42.0f; // SPEED_CHARGE
                 break;
 
             // ---- Rogue ----
@@ -4073,7 +4454,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->StackAmount = 0;
                 break;
             case 122235: // Clash
-                spellInfo->Speed = SPEED_CHARGE;
+                spellInfo->Speed = 42.0f; // SPEED_CHARGE
                 break;
             case 119607: // Renewing Mist (jump)
                 spellInfo->Effects[EFFECT_1].RadiusEntry = spellInfo->Effects[EFFECT_1].MaxRadiusEntry;
