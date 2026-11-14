@@ -152,14 +152,16 @@ INSERT INTO `instance_encounters` (`entry`, `creditType`, `creditEntry`, `lastEn
 (1464, 0, 62205, 630, 'Wing Leader Ner\'onok');
 
 -- creature_template: SkyFire's rows for this dungeon are mostly unfilled stubs (level 1, faction 35, no flags).
--- Values from the LoA world DB; SkyFire's own speeds, gold, loot ids and spells are kept.
+-- Values from the LoA world DB; SkyFire's own speeds, gold, loot ids and spells are kept. dmg_multiplier is only
+-- taken where SkyFire has no mindmg/maxdmg (it multiplies its own template damage when set).
+
 UPDATE `creature_template` SET `flags_extra` = 128 WHERE `entry` = 57478; -- Invisible Stalker
 UPDATE `creature_template` SET `minlevel` = 89, `maxlevel` = 89, `faction_A` = 16, `faction_H` = 16, `unit_flags` = 32768 WHERE `entry` = 61434; -- Sik\'thik Vanguard
 UPDATE `creature_template` SET `minlevel` = 89, `maxlevel` = 89, `faction_A` = 16, `faction_H` = 16, `unit_flags` = 32768 WHERE `entry` = 61436; -- Sik\'thik Bladedancer
 UPDATE `creature_template` SET `minlevel` = 93, `maxlevel` = 93, `faction_A` = 16, `faction_H` = 16, `dmg_multiplier` = 3 WHERE `entry` = 61483; -- Reinforcements Summoner
 UPDATE `creature_template` SET `minlevel` = 90, `maxlevel` = 90, `unit_flags` = 33554432, `InhabitType` = 4 WHERE `entry` = 61484; -- Sik\'thik Amber-Sapper
 UPDATE `creature_template` SET `minlevel` = 91, `maxlevel` = 91, `faction_A` = 16, `faction_H` = 16, `unit_flags` = 32832, `dmg_multiplier` = 9, `mechanic_immune_mask` = 667893759, `flags_extra` = 1 WHERE `entry` = 61485; -- General Pa\'valak
-UPDATE `creature_template` SET `unit_flags` = 32832, `dmg_multiplier` = 10, `mechanic_immune_mask` = 667893759, `flags_extra` = 1 WHERE `entry` = 61567; -- Vizier Jin\'bak
+UPDATE `creature_template` SET `unit_flags` = 32832, `mechanic_immune_mask` = 667893759, `flags_extra` = 1 WHERE `entry` = 61567; -- Vizier Jin\'bak
 UPDATE `creature_template` SET `flags_extra` = 128 WHERE `entry` = 61613; -- Sap Puddle
 UPDATE `creature_template` SET `flags_extra` = 128 WHERE `entry` = 61629; -- Sappling Summon Dest
 UPDATE `creature_template` SET `dmg_multiplier` = 3, `mechanic_immune_mask` = 667893759, `flags_extra` = 1 WHERE `entry` = 61634; -- Commander Vo\'jak
