@@ -249,7 +249,7 @@ class npc_cache_of_madness_artifact : public CreatureScript
                             {
                                 Position pos = me->GetPosition();
                                 me->SummonCreature(summonId, pos);
-                                me->SetPhaseMask(2, true);
+                                me->SetVisible(false); // LoA hid the used artifact with phase mask 2, which SkyFire does not use for visibility
                             }
                             if (InstanceScript* instance = me->GetInstanceScript())
                                 instance->SetData(DATA_ARTIFACTS_ACTIVATED, instance->GetData(DATA_ARTIFACTS_ACTIVATED) + 1);
