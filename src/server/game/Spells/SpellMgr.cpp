@@ -3806,6 +3806,26 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
                 spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(0);
                 break;
+            // Scarlet Monastery (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 114488: // Flying Kick
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_HIT_RESULT; // LoA: SPELL_ATTR8_CANT_MISS
+                break;
+            case 114952: // Fuel Barrel
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 125844: // Burning Man
+            case 125852:
+                spellInfo->Attributes |= SPELL_ATTR0_CANT_CANCEL;
+                break;
+            case 115150: // Summon Vile Spirits
+                spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                break;
+            case 114487: // Flying Kick Eff
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            case 113134: // Mass Resurrection
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_DEAD;
+                break;
             case 117187: // Lightning Bolt
             case 118312: // Water Bolt
             case 122881: // Unstable Bolt

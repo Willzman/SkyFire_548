@@ -1,149 +1,296 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* ScriptData
-SDName: Instance_Scarlet_Monastery
-SD%Complete: 50
-SDComment:
-SDCategory: Scarlet Monastery
-EndScriptData */
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (src/server/scripts/EasternKingdoms/ScarletMonastery/instance_scarlet_monastery.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "VMapFactory.h"
 #include "scarlet_monastery.h"
+#include "Log.h"
+#include "LFGMgr.h"
 
-enum Entry
+namespace
 {
-    ENTRY_PUMPKIN_SHRINE    = 186267,
-    ENTRY_HORSEMAN          = 23682,
-    ENTRY_HEAD              = 23775,
-    ENTRY_PUMPKIN           = 23694
+
+static DoorData const doorData[] =
+{
+    { GO_THALNOS_EXIT,       BOSS_THALNOS_THE_SOULRENDER, DOOR_TYPE_PASSAGE,    BOUNDARY_NONE},
+    { GO_KORLOFF_EXIT,       BOSS_BROTHER_KORLOFF,        DOOR_TYPE_PASSAGE,    BOUNDARY_NONE },
+    { GO_WHITEMANE_ENTRANCE, BOSS_WHITEMANE,              DOOR_TYPE_SPAWN_HOLE, BOUNDARY_NONE }
 };
 
-#define MAX_ENCOUNTER 2
+// (LoA scenario boss table removed: no scenario API in SkyFire)
 
 class instance_scarlet_monastery : public InstanceMapScript
 {
-public:
-    instance_scarlet_monastery() : InstanceMapScript("instance_scarlet_monastery", 189) { }
+    public:
+        instance_scarlet_monastery() : InstanceMapScript("instance_scarlet_monastery", 1004) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
-    {
-        return new instance_scarlet_monastery_InstanceMapScript(map);
-    }
-
-    struct instance_scarlet_monastery_InstanceMapScript : public InstanceScript
-    {
-        instance_scarlet_monastery_InstanceMapScript(Map* map) : InstanceScript(map) { }
-
-        uint64 PumpkinShrineGUID;
-        uint64 HorsemanGUID;
-        uint64 HeadGUID;
-        std::set<uint64> HorsemanAdds;
-
-        uint64 MograineGUID;
-        uint64 WhitemaneGUID;
-        uint64 VorrelGUID;
-        uint64 DoorHighInquisitorGUID;
-
-        uint32 encounter[MAX_ENCOUNTER];
-
-        void Initialize() OVERRIDE
+        struct instance_scarlet_monastery_InstanceMapScript : public InstanceScript
         {
-            memset(&encounter, 0, sizeof(encounter));
+            instance_scarlet_monastery_InstanceMapScript(Map* map) : InstanceScript(map) { }
+            std::set<uint64> guids;
+            uint32 lfgDungeon;
 
-            PumpkinShrineGUID  = 0;
-            HorsemanGUID = 0;
-            HeadGUID = 0;
-            HorsemanAdds.clear();
-
-            MograineGUID = 0;
-            WhitemaneGUID = 0;
-            VorrelGUID = 0;
-            DoorHighInquisitorGUID = 0;
-        }
-
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
-        {
-            switch (go->GetEntry())
+            void Initialize() override
             {
-            case ENTRY_PUMPKIN_SHRINE: PumpkinShrineGUID = go->GetGUID();break;
-            case 104600: DoorHighInquisitorGUID = go->GetGUID(); break;
+                SetBossNumber(encounternumber);
+                LoadDoorData(doorData);
+                guids.clear();
+                lfgDungeon = 0;
+
+                if (false)
+                    { } // LoadScenarioInfo: challenge mode / scenario not supported in SkyFire
             }
-        }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
-        {
-            switch (creature->GetEntry())
+            void OnPlayerEnter(Player* player) override
             {
-                case ENTRY_HORSEMAN:    HorsemanGUID = creature->GetGUID(); break;
-                case ENTRY_HEAD:        HeadGUID = creature->GetGUID(); break;
-                case ENTRY_PUMPKIN:     HorsemanAdds.insert(creature->GetGUID());break;
-                case 3976: MograineGUID = creature->GetGUID(); break;
-                case 3977: WhitemaneGUID = creature->GetGUID(); break;
-                case 3981: VorrelGUID = creature->GetGUID(); break;
+                if (false)
+                    { } // SendChallengeInfo: challenge mode / scenario not supported in SkyFire
             }
-        }
 
-        void SetData(uint32 type, uint32 data) OVERRIDE
-        {
-            switch (type)
+            void OnCreatureCreate(Creature* creature) override
             {
-            case TYPE_MOGRAINE_AND_WHITE_EVENT:
-                if (data == IN_PROGRESS)
-                    DoUseDoorOrButton(DoorHighInquisitorGUID);
-                if (data == FAIL)
-                    DoUseDoorOrButton(DoorHighInquisitorGUID);
+                if (instance->GetDifficulty() == DIFFICULTY_25MAN_LFR && !lfgDungeon)
+                    if (Player* player = LoaCompat::GetFirstPlayerInInstance(instance))
+                        lfgDungeon = sLFGMgr->GetDungeon(player->GetGroup() ? player->GetGroup()->GetGUID() : player->GetGUID());
 
-                encounter[0] = data;
-                break;
-            case GAMEOBJECT_PUMPKIN_SHRINE:
-                HandleGameObject(PumpkinShrineGUID, false);
-                break;
-            case DATA_HORSEMAN_EVENT:
-                encounter[1] = data;
-                if (data == DONE)
+                if (false && creature->isDead())
+                    creature->Respawn();
+
+                switch (creature->GetEntry())
                 {
-                    for (std::set<uint64>::const_iterator itr = HorsemanAdds.begin(); itr != HorsemanAdds.end(); ++itr)
-                    {
-                        Creature* add = instance->GetCreature(*itr);
-                        if (add && add->IsAlive())
-                            add->Kill(add);
-                    }
-                    HorsemanAdds.clear();
-                    HandleGameObject(PumpkinShrineGUID, false);
+                    case NPC_THALNOS_THE_SOULRENDER:
+                        ThalnosGUID = creature->GetGUID();
+                        if (lfgDungeon == LFG_DUNGEON_HEADLESS_HORSEMAN)
+                        {
+                            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+                            creature->SetVisible(false);
+                        }
+                        break;
+                    case NPC_BROTHER_KORLOFF:
+                        KorloffGUID = creature->GetGUID();
+                        break;
+                    case NPC_COMMANDER_DURAND:
+                        DurandGUID = creature->GetGUID();
+                        break;
+                    case NPC_HIGH_INQUISITOR_WHITEMANE:
+                        WhitemaneGUID = creature->GetGUID();
+                        break;
+                    case NPC_FALLEN_CRUSADER:
+                        FallenCrusaderGUID = creature->GetGUID();
+                        guids.insert(FallenCrusaderGUID);
+                        break;
+                    case NPC_HOODED_CRUSADER_OUTRO:
+                        HoodedGUID = creature->GetGUID();
+                        creature->SetVisible(false);
+                        break;
+                    case NPC_SCARLET_JUDICATOR:
+                        if (!creature->HasAura(128800)) // drunked at holl must be neutral [set like default]
+                            creature->setFaction(67);
+                        break;
+                    case NPC_PILE_OF_CORPSES:
+                    case NPC_SCARLET_FLAMETHOWER:
+                    case NPC_SCARLET_CENTURION:
+                    case NPC_ZOMBIFIED_CORPSE:
+                    case NPC_HOODED_CRUSADER_INTO:
+                    case NPC_FRENZIED_SPIRIT:
+                        if (lfgDungeon == LFG_DUNGEON_HEADLESS_HORSEMAN)
+                        {
+                            creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED);
+                            creature->SetVisible(false);
+                        }
+                        break;
                 }
-                break;
             }
-        }
 
-        uint64 GetData64(uint32 type) const OVERRIDE
-        {
-            switch (type)
+            void OnGameObjectCreate(GameObject* go) override
             {
-                //case GAMEOBJECT_PUMPKIN_SHRINE:   return PumpkinShrineGUID;
-                //case DATA_HORSEMAN:               return HorsemanGUID;
-                //case DATA_HEAD:                   return HeadGUID;
-                case DATA_MOGRAINE:             return MograineGUID;
-                case DATA_WHITEMANE:            return WhitemaneGUID;
-                case DATA_VORREL:               return VorrelGUID;
-                case DATA_DOOR_WHITEMANE:       return DoorHighInquisitorGUID;
+                switch (go->GetEntry())
+                {
+                    case GO_THALNOS_EXIT:
+                    case GO_KORLOFF_EXIT:
+                        AddDoor(go, true);
+                        break;
+                    case GO_WHITEMANE_ENTRANCE:
+                        AddDoor(go, true);
+                        WhitemaneDoorGUID = go->GetGUID();
+                        break;
+                    case GO_CHALLENGE_DOOR:
+                        { } // SetChallengeDoorGuid: challenge mode / scenario not supported in SkyFire
+                        break;
+                }
             }
-            return 0;
-        }
 
-        uint32 GetData(uint32 type) const OVERRIDE
+            void OnUnitDeath(Unit* unit) override
+            {
+                Creature* creature = unit->ToCreature();
+                if (!creature)
+                    return;
+                if (creature->GetEntry() == NPC_FALLEN_CRUSADER)
+                    guids.erase(creature->GetGUID());
+
+                if (false && !false)
+                    { } // UpdateConditionInfo: challenge mode / scenario not supported in SkyFire
+            }
+
+            void Update(uint32 diff) override
+            {
+                { } // ScheduleBeginningTimeUpdate: challenge mode / scenario not supported in SkyFire
+                { } // ScheduleChallengeStartup: challenge mode / scenario not supported in SkyFire
+                { } // ScheduleChallengeTimeUpdate: challenge mode / scenario not supported in SkyFire
+            }
+
+            uint64 GetData64(uint32 type) const override
+            {
+                switch (type)
+                {
+                    case BOSS_THALNOS_THE_SOULRENDER:
+                        return ThalnosGUID;
+                    case BOSS_BROTHER_KORLOFF:
+                        return KorloffGUID;
+                    case BOSS_DURAND:
+                        return DurandGUID;
+                    case BOSS_WHITEMANE:
+                        return WhitemaneGUID;
+                    case NPC_HOODED_CRUSADER_OUTRO:
+                        return HoodedGUID;
+                }
+                return 0;
+            }
+
+            std::string GetSaveData() override
+            {
+                OUT_SAVE_INST_DATA;
+
+                std::ostringstream saveStream;
+                saveStream << "S C M " << GetBossSaveData();
+
+                OUT_SAVE_INST_DATA_COMPLETE;
+                return saveStream.str();
+            }
+
+            void Load(char const* in) override
+            {
+                if (!in)
+                {
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
+                }
+
+                OUT_LOAD_INST_DATA(in);
+
+                char dataHead1, dataHead2, dataHead3;
+
+                std::istringstream loadStream(in);
+                loadStream >> dataHead1 >> dataHead2 >> dataHead3;
+
+                if (dataHead1 == 'S' && dataHead2 == 'C' && dataHead3 == 'M')
+                {
+                    for (uint8 i = 0; i < 3; ++i)
+                    {
+                        uint32 tmpState;
+                        loadStream >> tmpState;
+                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                            tmpState = NOT_STARTED;
+
+                        SetBossState(i, EncounterState(tmpState));
+                    }
+                }
+                else OUT_LOAD_INST_DATA_FAIL;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
+            }
+
+            bool isWipe()
+            {
+                for (auto&& itr : instance->GetPlayers())
+                    if (Player* plr = itr.GetSource())
+                        if (plr->IsAlive() && !plr->IsGameMaster())
+                            return false;
+
+                return true;
+            }
+
+            bool SetBossState(uint32 type, EncounterState state) override
+            {
+                if (!InstanceScript::SetBossState(type, state))
+                    return false;
+
+                if (type == BOSS_DURAND && state == SPECIAL)
+                {
+                    if (Creature* Durand = instance->GetCreature(DurandGUID))
+                    {
+                        Durand->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        Durand->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                        Durand->SetReactState(REACT_AGGRESSIVE);
+                        Durand->SetStandState(UNIT_STAND_STATE_STAND);
+                        Durand->SetFullHealth();
+                        if (Player* _player = Durand->FindNearestPlayer(VISIBLE_RANGE))
+                            Durand->AI()->AttackStart(_player);
+                    }
+                }
+                return true;
+            }
+
+        protected:
+            uint64 ThalnosGUID;
+            uint64 KorloffGUID;
+            uint64 DurandGUID;
+            uint64 WhitemaneGUID;
+            uint64 FallenCrusaderGUID;
+            uint64 WhitemaneDoorGUID;
+            uint64 HoodedGUID;
+        };
+
+        InstanceScript* GetInstanceScript(InstanceMap* map) const override
         {
-            if (type == TYPE_MOGRAINE_AND_WHITE_EVENT)
-                return encounter[0];
-            if (type == DATA_HORSEMAN_EVENT)
-                return encounter[1];
-            return 0;
+            return new instance_scarlet_monastery_InstanceMapScript(map);
         }
-    };
 };
+
+} // namespace
 
 void AddSC_instance_scarlet_monastery()
 {
