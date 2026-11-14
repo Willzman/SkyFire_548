@@ -129,19 +129,13 @@ set(scripts_STAT_SRCS
   EasternKingdoms/Deadmines/boss_admiral_ripsnarl.cpp
   EasternKingdoms/Deadmines/boss_captain_cookie.cpp
   EasternKingdoms/Deadmines/boss_vanessa_vancleef.cpp
-  #REWORKED IN PANDARIA
-  #EasternKingdoms/ScarletMonastery/boss_azshir_the_sleepless.cpp
-  #EasternKingdoms/ScarletMonastery/boss_mograine_and_whitemane.cpp
-  #EasternKingdoms/ScarletMonastery/boss_bloodmage_thalnos.cpp
-  #EasternKingdoms/ScarletMonastery/boss_interrogator_vishas.cpp
-  #EasternKingdoms/ScarletMonastery/boss_headless_horseman.cpp
-  #EasternKingdoms/ScarletMonastery/instance_scarlet_monastery.cpp
-  #EasternKingdoms/ScarletMonastery/boss_houndmaster_loksey.cpp
-  #EasternKingdoms/ScarletMonastery/scarlet_monastery.h
-  #EasternKingdoms/ScarletMonastery/boss_high_inquisitor_fairbanks.cpp
-  #EasternKingdoms/ScarletMonastery/boss_arcanist_doan.cpp
-  #EasternKingdoms/ScarletMonastery/boss_herod.cpp
-  #EasternKingdoms/ScarletMonastery/boss_scorn.cpp
+  EasternKingdoms/ScarletMonastery/scarlet_monastery.h
+  EasternKingdoms/ScarletMonastery/scarlet_monastery.cpp
+  EasternKingdoms/ScarletMonastery/instance_scarlet_monastery.cpp
+  EasternKingdoms/ScarletMonastery/boss_thalnos_the_soulrender.cpp
+  EasternKingdoms/ScarletMonastery/boss_brother_korloff.cpp
+  EasternKingdoms/ScarletMonastery/boss_high_inqusitior_whitemane.cpp
+  EasternKingdoms/ScarletMonastery/boss_headless_horseman.cpp
   EasternKingdoms/ScarletHalls/scarlet_halls.h
   EasternKingdoms/ScarletHalls/scarlet_halls.cpp
   EasternKingdoms/ScarletHalls/instance_scarlet_halls.cpp
