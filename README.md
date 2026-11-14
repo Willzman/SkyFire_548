@@ -33,38 +33,28 @@ For further information on the SkyFire project, please visit our project website
 Goal of this fork: as complete and class-accurate a MoP 5.4.8 server as possible. Most fixes are ported
 from [Legends of Azeroth Pandaria](https://github.com/Legends-of-Azeroth/Legends-of-Azeroth-Pandaria-5.4.8)
 (GPL v2+); older content can come from AzerothCore and TrinityCore (GPL v2+). One pull request per item.
-Everything marked done is merged into `Development` and **still needs in-game testing**.
 
-**Done**
-- [x] Script API compatibility for ported scripts (#9, #12)
-- [x] Scripts the world DB already expected: Gate of the Setting Sun, Mogu'shan Vaults, Mogu'shan Palace,
-  Temple of the Jade Serpent, Shado-Pan Monastery, Zul'Gurub, Zul'Aman (re-enabled), Wandering Isle,
-  Emerald Dragons and more, with their missing spawns and DB rows (#10, #13–#17, #22–#24); dead ScriptName
-  bindings cleaned up (#25, #26)
-- [x] Missing quest starters/enders (#20), item and trinket spell scripts (#21), creature loot (#19)
-- [x] Class accuracy: MoP spell-power coefficients from the client data (#27), GCD haste rules (#28),
-  Warlock resource regen (#29), missing class aura types such as spell power %, rating %, auto-attack %
-  and mana regen (#30)
-- [x] Class accuracy, second pass: class spell DB rows and glyph-learned spells (#33), absorbs scaling with
-  spell power (#34), custom spell attributes (#35), energy/focus regen with haste and pet stat auras (#36),
-  real PPM procs for 5.4 trinkets, enchants and tier bonuses (#37), class spell corrections (#38),
-  Vengeance for all tanks (#41), Shaman, Priest and Mage script gaps (#39, #40, #43), power-level auras (#42)
+What is left:
+
+**Testing**
+- [ ] In-game testing of everything merged so far (class fixes, all MoP 5-man and revamped dungeons,
+  Mogu'shan Vaults, Terrace of Endless Spring, Isle of Thunder)
 
 **Class accuracy (priority)**
-- [ ] In-game testing of all class fixes
 - [ ] Remaining class gaps: Shaman T16 Restoration 4P, Prayer of Mending (Divine Insight), absorbs and the
   "ignore PvP power" flag, a few class spell corrections that need their LoA scripts
 
 **MoP content**
-- [ ] Remaining 5-man dungeons: Stormstout Brewery, Siege of Niuzao Temple, Gate of the Setting Sun trash
-- [ ] Isle of Thunder (spawns, quests, Nalak) and Pandaria zone scripting
-- [ ] Scarlet Halls, Scarlet Monastery and Scholomance (MoP versions)
+- [ ] Pandaria zone scripting: Krasarang Wilds, Kun-Lai Summit, Townlong Steppes, Dread Wastes, Vale of
+  Eternal Blossoms; the rest of Valley of the Four Winds and the Wandering Isle
 - [ ] Scenario framework, then the scenarios
-- [ ] Raids: Heart of Fear, Terrace of Endless Spring, Throne of Thunder, Siege of Orgrimmar
-- [ ] World bosses and Timeless Isle; challenge modes; MoP battlegrounds and arenas
+- [ ] Challenge modes (with the core work)
+- [ ] Raids: Heart of Fear, Throne of Thunder, Siege of Orgrimmar
+- [ ] World bosses and Timeless Isle; MoP battlegrounds and arenas
 
 **Other gaps**
-- [ ] Cataclysm instances and zones; selected older instances (AzerothCore for Outland/Northrend)
+- [ ] Remaining Cataclysm instances and zones; selected older instances (AzerothCore for Outland/Northrend)
+- [ ] Holiday events
 - [ ] Quests with no giver in any source, unscripted elites and rares, missing loot
 - [ ] Pet battle ability effects; DB fill-ins (vendors, item and gameobject templates)
 
