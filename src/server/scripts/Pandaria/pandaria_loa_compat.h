@@ -26,6 +26,9 @@
 #include "Pet.h"
 #include "Map.h"
 #include "ObjectAccessor.h"
+#include "DBCStores.h"
+#include "DynamicObject.h"
+#include "MoveSplineInit.h"
 
 namespace LoaCompat
 {
@@ -182,6 +185,56 @@ namespace LoaCompat
         float angle = obj1->GetAngle(obj2);
         return (size * size) >= self->GetExactDist2dSq(obj1->GetPositionX() + std::cos(angle) * dist, obj1->GetPositionY() + std::sin(angle) * dist);
     }
+    // LoA MotionMaster::MoveSplinePath: one spline from the current position through the given points
+    inline void MoveSplinePath(Unit* owner, Position const* path, uint32 count, bool fly, bool walk, float speed, bool cyclic = false)
+    {
+        if (owner->isMoving())
+            owner->StopMoving();
+
+        Movement::MoveSplineInit init(owner);
+        init.Path().push_back(G3D::Vector3(owner->GetPositionX(), owner->GetPositionY(), owner->GetPositionZ()));
+        for (uint32 i = 0; i < count; ++i)
+            init.Path().push_back(G3D::Vector3(path[i].GetPositionX(), path[i].GetPositionY(), path[i].GetPositionZ()));
+
+        init.SetWalk(walk);
+        if (fly)
+            init.SetFly();
+        if (cyclic)
+            init.SetCyclic();
+        if (speed)
+            init.SetVelocity(speed);
+        init.Launch();
+    }
+
+    // LoA WorldObject::GetWMOAreaId: WMOAreaTable.dbc id of the WMO group the object stands in (0 = none)
+    inline uint32 GetWMOAreaId(WorldObject const* obj)
+    {
+        uint32 mogpFlags;
+        int32 adtId, rootId, groupId;
+        if (obj->GetMap()->GetAreaInfo(obj->GetPositionX(), obj->GetPositionY(), obj->GetPositionZ(), mogpFlags, adtId, rootId, groupId))
+            if (WMOAreaTableEntry const* wmoEntry = GetWMOAreaTableEntryByTripple(rootId, adtId, groupId))
+                return wmoEntry->Id;
+        return 0;
+    }
+
+    // LoA UnitAI::DoCast(SelectAggroTarget, ...): cast on a selected target, falling back to an
+    // easier selection (first position, then any distance) when nothing matches
+    inline void DoCastSelected(UnitAI* ai, Unit* me, SelectAggroTarget targetType, uint32 spellId, bool triggered = false,
+        uint32 position = 0, float dist = 0.0f, bool playerOnly = true, int32 aura = 0)
+    {
+        Unit* target = ai->SelectTarget(targetType, position, dist, playerOnly, aura);
+        if (!target)
+        {
+            if (position)
+                target = ai->SelectTarget(targetType, 0, dist, playerOnly, aura);
+            else if (dist > 0.0f)
+                target = ai->SelectTarget(targetType, position, 0.0f, playerOnly, aura);
+        }
+
+        if (target)
+            me->CastSpell(target, spellId, triggered);
+    }
+
 } // namespace LoaCompat
 
 // LoA UnitAI.h spec target selectors (true = valid target). Usable with remove_if / SelectTarget.

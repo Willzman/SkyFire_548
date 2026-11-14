@@ -703,6 +703,13 @@ void AddSC_boss_sha_of_violence();
 void AddSC_boss_taran_zhu();
 void AddSC_instance_shadopan_monastery();
 void AddSC_shadopan_monastery();
+// Siege of Niuzao Temple
+void AddSC_commander_vojak();
+void AddSC_general_pavalak();
+void AddSC_vizier_jinbak();
+void AddSC_wing_leader_neronok();
+void AddSC_instance_siege_of_niuzao_temple();
+void AddSC_siege_of_niuzao_temple();
 // Isle of Thunder
 void AddSC_scenario_isle_of_thunder();
 void AddSC_thunder_king_citadel();
@@ -1499,6 +1506,13 @@ void AddPandariaScripts()
     AddSC_boss_taran_zhu();
     AddSC_instance_shadopan_monastery();
     AddSC_shadopan_monastery();
+    // Siege of Niuzao Temple
+    AddSC_commander_vojak();
+    AddSC_general_pavalak();
+    AddSC_vizier_jinbak();
+    AddSC_wing_leader_neronok();
+    AddSC_instance_siege_of_niuzao_temple();
+    AddSC_siege_of_niuzao_temple();
     // Isle of Thunder
     AddSC_scenario_isle_of_thunder();
     AddSC_thunder_king_citadel();
