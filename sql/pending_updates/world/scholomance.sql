@@ -148,7 +148,6 @@ INSERT INTO `creature_template` (`entry`,`difficulty_entry_1`,`difficulty_entry_
 (68291, 0, 0, 0, 0, 0, 47615, 0, 0, 0, 'Ice Wall', '', '', 0, 90, 90, 4, 0, 14, 14, 0, 1, 1.14286, 1, 1, 14666, 24933, 0, 45299, 1, 2000, 2000, 1, 0, 2048, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1073741888, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '', 0, 3, 1, 100, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 128, 'npc_ice_wall_stalker', 0, 10, );
 
 -- creature_template (values from the LoA world DB; SkyFire's speeds, gold, loot ids, spells and health are kept)
-UPDATE `creature_template` SET `unit_flags` = 2 WHERE `entry` = 53488; -- Summon Enabler Stalker
 UPDATE `creature_template` SET `minlevel` = 87, `maxlevel` = 87, `exp` = 3, `faction_A` = 14, `faction_H` = 14, `unit_flags` = 33554432, `unit_flags2` = 34816, `flags_extra` = 128 WHERE `entry` = 57860; -- Frost Grasp Stalker
 UPDATE `creature_template` SET `minlevel` = 43, `maxlevel` = 43, `faction_A` = 974, `faction_H` = 974, `mechanic_immune_mask` = 769638399, `unit_class` = 8, `flags_extra` = 1, `dmg_multiplier` = 9 WHERE `entry` = 58633; -- Instructor Chillheart
 UPDATE `creature_template` SET `minlevel` = 90, `maxlevel` = 90, `faction_A` = 16, `faction_H` = 16, `unit_class` = 8, `VehicleId` = 2020, `dmg_multiplier` = 3 WHERE `entry` = 58662; -- Instructor Chillheart\'s Phylactery Vehicle
