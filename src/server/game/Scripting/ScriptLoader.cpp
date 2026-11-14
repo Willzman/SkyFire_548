@@ -194,6 +194,13 @@ void AddSC_instance_scarlet_halls();
 void AddSC_boss_houndmaster_braun();
 void AddSC_boss_armsmaster_harlan();
 void AddSC_boss_flameweaver_koegler();
+void AddSC_scholomance();                    //Scholomance
+void AddSC_instance_scholomance();
+void AddSC_boss_instructor_chillheart();
+void AddSC_boss_jandice_barov();
+void AddSC_boss_rattlegore();
+void AddSC_boss_lilian_voss();
+void AddSC_boss_grandmaster_gandling();
 
 void AddSC_shadowfang_keep();                //Shadowfang keep
 void AddSC_instance_shadowfang_keep();
@@ -971,6 +978,13 @@ void AddEasternKingdomsScripts()
     AddSC_boss_houndmaster_braun();
     AddSC_boss_armsmaster_harlan();
     AddSC_boss_flameweaver_koegler();
+    AddSC_scholomance();                    //Scholomance
+    AddSC_instance_scholomance();
+    AddSC_boss_instructor_chillheart();
+    AddSC_boss_jandice_barov();
+    AddSC_boss_rattlegore();
+    AddSC_boss_lilian_voss();
+    AddSC_boss_grandmaster_gandling();
 
     AddSC_shadowfang_keep();                //Shadowfang keep
     AddSC_instance_shadowfang_keep();
