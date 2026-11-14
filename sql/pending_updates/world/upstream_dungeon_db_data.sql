@@ -27,7 +27,6 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 (13, 1, 126642, 0, 0, 31, 0, 3, 59198, 0, 0, 0, 0, '', 'Dragon Breath Cosmetic');
 
 -- gameobject_template ('unk name' stubs and chests without a loot id)
-UPDATE `gameobject_template` SET `data1` = 42733 WHERE `entry` = 212968; -- Ancient Tome
 
 
 -- ==========================================================================
