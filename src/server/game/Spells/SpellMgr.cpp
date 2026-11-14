@@ -3851,6 +3851,142 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 122376: // Barrel Drop
                 spellInfo->AttributesEx6 |= SPELL_ATTR6_CASTABLE_WHILE_ON_VEHICLE;
                 break;
+            //
+            // ZUL'GURUB SPELLS (LoA's corrections; its scripts are the ones ported here)
+            //
+            // Venoxis
+            case 96489: // Toxic Explosion
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 96560: // Word of Hethiss
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 96842: // Bloodvenom
+                spellInfo->MaxAffectedTargets = 3;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(41);
+                break;
+            case 96638: // Bloodvenom dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                break;
+            case 96685: // Venomous Infusion dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                break;
+            case 96475: // Toxic Link
+                spellInfo->MaxAffectedTargets = 2;
+                break;
+            case 96476: // Toxic Link dummy
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->TargetAuraSpell = 96477;
+                break;
+            // Zanzil
+            case 96319:
+            case 96316:
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_DUMMY;
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = 0;
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 96342: // Pursuit
+                spellInfo->Effects[EFFECT_2].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                break;
+            case 96914: // Zanzil Fire
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_STUN;
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_CASTER);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                break;
+            // Kilnara
+            case 96457: // Wall of Agony
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_1;
+                break;
+            case 96909: // Wail of Sorrow
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 96422: // Tears of Blood dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
+                break;
+            case 97355: // Gaping Wound jump
+            case 97357: // Gaping Wound dmg
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                spellInfo->Effects[EFFECT_1].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo();
+                break;
+            case 98238: // Rat Lure
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENTRY);
+                break;
+            // Jin'do the Godbreaker
+            case 96689: // Spirit World aura
+                // LoA also set the phase effect's MiscValue to its phase mask 2. SkyFire phases by id and the
+                // DBC value (MiscValueB 173) is already right; both effects must reach the players, though.
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
+                spellInfo->Effects[EFFECT_1].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ENEMY);
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_HIT_RESULT;
+                break;
+            case 97022: // Hakkar's Chains
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo();
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->ChannelInterruptFlags = 0;
+                break;
+            case 97172: // Shadows of Hakkar
+            case 97198: // Body Slam
+                spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 97597: // Spirit Warrior's Gaze
+            case 97158: // Shadow Spike target
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 97152: // Summon Spirit target
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(33);
+                break;
+            case 96964: // Sunder Rift
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(18);
+                break;
+            case 96970: // Sunder Rift
+                spellInfo->ProcChance = 100;
+                break;
+            case 97320: // Sunder Rift
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_SRC_CASTER);
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_SRC_AREA_ALLY);
+                spellInfo->InterruptFlags = 0;
+                break;
+            //
+            // ZUL'AMAN SPELLS (LoA's corrections)
+            //
+            case 43648: // Akil'zon: Electrical Storm
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_MOD_STUN;
+                break;
+            case 42471: // Jan'alai: Hatch Eggs
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                spellInfo->MaxAffectedTargets = 3;
+                break;
+            case 42630: // Jan'alai: Fire Bomb dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 43140: // Jan'alai: Flame Breath
+                spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                spellInfo->ChannelInterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 97505: // Halazzi: Refreshing Stream heal
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 44132: // Hex Lord Malacrass: Drain Power
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 43095: // Hex Lord Malacrass: Creeping Paralysis
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 43121: // Hex Lord Malacrass: Feather Storm
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                break;
+            case 43550: // Hex Lord Malacrass: Mind Control
+                spellInfo->Effects[EFFECT_0].TargetB = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ENEMY);
+                break;
             default:
                 break;
         }

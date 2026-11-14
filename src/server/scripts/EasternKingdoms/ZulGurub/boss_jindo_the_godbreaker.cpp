@@ -117,6 +117,12 @@ enum Adds
     NPC_GURUBASHI_SPIRIT    = 52730,
 };
 
+enum Phases
+{
+    PHASE_DEFAULT       = 169, // SkyFire's fallback phase: seen by everyone who has no phase of their own
+    PHASE_SPIRIT_WORLD  = 173, // SpellEffect.dbc: Spirit World (96689) effect 1, SPELL_AURA_PHASE, MiscValueB
+};
+
 enum Points
 {
     POINT_JINDO = 1,
@@ -170,6 +176,7 @@ class boss_jindo_the_godbreaker : public CreatureScript
                 _Reset();
                 bTwoPhase = false;
                 chains = 0;
+                me->ClearPhases(true);
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                 me->LowerPlayerDamageReq(me->GetHealth());
@@ -212,7 +219,11 @@ class boss_jindo_the_godbreaker : public CreatureScript
                 if (summon->GetEntry() == NPC_GURUBASHI_SPIRIT || 
                     summon->GetEntry() == NPC_HAKKAR_CHAINS ||
                     summon->GetEntry() == NPC_SPIRIT_OF_HAKKAR)
-                    summon->SetPhaseMask(2, true);
+                {
+                    // SkyFire shows creatures by phase id, not by phase mask: Spirit World (96689) puts players in phase 173
+                    summon->ClearPhases(false);
+                    summon->SetPhased(PHASE_SPIRIT_WORLD, true, true);
+                }
             }
 
             void SummonedCreatureDies(Creature* summon, Unit* killer) override
@@ -272,6 +283,10 @@ class boss_jindo_the_godbreaker : public CreatureScript
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                     events.Reset();
                     Talk(SAY_PHASE_2);
+
+                    // Jin'do is seen from both worlds from here on (LoA: phase mask 3)
+                    me->SetPhased(PHASE_DEFAULT, false, true);
+                    me->SetPhased(PHASE_SPIRIT_WORLD, true, true);
 
                     if (Creature* pHakkar = me->SummonCreature(NPC_SPIRIT_OF_HAKKAR, hakkarPos))
                     {
