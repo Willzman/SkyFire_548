@@ -64,7 +64,7 @@ enum ConditionTypes
     CONDITION_IN_WATER              = 40,                   // 0                0              0                  true if unit in water
     CONDITION_UNUSED_41             = 41,                   // TC/LoA TERRAIN_SWAP — use CONDITION_TERRAIN_SWAP (39)
     CONDITION_STAND_STATE           = 42,                   // stateType        state          0                  true if unit matches sit/stand state (0,x: exact state x; 1,0: any standing; 1,1: any sitting)
-    CONDITION_UNUSED_43             = 43,                   // TC/LoA DAILY_QUEST_DONE — deferred until daily quest cooldown storage is restored
+    CONDITION_DAILY_QUEST_DONE      = 43,                   // quest id         0              0                  true if player has rewarded the daily quest since the last daily reset
     CONDITION_CHARMED               = 44,                   // 0                0              0                  true if unit is currently charmed
     CONDITION_PET_TYPE              = 45,                   // mask             0              0                  true if player has a pet of given type(s)
     CONDITION_TAXI                  = 46,                   // 0                0              0                  true if player is on taxi / in flight

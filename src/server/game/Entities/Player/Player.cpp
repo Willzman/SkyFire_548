@@ -14046,36 +14046,16 @@ void Player::_LoadQuestStatusRewarded(PreparedQueryResult result)
 
 void Player::_LoadDailyQuestStatus(PreparedQueryResult result)
 {
-    //for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-        //SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, 0);
-
+    m_dailyquests.clear();
     m_DFQuests.clear();
 
     //QueryResult* result = CharacterDatabase.PQuery("SELECT quest, time FROM character_queststatus_daily WHERE guid = '%u'", GetGUIDLow());
 
     if (result)
     {
-        uint32 quest_daily_idx = 0;
-
         do
         {
             Field* fields = result->Fetch();
-            if (Quest const* qQuest = sObjectMgr->GetQuestTemplate(fields[0].GetUInt32()))
-            {
-                if (qQuest->IsDFQuest())
-                {
-                    m_DFQuests.insert(qQuest->GetQuestId());
-                    m_lastDailyQuestTime = time_t(fields[1].GetUInt32());
-                    continue;
-                }
-            }
-
-            if (quest_daily_idx >= PLAYER_MAX_DAILY_QUESTS)  // max amount with exist data in query
-            {
-                SF_LOG_ERROR("entities.player", "Player (GUID: %u) have more 25 daily quest records in `charcter_queststatus_daily`", GetGUIDLow());
-                break;
-            }
-
             uint32 quest_id = fields[0].GetUInt32();
 
             // save _any_ from daily quest times (it must be after last reset anyway)
@@ -14085,8 +14065,10 @@ void Player::_LoadDailyQuestStatus(PreparedQueryResult result)
             if (!quest)
                 continue;
 
-            //SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, quest_id);
-            ++quest_daily_idx;
+            if (quest->IsDFQuest())
+                m_DFQuests.insert(quest_id);
+            else
+                m_dailyquests.insert(quest_id);
 
             SF_LOG_DEBUG("entities.player.loading", "Daily quest (%u) cooldown for player (GUID: %u)", quest_id, GetGUIDLow());
         } while (result->NextRow());
@@ -15515,28 +15497,23 @@ void Player::_SaveDailyQuestStatus(SQLTransaction& trans)
     PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_DAILY_CHAR);
     stmt->setUInt32(0, GetGUIDLow());
     trans->Append(stmt);
-    /*for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
+
+    for (QuestSet::const_iterator itr = m_dailyquests.begin(); itr != m_dailyquests.end(); ++itr)
     {
-        if (GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
-        {
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_DAILYQUESTSTATUS);
-            stmt->setUInt32(0, GetGUIDLow());
-            stmt->setUInt32(1, GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx));
-            stmt->setUInt64(2, uint64(m_lastDailyQuestTime));
-            trans->Append(stmt);
-        }
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_DAILYQUESTSTATUS);
+        stmt->setUInt32(0, GetGUIDLow());
+        stmt->setUInt32(1, (*itr));
+        stmt->setUInt64(2, uint64(m_lastDailyQuestTime));
+        trans->Append(stmt);
     }
-    */
-    if (!m_DFQuests.empty())
+
+    for (DFQuestsDoneList::iterator itr = m_DFQuests.begin(); itr != m_DFQuests.end(); ++itr)
     {
-        for (DFQuestsDoneList::iterator itr = m_DFQuests.begin(); itr != m_DFQuests.end(); ++itr)
-        {
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_DAILYQUESTSTATUS);
-            stmt->setUInt32(0, GetGUIDLow());
-            stmt->setUInt32(1, (*itr));
-            stmt->setUInt64(2, uint64(m_lastDailyQuestTime));
-            trans->Append(stmt);
-        }
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_DAILYQUESTSTATUS);
+        stmt->setUInt32(0, GetGUIDLow());
+        stmt->setUInt32(1, (*itr));
+        stmt->setUInt64(2, uint64(m_lastDailyQuestTime));
+        trans->Append(stmt);
     }
 }
 
@@ -19914,26 +19891,20 @@ void Player::SetDailyQuestStatus(uint32 quest_id)
 {
     if (Quest const* qQuest = sObjectMgr->GetQuestTemplate(quest_id))
     {
-        if (!qQuest->IsDFQuest())
-        {
-            for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-            {
-                /*if (!GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx))
-                {
-                    SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, quest_id);
-                    m_lastDailyQuestTime = time(NULL);              // last daily quest time
-                    m_DailyQuestChanged = true;
-                    break;
-                }*/
-            }
-        }
-        else
-        {
+        // the 5.4.8 client has no fixed-size daily quest fields (and no 25 a day limit), so the list lives here only
+        if (qQuest->IsDFQuest())
             m_DFQuests.insert(quest_id);
-            m_lastDailyQuestTime = time(NULL);
-            m_DailyQuestChanged = true;
-        }
+        else
+            m_dailyquests.insert(quest_id);
+
+        m_lastDailyQuestTime = time(NULL);              // last daily quest time
+        m_DailyQuestChanged = true;
     }
+}
+
+bool Player::IsDailyQuestDone(uint32 quest_id) const
+{
+    return m_dailyquests.find(quest_id) != m_dailyquests.end() || m_DFQuests.find(quest_id) != m_DFQuests.end();
 }
 
 void Player::SetWeeklyQuestStatus(uint32 quest_id)
@@ -19960,9 +19931,7 @@ void Player::SetMonthlyQuestStatus(uint32 quest_id)
 
 void Player::ResetDailyQuestStatus()
 {
-    //for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    //    SetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx, 0);
-
+    m_dailyquests.clear();
     m_DFQuests.clear(); // Dungeon Finder Quests.
 
     // DB data deleted in caller

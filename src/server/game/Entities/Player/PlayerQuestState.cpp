@@ -1269,7 +1269,7 @@ bool Player::SatisfyQuestPrevChain(Quest const* qInfo, bool msg)
     return true;
 }
 
-bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
+bool Player::SatisfyQuestDay(Quest const* qInfo, bool /*msg*/)
 {
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
@@ -1282,28 +1282,8 @@ bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
         return true;
     }
 
-    bool have_slot = false;
-    for (uint32 quest_daily_idx = 0; quest_daily_idx < PLAYER_MAX_DAILY_QUESTS; ++quest_daily_idx)
-    {
-        uint32 id = 0;//GetUInt32Value(PLAYER_FIELD_DAILY_QUESTS_1+quest_daily_idx);
-        if (qInfo->GetQuestId() == id)
-            return false;
-
-        if (!id)
-            have_slot = true;
-    }
-
-    if (!have_slot)
-    {
-        if (msg)
-        {
-            SendCanTakeQuestResponse(INVALIDREASON_DAILY_QUESTS_REMAINING);
-            SF_LOG_DEBUG("misc", "SatisfyQuestDay: Sent INVALIDREASON_DAILY_QUESTS_REMAINING (questId: %u) because player already did all possible quests today.", qInfo->GetQuestId());
-        }
-        return false;
-    }
-
-    return true;
+    // not rewarded since the last daily reset
+    return m_dailyquests.find(qInfo->GetQuestId()) == m_dailyquests.end();
 }
 
 bool Player::SatisfyQuestWeek(Quest const* qInfo, bool /*msg*/)
