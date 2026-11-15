@@ -649,7 +649,10 @@ public:
     uint16 GetConfigMaxSkillValue() const
     {
         uint8 lvl = uint8(getIntConfig(WorldIntConfigs::CONFIG_MAX_PLAYER_LEVEL));
-        return lvl > 60 ? 300 + ((lvl - 60) * 75) / 10 : lvl * 5;
+        // 300 at 60, 375 at 70, 450 at 80, 525 at 85, 600 at 90
+        return lvl > 85 ? 525 + ((lvl - 85) * 75) / 5 :
+               lvl > 80 ? 450 + ((lvl - 80) * 75) / 5 :
+               lvl > 60 ? 300 + ((lvl - 60) * 75) / 10 : lvl * 5;
     }
 
     void SetInitialWorldSettings();
