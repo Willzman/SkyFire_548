@@ -21,7 +21,7 @@
  * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
  */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
 #include "../pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
@@ -456,7 +456,12 @@ class spell_sap_residue : public SpellScriptLoader
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CASTER);
+                // Both spells have a single area effect: 119941 hits enemies, 120070 hits entries.
+                // The hook was on EFFECT_1 / TARGET_UNIT_CASTER, which neither spell has, so the size check never ran.
+                if (m_scriptSpellId == 119941)
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                else
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_sap_residue_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

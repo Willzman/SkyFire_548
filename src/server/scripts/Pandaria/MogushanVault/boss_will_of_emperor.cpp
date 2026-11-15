@@ -21,7 +21,7 @@
  * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
  */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
 #include "../pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
@@ -1831,7 +1831,8 @@ class spell_titan_gas final : public SpellScriptLoader
 
             void Register() override final
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_gas_SpellScript::FilterTargets, EFFECT_0, TARGET_DEST_DB);
+                // 116803 targets TARGET_SRC_CASTER / TARGET_UNIT_SRC_AREA_ENTRY; with TARGET_DEST_DB the filter was never attached
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_titan_gas_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

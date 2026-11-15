@@ -78,8 +78,8 @@ class spell_spicy_explosion : public SpellScriptLoader
             void Register() OVERRIDE
             {
                 AfterCast += SpellCastFn(spell_spicy_explosion_SpellScript::HandleAfterCast);
+                // effect 3 targets the caster only, so it has no area target list to filter
                 OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENTRY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_spicy_explosion_SpellScript::SelectTargets, EFFECT_3, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

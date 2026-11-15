@@ -951,7 +951,8 @@ class spell_gen_clone : public SpellScriptLoader
                 else
                 {
                     // MoP clone spells (e.g. 45204) put SCRIPT_EFFECT on EFFECT_2.
-                    OnEffectHitTarget += SpellEffectFn(spell_gen_clone_SpellScript::HandleScriptEffect, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
+                    if (m_scriptSpellId != 45204)   // effect 1 of 45204 is an aura
+                        OnEffectHitTarget += SpellEffectFn(spell_gen_clone_SpellScript::HandleScriptEffect, EFFECT_1, SPELL_EFFECT_SCRIPT_EFFECT);
                     OnEffectHitTarget += SpellEffectFn(spell_gen_clone_SpellScript::HandleScriptEffect, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
                 }
             }
