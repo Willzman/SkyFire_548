@@ -52,7 +52,6 @@ struct SpellResearchData;
 typedef std::deque<Mail*> PlayerMails;
 
 #define PLAYER_MAX_SKILLS           128
-#define PLAYER_MAX_DAILY_QUESTS     750
 #define PLAYER_EXPLORED_ZONES_SIZE  200
 
 struct ActionButtonPACKET
@@ -1810,6 +1809,7 @@ public:
     void RemoveRewardedQuest(uint32 quest_id);
 
     void SetDailyQuestStatus(uint32 quest_id);
+    bool IsDailyQuestDone(uint32 quest_id) const;
     void SetWeeklyQuestStatus(uint32 quest_id);
     void SetMonthlyQuestStatus(uint32 quest_id);
     void SetSeasonalQuestStatus(uint32 quest_id);
@@ -3354,6 +3354,7 @@ protected:
     typedef std::set<uint32> SeasonalQuestSet;
     typedef UNORDERED_MAP<uint32, SeasonalQuestSet> SeasonalEventQuestMap;
     QuestSet m_timedquests;
+    QuestSet m_dailyquests;                             // daily quests rewarded since the last daily reset
     QuestSet m_weeklyquests;
     QuestSet m_monthlyquests;
     SeasonalEventQuestMap m_seasonalquests;
