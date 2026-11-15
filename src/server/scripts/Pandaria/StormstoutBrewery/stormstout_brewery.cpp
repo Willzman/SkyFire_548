@@ -38,6 +38,22 @@ uint32 const PartyEmotes[4] =
     EMOTE_ONESHOT_LAUGH,
 };
 
+// Bring a nearby hozen into the fight against the unit that pulled its pack.
+// Used instead of DoZoneInCombat(), which puts every player on the map in
+// combat and logs an error (and leaves the hozen idle) when it finds no target.
+static void PullIntoFight(Creature* hozen, Unit* who)
+{
+    if (!who || !hozen->IsAlive() || hozen->IsInCombat() || hozen->HasReactState(REACT_PASSIVE))
+        return;
+
+    if (!hozen->IsValidAttackTarget(who))
+        return;
+
+    hozen->CombatStart(who);
+    if (hozen->IsAIEnabled)
+        hozen->AI()->AttackStart(who);
+}
+
 // 107205 - Spicy Explosion
 class spell_spicy_explosion : public SpellScriptLoader
 {
@@ -314,7 +330,7 @@ class npc_aqua_dancer : public CreatureScript
                 damage = me->GetHealth();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* killer) OVERRIDE
             {
                 DoCast(me, SPELL_SPLASH, true);
 
@@ -322,8 +338,7 @@ class npc_aqua_dancer : public CreatureScript
                 {
                     Talk(0);
                     me->DealDamage(hozen, uint32(hozen->GetMaxHealth() / 2), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_FROST);
-                    if (hozen->IsAlive())
-                        hozen->AI()->DoZoneInCombat();
+                    PullIntoFight(hozen, killer);
                 }
             }
 
@@ -378,14 +393,13 @@ class npc_fiery_trickster : public CreatureScript
                 damage = me->GetHealth();
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* killer) OVERRIDE
             {
                 if (Creature* hozen = ObjectAccessor::GetCreature(*me, _hozenGUID))
                 {
                     Talk(0);
                     me->DealDamage(hozen, uint32(hozen->GetMaxHealth() / 2), NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_FIRE);
-                    if (hozen->IsAlive())
-                        hozen->AI()->DoZoneInCombat();
+                    PullIntoFight(hozen, killer);
                 }
             }
 
@@ -467,7 +481,7 @@ class npc_hozen_party_animal : public CreatureScript
                     _canAggroMore = false;
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* who) OVERRIDE
             {
                 if (_canAggroMore)
                 {
@@ -475,11 +489,12 @@ class npc_hozen_party_animal : public CreatureScript
                     GetCreatureListWithEntryInGrid(partyAnimals, me, me->GetEntry(), 15.0f);
                     for (Creature* hozen : partyAnimals)
                     {
-                        if (hozen->IsAlive() && !hozen->IsInCombat())
-                        {
-                            hozen->AI()->DoAction(1);
-                            hozen->AI()->DoZoneInCombat();
-                        }
+                        if (hozen == me || !hozen->IsAlive() || hozen->IsInCombat())
+                            continue;
+
+                        // Stop the pulled hozen from pulling its own neighbours in turn
+                        hozen->AI()->DoAction(1);
+                        PullIntoFight(hozen, who);
                     }
                 }
 
@@ -626,13 +641,13 @@ class npc_controlled_hozen : public CreatureScript
                 me->GetMotionMaster()->MoveTargetedHome();
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* who) OVERRIDE
             {
                 std::list<Creature*> brawlers;
                 GetCreatureListWithEntryInGrid(brawlers, me, me->GetEntry(), 60.0f);
                 for (Creature* brawler : brawlers)
-                    if (brawler->IsAlive() && !brawler->IsInCombat())
-                        brawler->AI()->DoZoneInCombat();
+                    if (brawler != me)
+                        PullIntoFight(brawler, who);
             }
         };
 
