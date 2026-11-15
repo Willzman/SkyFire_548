@@ -1936,10 +1936,19 @@ class spell_darkshore_corpse_soothe : public SpellScriptLoader
             {
                 OnCheckCast += SpellCheckCastFn(spell_darkshore_corpse_soothe_SpellScript::CheckCorpseNotSoothed);
                 OnCast += SpellCastFn(spell_darkshore_corpse_soothe_SpellScript::MarkCorpseSoothed);
-                OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::RelocateSummonDest, EFFECT_0, SPELL_EFFECT_SUMMON);
-                OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::RelocateSummonDest, EFFECT_1, SPELL_EFFECT_SUMMON);
-                OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::HandleQuestCredit, EFFECT_0, SPELL_EFFECT_SUMMON);
-                OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::HandleQuestCredit, EFFECT_1, SPELL_EFFECT_SUMMON);
+                // The four spells this is bound to summon from different effects (or from none): hook only the
+                // summon effects each one has, or every other spell logs a mismatch at startup.
+                if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(m_scriptSpellId))
+                {
+                    for (uint8 i = EFFECT_0; i <= EFFECT_1; ++i)
+                    {
+                        if (spellInfo->Effects[i].Effect != SPELL_EFFECT_SUMMON)
+                            continue;
+
+                        OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::RelocateSummonDest, i, SPELL_EFFECT_SUMMON);
+                        OnEffectHit += SpellEffectFn(spell_darkshore_corpse_soothe_SpellScript::HandleQuestCredit, i, SPELL_EFFECT_SUMMON);
+                    }
+                }
             }
         };
 

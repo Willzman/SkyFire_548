@@ -399,7 +399,9 @@ class spell_rimok_saboteur_bombard : public SpellScriptLoader
 
             void Register() override
             {
-                OnEffectPeriodic += AuraEffectPeriodicFn(spell_rimok_saboteur_bombard_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
+                // the aura is Bombard (120559); the area filter below belongs to the spell it triggers (120202)
+                if (m_scriptSpellId == SPELL_BOMBARD)
+                    OnEffectPeriodic += AuraEffectPeriodicFn(spell_rimok_saboteur_bombard_AuraScript::OnPeriodic, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
@@ -414,7 +416,8 @@ class spell_rimok_saboteur_bombard : public SpellScriptLoader
 
             void Register() override
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_bombard_rimok_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                if (m_scriptSpellId != SPELL_BOMBARD)
+                    OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_bombard_rimok_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
             }
         };
 

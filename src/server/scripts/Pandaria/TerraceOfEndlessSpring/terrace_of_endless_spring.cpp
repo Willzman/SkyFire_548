@@ -320,7 +320,8 @@ class spell_night_terrors_missile : public SpellScript
 
     void Register() OVERRIDE
     {
-        OnEffectHit += SpellEffectFn(spell_night_terrors_missile::SummonNightTerrors, EFFECT_0, SPELL_EFFECT_TRIGGER_MISSILE);
+        // SpellMgr turns effect 0 of 125736 into a dummy, so a hook on TRIGGER_MISSILE was never attached
+        OnEffectHit += SpellEffectFn(spell_night_terrors_missile::SummonNightTerrors, EFFECT_0, SPELL_EFFECT_DUMMY);
     }
 };
 
