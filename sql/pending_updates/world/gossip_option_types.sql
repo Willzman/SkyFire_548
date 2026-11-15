@@ -52,9 +52,6 @@ UPDATE `gossip_menu_option` SET `OptionType` = 5, `OptionNpcflag` = 16 WHERE (`O
 -- spirit healer (type 6, flag 16384): 1 options
 UPDATE `gossip_menu_option` SET `OptionType` = 6, `OptionNpcflag` = 16384 WHERE (`OptionType` = 0 OR `OptionNpcflag` = 0) AND (`MenuID`, `OptionID`) IN ((9800,0));
 
--- dual spec (type 18, flag 16): 1 options
-UPDATE `gossip_menu_option` SET `OptionType` = 18, `OptionNpcflag` = 16 WHERE (`OptionType` = 0 OR `OptionNpcflag` = 0) AND (`MenuID`, `OptionID`) IN ((10358,2));
-
 -- vendor (type 3, flag 512): 1 options
 UPDATE `gossip_menu_option` SET `OptionType` = 3, `OptionNpcflag` = 512 WHERE (`OptionType` = 0 OR `OptionNpcflag` = 0) AND (`MenuID`, `OptionID`) IN ((12101,3));
 
@@ -95,10 +92,10 @@ UPDATE `gossip_menu_option` SET `ActionMenuID` = 10763 WHERE `MenuID` = 10768 AN
 UPDATE `gossip_menu_option` SET `ActionMenuID` = 10764 WHERE `MenuID` = 10768 AND `OptionID` = 8 AND `ActionMenuID` = 0;
 UPDATE `gossip_menu_option` SET `ActionMenuID` = 12373 WHERE `MenuID` = 12372 AND `OptionID` = 3 AND `ActionMenuID` = 0;
 
--- Conditions LoA has on those options (quest state, auras, events), so they do not show for everyone: 159 rows on 118 options
+-- Conditions LoA has on those options (quest state, auras, events), so they do not show for everyone: 156 rows on 117 options
 DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND (`SourceGroup`, `SourceEntry`) IN ((1141,0),(2177,0),(2178,0),(2179,0),(3864,1),(5848,0),(5849,0),(6646,2),(6874,0),(6874,1),(6874,2),(6874,3),(6874,4),(6917,0),(6953,0),(7399,0),(7452,0),(7452,1),(7452,2),(7452,3),(7465,0),(7559,1),(7560,1),(7669,0),(7771,0),(8073,0),(8075,0),(8076,0),(8077,0),(9190,0),(9190,1),(9217,0),(9761,0),(9855,0),(9860,0),(9983,0),(10219,0),(10273,0),(10274,0),(10338,0));
-DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND (`SourceGroup`, `SourceEntry`) IN ((10358,0),(10358,1),(10358,2),(10358,3),(10358,4),(10358,5),(10358,6),(10358,7),(10494,0),(10502,0),(10519,0),(10520,0),(10521,0),(10521,1),(10521,2),(10521,3),(10521,4),(10602,0),(10620,0),(10622,0),(10624,0),(10658,0),(10659,0),(10680,0),(10680,1),(10780,0),(10780,2),(10780,3),(10797,0),(10801,0),(10808,0),(10882,0),(10941,0),(10941,1),(10960,0),(10978,0),(11093,0),(11132,0),(11146,0),(11372,1));
-DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND (`SourceGroup`, `SourceEntry`) IN ((11373,1),(11473,1),(11479,0),(11613,1),(11654,0),(11659,0),(11689,0),(11727,0),(11728,0),(11739,0),(11741,1),(11743,0),(11744,0),(11872,0),(11873,0),(11934,0),(11936,0),(11938,0),(11940,0),(11942,0),(11943,0),(11967,0),(12034,0),(12035,0),(12043,0),(12043,1),(12043,2),(12058,0),(12058,1),(12090,0),(12113,0),(12121,0),(12247,0),(12296,0),(12297,0),(12298,0),(12353,0),(12941,1));
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND (`SourceGroup`, `SourceEntry`) IN ((10358,0),(10358,1),(10358,3),(10358,4),(10358,5),(10358,6),(10358,7),(10494,0),(10502,0),(10519,0),(10520,0),(10521,0),(10521,1),(10521,2),(10521,3),(10521,4),(10602,0),(10620,0),(10622,0),(10624,0),(10658,0),(10659,0),(10680,0),(10680,1),(10780,0),(10780,2),(10780,3),(10797,0),(10801,0),(10808,0),(10882,0),(10941,0),(10941,1),(10960,0),(10978,0),(11093,0),(11132,0),(11146,0),(11372,1),(11373,1));
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND (`SourceGroup`, `SourceEntry`) IN ((11473,1),(11479,0),(11613,1),(11654,0),(11659,0),(11689,0),(11727,0),(11728,0),(11739,0),(11741,1),(11743,0),(11744,0),(11872,0),(11873,0),(11934,0),(11936,0),(11938,0),(11940,0),(11942,0),(11943,0),(11967,0),(12034,0),(12035,0),(12043,0),(12043,1),(12043,2),(12058,0),(12058,1),(12090,0),(12113,0),(12121,0),(12247,0),(12296,0),(12297,0),(12298,0),(12353,0),(12941,1));
 INSERT INTO `conditions` (`SourceTypeOrReferenceId`,`SourceGroup`,`SourceEntry`,`SourceId`,`ElseGroup`,`ConditionTypeOrReference`,`ConditionTarget`,`ConditionValue1`,`ConditionValue2`,`ConditionValue3`,`NegativeCondition`,`ErrorType`,`ErrorTextId`,`ScriptName`,`Comment`) VALUES
 (15,1141,0,0,0,8,0,3129,0,0,0,0,0,'',''),
 (15,2177,0,0,0,9,0,24722,0,0,0,0,0,'','Gossip Option requires quest not complete'),
@@ -155,9 +152,6 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`,`SourceGroup`,`SourceEntry`,
 (15,10358,1,0,0,1,0,67401,0,0,1,0,0,'',''),
 (15,10358,1,0,0,17,0,2816,0,0,0,0,0,'',''),
 (15,10358,1,0,0,17,0,3736,0,0,0,0,0,'',''),
-(15,10358,2,0,0,1,0,67401,0,0,1,0,0,'',''),
-(15,10358,2,0,0,17,0,2816,0,0,0,0,0,'',''),
-(15,10358,2,0,0,17,0,3736,0,0,0,0,0,'',''),
 (15,10358,3,0,0,17,0,2784,0,0,0,0,0,'',''),
 (15,10358,4,0,0,17,0,2787,0,0,0,0,0,'',''),
 (15,10358,5,0,0,17,0,2783,0,0,0,0,0,'',''),
