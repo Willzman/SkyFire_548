@@ -368,7 +368,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                         instance->SetBossState(BOSS_DURAND, SPECIAL);
                         events.ScheduleEvent(EVENT_HEAL, urand(15000, 16000));
                         events.ScheduleEvent(EVENT_MASS_RESURRETION, 10 * IN_MILLISECONDS);
-                        events.ScheduleEvent(EVENT_SMITE, 0.5 * IN_MILLISECONDS);
+                        events.ScheduleEvent(EVENT_SMITE, 500);
 
                         instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_DEEP_SLEEP);
 
@@ -554,7 +554,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_INTRO:
-                            events.ScheduleEvent(EVENT_SMITE, 0.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_SMITE, 500);
                             events.ScheduleEvent(EVENT_HEAL, urand(9000, 13000));
                             break;
                         case EVENT_SMITE:
@@ -573,7 +573,7 @@ class boss_high_inqusitior_whitemane : public CreatureScript
                                 if (!InRessurection)
                                     DoCast(target, SPELL_SMITE);
 
-                            events.ScheduleEvent(EVENT_SMITE, urand(2.6 * IN_MILLISECONDS, 3 * IN_MILLISECONDS));
+                            events.ScheduleEvent(EVENT_SMITE, urand(2600, 3000));
                             break;
                         case EVENT_HEAL:
                         {
@@ -645,7 +645,7 @@ class spell_sc_mass_ressurection : public SpellScript
 
     void FilterTargets(std::list<WorldObject*>& targets)
     {
-        targets.remove_if([=](WorldObject const* target)
+        targets.remove_if([this](WorldObject const* target)
         {
             if (target->GetTypeId() != TypeID::TYPEID_UNIT)
                 return true;

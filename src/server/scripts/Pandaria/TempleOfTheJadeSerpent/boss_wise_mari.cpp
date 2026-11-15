@@ -173,7 +173,7 @@ class boss_wase_mari : public CreatureScript
 
                 _Reset();
                 events.Reset();
-                cosmeticEvents.ScheduleEvent(EVENT_SUMMON_TRIGGERS, 0.5 * IN_MILLISECONDS);
+                cosmeticEvents.ScheduleEvent(EVENT_SUMMON_TRIGGERS, 500);
                 me->RemoveAurasDueToSpell(SPELL_WATER_BUBBLE_WISE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
                 me->SetReactState(REACT_PASSIVE);
@@ -292,12 +292,12 @@ class boss_wase_mari : public CreatureScript
                             events.ScheduleEvent(EVENT_CALL_WATER, urand(12, 16) * IN_MILLISECONDS);
                         break;
                     case ACTION_HYDROLANCE:
-                        events.ScheduleEvent(EVENT_HYDROLANCE, 0.25 * IN_MILLISECONDS);
+                        events.ScheduleEvent(EVENT_HYDROLANCE, 250);
                         events.ScheduleEvent(EVENT_HYDROLANCE_START, urand(8, 12) * IN_MILLISECONDS);
                         break;
                     case ACTION_WASH_AWAY:
                         events.Reset();
-                        events.ScheduleEvent(EVENT_SWITCH_PHASE_TWO, 0.5 * IN_MILLISECONDS);
+                        events.ScheduleEvent(EVENT_SWITCH_PHASE_TWO, 500);
                         break;
                 }
             }

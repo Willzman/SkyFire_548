@@ -526,7 +526,7 @@ class boss_spirit_kings_controller : public CreatureScript
                         if (instance)
                         {
                             instance->SetBossState(DATA_SPIRIT_KINGS, IN_PROGRESS);
-                            events.ScheduleEvent(EVENT_CHECK_WIPE, 2.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_CHECK_WIPE, 2500);
                         }
                         break;
                     }

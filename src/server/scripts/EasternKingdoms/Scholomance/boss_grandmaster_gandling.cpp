@@ -155,7 +155,7 @@ class boss_grandmaster_gandling : public CreatureScript
                 events.ScheduleEvent(EVENT_IMMOLATE, urand(5000, 10000));
                 events.ScheduleEvent(EVENT_RISE, 45 * IN_MILLISECONDS);
                 events.ScheduleEvent(EVENT_HARSH_LESSON, urand(25000, 40000));
-                events.ScheduleEvent(EVENT_INCINERATE, 0.5 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_INCINERATE, 500);
 
                 if (Creature* FireStalker = GetClosestCreatureWithEntry(me, NPC_GANDLING_FIRE_STALKER, 50.0f, true))
                     if (FireStalker->HasAura(SPELL_GANDlING_FIRE_AURA))
@@ -240,7 +240,7 @@ class boss_grandmaster_gandling : public CreatureScript
                             if (Unit* vic = me->GetVictim())
                                 DoCast(vic, SPELL_INCINERATE);
 
-                            events.ScheduleEvent(EVENT_INCINERATE, urand(2.5 * IN_MILLISECONDS, 3 * IN_MILLISECONDS));
+                            events.ScheduleEvent(EVENT_INCINERATE, urand(2500, 3000));
                             break;
                     }
                 }
@@ -253,7 +253,7 @@ class boss_grandmaster_gandling : public CreatureScript
                 {
                     if (me->HasUnitState(UNIT_STATE_CASTING))
                     {
-                        events.RescheduleEvent(eventId, urand(0.2 * IN_MILLISECONDS, 0.45 * IN_MILLISECONDS));
+                        events.RescheduleEvent(eventId, urand(200, 450));
                         return true;
                     }
 

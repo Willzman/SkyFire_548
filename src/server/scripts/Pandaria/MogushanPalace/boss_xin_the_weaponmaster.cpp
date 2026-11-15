@@ -270,7 +270,7 @@ class boss_xin_the_weaponmaster : public CreatureScript
 
                 if (m_lLaunchersList.empty())
                 {
-                    SF_LOG_ERROR("scripts", "Xin the Weaponmaster found no world triggers for blade launcher in instance {}", me->GetInstanceId());
+                    SF_LOG_ERROR("scripts", "Xin the Weaponmaster found no world triggers for blade launcher in instance %u", me->GetInstanceId());
                     return true;
                 }
 

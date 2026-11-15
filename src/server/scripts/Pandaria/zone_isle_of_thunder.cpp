@@ -4273,7 +4273,7 @@ class spell_mogu_manipulation_cancel : public SpellScript
 
     void SelectTarget(std::list<WorldObject*>& targets)
     {
-        targets.remove_if([=](WorldObject* target) { return GetCaster()->GetGUID() != target->GetGUID(); });
+        targets.remove_if([this](WorldObject* target) { return GetCaster()->GetGUID() != target->GetGUID(); });
     }
 
     void Register() OVERRIDE

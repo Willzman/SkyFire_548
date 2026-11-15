@@ -641,7 +641,7 @@ class boss_jin_qin_xi : public CreatureScript
 
                             // --- Attacks ---
                             events.ScheduleEvent(EVENT_CHECK_MAGNETIC_ARMOR, 12 * IN_MILLISECONDS);
-                            events.ScheduleEvent(EVENT_RESTORE_MANA, 0.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_RESTORE_MANA, 500);
                             break;
                         }
                         case EVENT_SUMMON_RAGE:

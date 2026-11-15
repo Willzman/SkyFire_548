@@ -131,10 +131,10 @@ class boss_lorewalker_stonestep : public CreatureScript
                 switch (actionId)
                 {
                     case ACTION_ZAO:
-                        events.ScheduleEvent(EVENT_SUN_0, 0.5 * IN_MILLISECONDS);
+                        events.ScheduleEvent(EVENT_SUN_0, 500);
                         break;
                     case ACTION_TRIAL:
-                        events.ScheduleEvent(EVENT_STRIFE_0, 0.5 * IN_MILLISECONDS);                   
+                        events.ScheduleEvent(EVENT_STRIFE_0, 500);                   
                         break;
                     case ACTION_RESET:
                         events.Reset();
@@ -456,7 +456,7 @@ class npc_zao : public CreatureScript
                     switch (eventId)
                     {
                         case EVENT_ZAO_ENTER_COMBAT_1:
-                            events.ScheduleEvent(EVENT_ZAO_ENTERS_COMBAT, 5.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_ZAO_ENTERS_COMBAT, 5500);
                             break;
                         case EVENT_ZAO_ENTERS_COMBAT:
                             Talk(TALK_AGGRO);
@@ -1047,7 +1047,7 @@ class npc_talking_fish : public CreatureScript
                             break;
                         case EVENT_TALK_2:
                             Talk(TALK_1);
-                            events.ScheduleEvent(EVENT_TALK_3, 3.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_TALK_3, 3500);
                             break;
                         case EVENT_TALK_3:
                             Talk(TALK_2);
