@@ -306,6 +306,11 @@ class npc_aqua_dancer : public CreatureScript
     public:
         npc_aqua_dancer() : CreatureScript("npc_aqua_dancer") { }
 
+        enum Events
+        {
+            EVENT_BIND = 1
+        };
+
         struct npc_aqua_dancerAI : public ScriptedAI
         {
             npc_aqua_dancerAI(Creature* creature) : ScriptedAI(creature), _hozenGUID(0) { }
@@ -313,14 +318,31 @@ class npc_aqua_dancer : public CreatureScript
             void InitializeAI() OVERRIDE
             {
                 me->SetUnitMovementFlags(MOVEMENTFLAG_DISABLE_GRAVITY);
+                me->SetReactState(REACT_PASSIVE);
 
-                if (Creature* hozen = GetClosestCreatureWithEntry(me, NPC_SODDEN_HOZEN_BRAWLER, 30.0f))
+                // Delayed like the Fiery Trickster's, so the brawlers are loaded
+                _events.ScheduleEvent(EVENT_BIND, urand(400, 800));
+            }
+
+            // One dancer per Sodden Hozen Brawler. There are more dancers than
+            // brawlers (6 and 2 here), and binding every dancer to the closest
+            // brawler gave each brawler up to three Aquatic Illusions, so its
+            // melee hits procced Water Strike several times over.
+            void BindHozen()
+            {
+                std::list<Creature*> brawlers;
+                GetCreatureListWithEntryInGrid(brawlers, me, NPC_SODDEN_HOZEN_BRAWLER, 30.0f);
+                brawlers.sort(Skyfire::ObjectDistanceOrderPred(me));
+
+                for (Creature* hozen : brawlers)
                 {
+                    if (!hozen->IsAlive() || hozen->HasAura(SPELL_AQUATIC_ILLUSION))
+                        continue;
+
                     DoCast(hozen, SPELL_AQUATIC_ILLUSION, true);
                     _hozenGUID = hozen->GetGUID();
+                    break;
                 }
-
-                me->SetReactState(REACT_PASSIVE);
             }
 
             void Reset() OVERRIDE { }
@@ -342,10 +364,17 @@ class npc_aqua_dancer : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 /*diff*/) OVERRIDE { }
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
+                _events.Update(diff);
+
+                if (_events.ExecuteEvent() == EVENT_BIND)
+                    BindHozen();
+            }
 
         private:
             uint64 _hozenGUID;
+            EventMap _events;
         };
 
         CreatureAI* GetAI(Creature* creature) const OVERRIDE
