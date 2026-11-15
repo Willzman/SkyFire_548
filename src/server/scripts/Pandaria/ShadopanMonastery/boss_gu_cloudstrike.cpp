@@ -135,7 +135,7 @@ class boss_gu_cloudstrike : public CreatureScript
                     me->SetReactState(REACT_PASSIVE);
                     me->CombatStop(true);
                     me->setRegeneratingHealth(false);
-                    float speed = me->GetExactDist(3722.58f, 2674.1f, 768.042f) / 1 * IN_MILLISECONDS;
+                    float speed = me->GetExactDist(3722.58f, 2674.1f, 768.042f) * float(IN_MILLISECONDS);
                     Movement::MoveSplineInit init(me);
                     init.MoveTo(3722.58f, 2674.1f, 768.042f);
                     init.SetVelocity(speed);
@@ -155,7 +155,7 @@ class boss_gu_cloudstrike : public CreatureScript
                             introDone = true;
                             Talk(TALK_INTRO_1);
                             me->CastSpell(me, SPELL_KILL_GUARDIANS);
-                            nonCombatEvents.ScheduleEvent(EVENT_TALK_INTRO_2, 6.4 * IN_MILLISECONDS);
+                            nonCombatEvents.ScheduleEvent(EVENT_TALK_INTRO_2, 6400);
                         }
                         break;
                     case ACTION_GU_P_3:
@@ -451,7 +451,7 @@ class npc_azure_serpent : public CreatureScript
 
                         me->RemoveAurasDueToSpell(SPELL_LIGHTNING_SHIELD);
                         events.ScheduleEvent(EVENT_MAGNETIC_SHROUD, urand(8 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
-                        events.ScheduleEvent(EVENT_LIGHTNING_BREATH, urand(2.5*IN_MILLISECONDS, 7.5*IN_MILLISECONDS));
+                        events.ScheduleEvent(EVENT_LIGHTNING_BREATH, urand(2500, 7500));
                         break;
                 }
 

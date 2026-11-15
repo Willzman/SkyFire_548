@@ -378,7 +378,7 @@ class boss_stone_guard_controller : public CreatureScript
                         if (!petrifiedActivated)
                         {
                             petrifiedActivated = true;
-                            events.ScheduleEvent(EVENT_PETRIFICATION, urand(6.5 * IN_MILLISECONDS, 7 * IN_MILLISECONDS));
+                            events.ScheduleEvent(EVENT_PETRIFICATION, urand(6500, 7000));
                         }
                         break;
                     }

@@ -353,7 +353,7 @@ class boss_yu_lon_tjs : public CreatureScript
                 leaveEvent = false;
                 me->SetHealth(me->ToUnit()->CountPctFromMaxHealth(30));
                 me->SetReactState(REACT_AGGRESSIVE);
-                events.ScheduleEvent(EVENT_JADE_FIRE, 0.1 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_JADE_FIRE, 100);
 
                 if (instance)
                     instance->SendEncounterUnit(ENCOUNTER_FRAME_ENGAGE, me);
@@ -577,15 +577,15 @@ class npc_minion_of_doubt : public CreatureScript
                 if (attacker->GetTypeId() == TypeID::TYPEID_PLAYER && !playerCombatInit)
                 {
                     playerCombatInit = true;
-                    events.ScheduleEvent(EVENT_SHADOW_OF_DOUBT, urand(2.5 * IN_MILLISECONDS, 8 * IN_MILLISECONDS));
-                    events.ScheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4.5 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
+                    events.ScheduleEvent(EVENT_SHADOW_OF_DOUBT, urand(2500, 8000));
+                    events.ScheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4500, 12000));
                 }
             }
 
             void CastInterrupted(SpellInfo const* /*spell*/) // LoA AI hook; SkyFire has no such hook, so this is unused
             {
-                events.RescheduleEvent(EVENT_SHADOW_OF_DOUBT, urand(6 * IN_MILLISECONDS, 14.5 * IN_MILLISECONDS));
-                events.RescheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4.5 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
+                events.RescheduleEvent(EVENT_SHADOW_OF_DOUBT, urand(6000, 14500));
+                events.RescheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4500, 12000));
             }
 
             void MoveInLineOfSight(Unit* who) override
@@ -624,7 +624,7 @@ class npc_minion_of_doubt : public CreatureScript
                             break;
                         case EVENT_SHATTERED_RESOLVE:
                             me->CastSpell(me->GetVictim(), SPELL_SHATTERED_RESOLVE, false);
-                            events.ScheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4.5 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
+                            events.ScheduleEvent(EVENT_SHATTERED_RESOLVE, urand(4500, 12000));
                             break;
                     }
                 }

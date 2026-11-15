@@ -568,7 +568,7 @@ class instance_temple_of_jade_serpent : public InstanceMapScript
                             }
 
                             if (Creature* osong = instance->GetCreature(osongGUID))
-                                osong->DespawnOrUnsummon(1.5 * IN_MILLISECONDS);
+                                osong->DespawnOrUnsummon(1500);
 
                             if (Creature* creature = instance->GetCreature(scrollGUID))
                                 creature->Respawn();
@@ -601,7 +601,7 @@ class instance_temple_of_jade_serpent : public InstanceMapScript
                         else if (data == DONE)
                         {
                             if (Creature* osong = instance->GetCreature(osongGUID))
-                                osong->DespawnOrUnsummon(1.5 * IN_MILLISECONDS);
+                                osong->DespawnOrUnsummon(1500);
 
                             if (Creature* lorewalker = instance->GetCreature(lorewalkerGUID))
                             {

@@ -275,7 +275,7 @@ class boss_master_snowdrift : public CreatureScript
                         break;
                     case ACTION_TALK_OUTRO:
                         Talk(TALK_WAWE2_END);
-                        nonCombatEvents.ScheduleEvent(EVENT_OUTRO_1, 6.35 * IN_MILLISECONDS);
+                        nonCombatEvents.ScheduleEvent(EVENT_OUTRO_1, 6350);
                         break;
                     case ACTION_TALK_WAVE_2:
                         Talk(TALK_WAWE2_START);
@@ -396,11 +396,11 @@ class boss_master_snowdrift : public CreatureScript
                             break;
                         case EVENT_INTRO_1:
                             Talk(TALK_INTRO_1);
-                            nonCombatEvents.ScheduleEvent(EVENT_INTRO_2, 7.4 * IN_MILLISECONDS);
+                            nonCombatEvents.ScheduleEvent(EVENT_INTRO_2, 7400);
                             break;
                         case EVENT_INTRO_2:
                             Talk(TALK_INTRO_2);
-                            nonCombatEvents.ScheduleEvent(EVENT_INTRO_3, 10.5 * IN_MILLISECONDS);
+                            nonCombatEvents.ScheduleEvent(EVENT_INTRO_3, 10500);
                             break;
                         case EVENT_INTRO_3:
                             if (instance)
@@ -409,7 +409,7 @@ class boss_master_snowdrift : public CreatureScript
                             break;
                         case EVENT_OUTRO_1:
                             Talk(TALK_OUTRO_1);
-                            nonCombatEvents.ScheduleEvent(EVENT_OUTRO_2, 7.3 * IN_MILLISECONDS);
+                            nonCombatEvents.ScheduleEvent(EVENT_OUTRO_2, 7300);
                             break;
                         case EVENT_OUTRO_2:
                             {
@@ -466,7 +466,7 @@ class boss_master_snowdrift : public CreatureScript
                                 if (instance->IsWipe())
                                     EnterEvadeMode();
                                 else
-                                    nonCombatEvents.ScheduleEvent(EVENT_CHECK_WIPE, 0.5 * IN_MILLISECONDS);
+                                    nonCombatEvents.ScheduleEvent(EVENT_CHECK_WIPE, 500);
                             }
                             break;
                         case EVENT_PHASE_2:
@@ -517,7 +517,7 @@ class boss_master_snowdrift : public CreatureScript
                             if (auto const target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
                                 me->CastSpell(target, SPELL_CHASE_DOWN, false);
                             me->SetReactState(REACT_PASSIVE);
-                            events.ScheduleEvent(EVENT_CHECK_DEST, 0.5 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_CHECK_DEST, 500);
                             break;
                         case EVENT_CHECK_DEST:
                             if (me->GetVictim() && me->GetVictim()->HasAuraTypeWithCaster(SPELL_AURA_MOD_POSSESS_PET /* aura 128 = fixate in 5.4.8 */, me->GetGUID())) // SPELL_AURA_MOD_POSSESS_PET /* aura 128 = fixate in 5.4.8 */
@@ -529,7 +529,7 @@ class boss_master_snowdrift : public CreatureScript
                                     events.ScheduleEvent(EVENT_PARRY_STANCE, urand(13, 15) * IN_MILLISECONDS);
                                 }
                                 else
-                                    events.ScheduleEvent(EVENT_CHECK_DEST, 0.5 * IN_MILLISECONDS);
+                                    events.ScheduleEvent(EVENT_CHECK_DEST, 500);
                             }
                             else
                             {
@@ -781,7 +781,7 @@ class npc_spm_pandaren_referee : public CreatureScript
                                 instance->SetData(DATA_SNOWDRIFT_STATE, FAIL);
                             }
                             else
-                                events.ScheduleEvent(EVENT_CHECK_WIPE, 0.5 * IN_MILLISECONDS);
+                                events.ScheduleEvent(EVENT_CHECK_WIPE, 500);
                             break;
                         case EVENT_1_WAVE_END:
                             {
@@ -1078,7 +1078,7 @@ class npc_snowdrift_miniboss : public CreatureScript
                 switch (me->GetEntry())
                 {
                     case NPC_FLAGRANT_LOTUS:
-                        nonCombatEvents.ScheduleEvent(EVENT_SUMMON_STAFF, 0.5 * IN_MILLISECONDS);
+                        nonCombatEvents.ScheduleEvent(EVENT_SUMMON_STAFF, 500);
                         events.ScheduleEvent(EVENT_BALL_OF_FIRE, urand(2, 4) * IN_MILLISECONDS);
                         events.ScheduleEvent(EVENT_FLYING_KICK, urand(3, 6) * IN_MILLISECONDS);
                         events.ScheduleEvent(EVENT_RELEASE_STAFF, urand(8, 12) * IN_MILLISECONDS);
@@ -1290,7 +1290,7 @@ class npc_snowdrift_fireball : public CreatureScript
 
             void InitializeAI() override
             {
-                events.ScheduleEvent(EVENT_INITIALIZE, 0.1 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_INITIALIZE, 100);
             }
 
             void UpdateAI(uint32 diff) override
@@ -1638,7 +1638,7 @@ class spell_snowdrift_parry_stance : public SpellScriptLoader
 
                 if (auto const aura = caster->GetAura(aurEff->GetId()))
                 {
-                    if (aura->GetDuration() > 1.5 * IN_MILLISECONDS)
+                    if (aura->GetDuration() > 1500)
                         caster->CastSpell(target, SPELL_QUIVERING_PALM, true);
                     else
                         caster->CastSpell(target, SPELL_FLYING_KICK, true);

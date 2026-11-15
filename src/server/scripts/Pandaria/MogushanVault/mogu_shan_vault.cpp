@@ -225,7 +225,7 @@ class npc_cursed_mogu_sculpture : public CreatureScript
 
             void EnterCombat(Unit* who) override
             {
-                events.ScheduleEvent(EVENT_CURSED_MOGU_SPIRIT_BOLT, urand(1.5 * IN_MILLISECONDS, 12 * IN_MILLISECONDS));
+                events.ScheduleEvent(EVENT_CURSED_MOGU_SPIRIT_BOLT, urand(1500, 12000));
                 events.ScheduleEvent(EVENT_IMPALE, urand(2000, 3000));
 
                 switch (me->GetEntry())

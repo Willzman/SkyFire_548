@@ -354,7 +354,7 @@ struct npc_achiev_prisoned_sha : public ScriptedAI
                     break;
                 case EVENT_SHA_FLAY:
                     DoCast(me, SPELL_SHA_FLAY);
-                    events.ScheduleEvent(EVENT_SHA_FLAY, 15.5 * IN_MILLISECONDS);
+                    events.ScheduleEvent(EVENT_SHA_FLAY, 15500);
                     break;
             }
         }

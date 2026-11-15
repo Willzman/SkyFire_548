@@ -94,7 +94,7 @@ class npc_shadopan_ambusher : public CreatureScript
             {
                 me->RemoveAura(SPELL_STEALTH);
                 events.ScheduleEvent(EVENT_CRISE, urand(6 * IN_MILLISECONDS, 8 * IN_MILLISECONDS));
-                events.ScheduleEvent(EVENT_SHADOWSTEP, 0.5 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_SHADOWSTEP, 500);
             }
 
             void UpdateAI(uint32 diff) override
@@ -815,7 +815,7 @@ class npc_residual_hatred : public CreatureScript
             {
                 events.ScheduleEvent(EVENT_CURSE_OF_AGONY, urand(5 * IN_MILLISECONDS, 10 * IN_MILLISECONDS));
                 events.ScheduleEvent(EVENT_RING_OF_MALICE, urand(6 * IN_MILLISECONDS, 10 * IN_MILLISECONDS));
-                events.ScheduleEvent(EVENT_SHADOW_BOLT, 1.3 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_SHADOW_BOLT, 1300);
             }
 
             void DamageTaken(Unit* /*attacker*/, uint32& damage) override
@@ -848,7 +848,7 @@ class npc_residual_hatred : public CreatureScript
                             break;
                         case EVENT_SHADOW_BOLT:
                             me->CastSpell((Unit*)NULL, SPELL_SHADOW_BOLT, false);
-                            events.ScheduleEvent(EVENT_SHADOW_BOLT, 1.3 * IN_MILLISECONDS);
+                            events.ScheduleEvent(EVENT_SHADOW_BOLT, 1300);
                             break;
                     }
                 }

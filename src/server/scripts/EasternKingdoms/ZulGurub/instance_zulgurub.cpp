@@ -254,7 +254,7 @@ class instance_zulgurub : public InstanceMapScript
                                     nearbyId == NPC_ARTIFACT_ACTIVE_FOSSIL)
                                 {
                                     nearby->CastSpell(nearby, CACHE_OF_MADNESS_SHATTER_ARTIFACT);
-                                    nearby->DespawnOrUnsummon(1.5f * IN_MILLISECONDS);
+                                    nearby->DespawnOrUnsummon(1500);
                                 }
                             }
                         }
