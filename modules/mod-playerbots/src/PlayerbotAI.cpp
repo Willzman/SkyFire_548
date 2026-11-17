@@ -656,7 +656,8 @@ bool PlayerbotAI::RunTravel()
     if (moveType == POINT_MOTION_TYPE)
         return true; // still walking the last MoveTo
 
-    if (BotMovement::MoveTo(_bot, _travel.x, _travel.y, _travel.z))
+    BotMovement::MoveResult moved;
+    if (BotMovement::MoveTo(_bot, _travel.x, _travel.y, _travel.z, &moved))
     {
         _travelFailCount = 0;
         return true;
@@ -664,7 +665,23 @@ bool PlayerbotAI::RunTravel()
 
     if (++_travelFailCount >= 5)
     {
-        sBotFindings->RecordAt(BotFindingType::PathFailed, _bot, _travel.x, _travel.y, _travel.z);
+        // Say why, so a finding can be told apart from a bot that was merely
+        // dead, eating or blocked by a door.
+        char const* why = "?";
+        switch (moved.why)
+        {
+            case BotMovement::MoveFail::CannotMove: why = !_bot->IsAlive() ? "bot dead" : (_bot->IsSitState() ? "bot sitting" : "bot casting"); break;
+            case BotMovement::MoveFail::BadCoords:  why = "bad coordinates"; break;
+            case BotMovement::MoveFail::NoPath:     why = "no path"; break;
+            case BotMovement::MoveFail::ClosedDoor: why = "closed door"; break;
+            case BotMovement::MoveFail::Sweep:      why = "sweep hazard"; break;
+            default: break;
+        }
+        char note[200];
+        snprintf(note, sizeof(note), "%s; path type 0x%X; from %.1f %.1f %.1f to %.1f %.1f %.1f (z used %.1f), %.0f yd",
+            why, moved.pathType, _bot->GetPositionX(), _bot->GetPositionY(), _bot->GetPositionZ(),
+            _travel.x, _travel.y, _travel.z, moved.destZ, _bot->GetExactDist(_travel.x, _travel.y, _travel.z));
+        sBotFindings->RecordAt(BotFindingType::PathFailed, _bot, _travel.x, _travel.y, _travel.z, note);
         ClearTravelDestination();
     }
     return true;
