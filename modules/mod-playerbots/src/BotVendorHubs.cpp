@@ -45,7 +45,12 @@ void BotVendorHubs::Load()
         "SELECT c.guid, c.id, c.map, c.position_x, c.position_y, c.position_z, "
         "ct.npcflag, c.npcflag, ct.faction_A "
         "FROM creature c INNER JOIN creature_template ct ON c.id = ct.entry "
-        "WHERE ((ct.npcflag | c.npcflag) & 128) != 0");
+        "WHERE ((ct.npcflag | c.npcflag) & 128) != 0 "
+        // Spawns that only exist while a game event runs (e.g. the Arena
+        // Tournament pedestal vendors in every starting zone): outside the
+        // event nothing stands there to sell to.
+        "AND NOT EXISTS (SELECT 1 FROM game_event_creature gec "
+        "WHERE gec.guid = c.guid AND gec.eventEntry > 0)");
 
     if (!result)
     {
