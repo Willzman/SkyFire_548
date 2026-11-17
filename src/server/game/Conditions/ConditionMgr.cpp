@@ -1162,6 +1162,8 @@ void ConditionMgr::LoadConditions(bool isReload)
         ++count;
     } while (result->NextRow());
 
+    sSpellMgr->UpdateSpellInfoDifficultyConditions();
+
     SF_LOG_INFO("server.loading", ">> Loaded %u conditions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
