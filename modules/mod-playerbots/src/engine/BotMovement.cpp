@@ -402,32 +402,103 @@ bool IsCasting(Player* bot)
         return true;
     }
 
-    bool MoveTo(Player* bot, float x, float y, float z)
+    // First stretch of a route too long for one smoothed path: follow the
+    // navmesh corner points (cheap, and good for much longer routes) and stop
+    // kLegLength yards along them.
+    static bool FirstLegOfLongPath(Player* bot, float x, float y, float z, G3D::Vector3& leg)
     {
-        if (!CanMove(bot))
+        float constexpr kLegLength = 150.0f;
+
+        PathGenerator corners(bot);
+        corners.SetUseStraightPath(true);
+        if (!corners.CalculatePath(x, y, z))
             return false;
+        if (corners.GetPathType() & (PATHFIND_NOPATH | PATHFIND_SHORT | PATHFIND_NOT_USING_PATH))
+            return false;
+
+        Movement::PointsArray const& points = corners.GetPath();
+        if (points.size() < 2)
+            return false;
+
+        float walked = 0.0f;
+        for (size_t i = 1; i < points.size(); ++i)
+        {
+            G3D::Vector3 const step = points[i] - points[i - 1];
+            float const length = step.magnitude();
+            if (walked + length >= kLegLength && length > 0.01f)
+            {
+                leg = points[i - 1] + step * ((kLegLength - walked) / length);
+                return true;
+            }
+            walked += length;
+        }
+
+        leg = points.back();
+        return true;
+    }
+
+    bool MoveTo(Player* bot, float x, float y, float z, MoveResult* result)
+    {
+        MoveResult local;
+        MoveResult& res = result ? *result : local;
+        res = MoveResult();
+
+        if (!CanMove(bot))
+        {
+            res.why = MoveFail::CannotMove;
+            return false;
+        }
         EnsureRunning(bot);
 
         bot->UpdateAllowedPositionZ(x, y, z);
+        res.destZ = z;
         if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+        {
+            res.why = MoveFail::BadCoords;
             return false;
+        }
 
         PathGenerator path(bot);
-        bool const ok = path.CalculatePath(x, y, z);
-        PathType const type = path.GetPathType();
-        if (!ok || (type & PATHFIND_NOPATH) || (type & PATHFIND_BLANK))
+        bool ok = path.CalculatePath(x, y, z);
+        PathType type = path.GetPathType();
+        G3D::Vector3 end = path.GetActualEndPosition();
+        if (ok && (type & (PATHFIND_NOPATH | PATHFIND_SHORT)))
+        {
+            // The core's smoothed path holds 74 points 4 yards apart, so a route
+            // longer than about 290 yards comes back as NOPATH although the
+            // navmesh connects both ends. Walk it one leg at a time: the caller
+            // asks again when the leg is done.
+            G3D::Vector3 leg;
+            if (FirstLegOfLongPath(bot, x, y, z, leg))
+            {
+                PathGenerator legPath(bot);
+                ok = legPath.CalculatePath(leg.x, leg.y, leg.z);
+                type = legPath.GetPathType();
+                end = legPath.GetActualEndPosition();
+            }
+        }
+        res.pathType = uint32(type);
+        if (!ok || (type & (PATHFIND_NOPATH | PATHFIND_SHORT)))
+        {
+            res.why = MoveFail::NoPath;
             return false;
+        }
 
-        // Prefer the navmesh's actual end when the path is incomplete/short.
-        G3D::Vector3 const& end = path.GetActualEndPosition();
+        // Prefer the navmesh's actual end when the path is incomplete.
         float destX = end.x;
         float destY = end.y;
         float destZ = end.z;
         bot->UpdateAllowedPositionZ(destX, destY, destZ);
         if (PathCrossesClosedDoor(bot, destX, destY, destZ))
+        {
+            res.why = MoveFail::ClosedDoor;
             return false;
+        }
         if (PathCrossesSweep(bot, destX, destY))
+        {
+            res.why = MoveFail::Sweep;
             return false;
+        }
 
         ClaimSelfWalk(bot);
         bot->GetMotionMaster()->Clear();

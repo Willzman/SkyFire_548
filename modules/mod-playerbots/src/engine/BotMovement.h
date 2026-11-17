@@ -61,7 +61,25 @@ namespace BotMovement
     bool MovePoint(Player* bot, float x, float y, float z, bool generatePath = true, bool checkSweep = true);
 
     // Path-aware travel: clamp Z, reject NOPATH, MovePoint with generatePath.
-    bool MoveTo(Player* bot, float x, float y, float z);
+    // Why MoveTo refused, for the play-tester's path-failed findings.
+    enum class MoveFail : uint8
+    {
+        None,
+        CannotMove,   // dead, sitting or casting
+        BadCoords,
+        NoPath,       // PathGenerator gave PATHFIND_NOPATH (pathType has the flags)
+        ClosedDoor,
+        Sweep
+    };
+
+    struct MoveResult
+    {
+        MoveFail why = MoveFail::None;
+        uint32 pathType = 0;
+        float destZ = 0.0f;   // destination height after UpdateAllowedPositionZ
+    };
+
+    bool MoveTo(Player* bot, float x, float y, float z, MoveResult* result = nullptr);
 
     // Doors are not part of the navmesh, so paths run straight through closed ones.
     bool PathCrossesClosedDoor(Player* bot, float x, float y, float z);
