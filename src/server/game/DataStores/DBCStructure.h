@@ -2645,6 +2645,7 @@ typedef UNORDERED_MAP<uint32, std::list<SkillLineAbilityEntry const*> > SpellsPe
 typedef UNORDERED_MAP<uint32, uint32> ClassBySkillIdStore;
 typedef UNORDERED_MAP<uint32, uint32> SpellEffectScallingByEffectId;
 
+// Row of the spelldifficulty_dbc table, the client has no SpellDifficulty.dbc since 4.x
 struct SpellDifficultyEntry
 {
     uint32     ID;                                          // 0
