@@ -85,6 +85,32 @@ namespace
     // A solo bot out of combat that stays this close to one spot this long is stuck.
     constexpr float BOT_STILL_RADIUS = 5.0f;
     constexpr uint32 BOT_STILL_MS = 5 * MINUTE * IN_MILLISECONDS;
+    // Within this range a target without line of sight is inside or behind world
+    // geometry (a ranged bot farther out may just need to step around a corner).
+    constexpr float BOT_NO_LOS_NEAR = 8.0f;
+    constexpr uint32 BOT_NO_LOS_GIVE_UP_MS = 10 * IN_MILLISECONDS;
+    constexpr uint32 BOT_UNREACHABLE_MS = 10 * MINUTE * IN_MILLISECONDS;
+
+    // NearestAttackableUnitInObjectRangeCheck that passes over units the bot gave up on.
+    class BotGrindTargetCheck
+    {
+    public:
+        BotGrindTargetCheck(PlayerbotAI const* ai, Player const* bot, float range) : _ai(ai), _bot(bot), _range(range) { }
+        bool operator()(Unit* u)
+        {
+            if (u->isTargetableForAttack() && _bot->IsWithinDistInMap(u, _range) && !_bot->IsFriendlyTo(u)
+                && _bot->CanSeeOrDetect(u) && !_ai->IsUnreachableTarget(u))
+            {
+                _range = _bot->GetDistance(u);
+                return true;
+            }
+            return false;
+        }
+    private:
+        PlayerbotAI const* _ai;
+        Player const* _bot;
+        float _range;
+    };
 
     // Auto Shot / wand stay on CURRENT_AUTOREPEAT forever. Callers that mean
     // "am I mid cast-bar?" must skip autorepeat or hunters never act again.
@@ -1492,7 +1518,6 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     if (!BotUpdateSchedule::Advance(_updateTimer, diff))
         return;
     ++_ticks;
-    _lastStep = "start";
 
     // Wander pauses are tracked in real time so they don't depend on the AI
     // throttle; clamp so a long hitch doesn't skip forever.
@@ -1550,6 +1575,7 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     }
     else
         _stillMs = 0;
+    _lastStep = "start";
 
     // Play-tester: passive findings, then a directed quest test if one is running.
     UpdateTester(BOT_AI_UPDATE_INTERVAL);
@@ -1993,6 +2019,10 @@ bool PlayerbotAI::HandleCombat()
         return false;
     }
 
+    // Next to it with no line of sight for a while: it cannot be hit from here.
+    if (NoteTargetLineOfSight(target))
+        return false;
+
     // Only abort eat/drink once we actually have something to fight.
     StopResting();
     // Guarantee dismount even when needFight was false (e.g. grind pull OOC).
@@ -2391,7 +2421,7 @@ Unit* PlayerbotAI::SelectTarget()
     }
 
     for (Unit* attacker : _bot->getAttackers())
-        if (attacker && attacker->IsAlive() && _bot->IsValidAttackTarget(attacker))
+        if (attacker && attacker->IsAlive() && _bot->IsValidAttackTarget(attacker) && !IsUnreachableTarget(attacker))
         {
             _holdAssist = false; // got aggro — fight back
             _targets.SetCurrentTarget(attacker);
@@ -2479,12 +2509,66 @@ Unit* PlayerbotAI::SelectTarget()
 Unit* PlayerbotAI::SelectGrindTarget()
 {
     Unit* target = nullptr;
-    Skyfire::NearestAttackableUnitInObjectRangeCheck check(_bot, _bot, BOT_LOOT_SEEK_DIST);
-    Skyfire::UnitLastSearcher<Skyfire::NearestAttackableUnitInObjectRangeCheck> searcher(_bot, target, check);
+    BotGrindTargetCheck check(this, _bot, BOT_LOOT_SEEK_DIST);
+    Skyfire::UnitLastSearcher<BotGrindTargetCheck> searcher(_bot, target, check);
     _bot->VisitNearbyObject(BOT_LOOT_SEEK_DIST, searcher);
     if (target && _bot->IsValidAttackTarget(target))
         return target;
     return nullptr;
+}
+
+bool PlayerbotAI::IsUnreachableTarget(Unit const* target) const
+{
+    if (!target)
+        return false;
+    auto const it = _unreachableTargets.find(target->GetGUID());
+    return it != _unreachableTargets.end() && int32(it->second - getMSTime()) > 0;
+}
+
+bool PlayerbotAI::NoteTargetLineOfSight(Unit* target)
+{
+    if (!target || _clientControlled || _bot->GetDistance(target) > BOT_NO_LOS_NEAR || _bot->IsWithinLOSInMap(target))
+    {
+        _noLosGuid = 0;
+        _noLosMs = 0;
+        return false;
+    }
+    if (target->GetGUID() != _noLosGuid)
+    {
+        _noLosGuid = target->GetGUID();
+        _noLosMs = 0;
+    }
+    _noLosMs += BOT_AI_UPDATE_INTERVAL;
+    if (_noLosMs < BOT_NO_LOS_GIVE_UP_MS)
+        return false;
+
+    // Spells and melee strikes all fail here (SPELL_FAILED_LINE_OF_SIGHT), so
+    // the bot would stand next to it for good. A spawn a player cannot hit
+    // either is worth a finding.
+    char note[200];
+    snprintf(note, sizeof(note), "no line of sight to %s (entry %u) from %.1f yd: nothing can hit it; passed over for 10 minutes",
+        target->GetName().c_str(), target->ToCreature() ? target->ToCreature()->GetEntry() : 0u, _bot->GetDistance(target));
+    sBotFindings->RecordAt(BotFindingType::Stuck, _bot, target->GetPositionX(), target->GetPositionY(),
+        target->GetPositionZ(), note);
+
+    for (auto it = _unreachableTargets.begin(); it != _unreachableTargets.end();)
+    {
+        if (int32(it->second - getMSTime()) <= 0)
+            it = _unreachableTargets.erase(it);
+        else
+            ++it;
+    }
+    _unreachableTargets[target->GetGUID()] = getMSTime() + BOT_UNREACHABLE_MS;
+    _noLosGuid = 0;
+    _noLosMs = 0;
+    if (_forcedTargetGuid == target->GetGUID())
+        ClearForcedTarget();
+    _targets.SetCurrentTarget(nullptr);
+    _chaseGuid = 0;
+    _bot->AttackStop();
+    _bot->SetSelection(0);
+    BotMovement::StopAndIdle(_bot);
+    return true;
 }
 
 Unit* PlayerbotAI::SelectQuestObjectiveTarget()
@@ -2510,7 +2594,7 @@ Unit* PlayerbotAI::SelectQuestObjectiveTarget()
     {
         if (!unit || !unit->IsAlive() || !needEntries.count(unit->GetEntry()))
             continue;
-        if (!_bot->IsValidAttackTarget(unit))
+        if (!_bot->IsValidAttackTarget(unit) || IsUnreachableTarget(unit))
             continue;
         float const dist = _bot->GetDistance(unit);
         if (dist > bestDist)

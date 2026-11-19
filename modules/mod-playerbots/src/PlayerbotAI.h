@@ -175,6 +175,8 @@ public:
 
     // .playerbots state: what the bot did on its last AI tick and why it may be idle.
     std::string DescribeState() const;
+    // A mob the bot stood next to without line of sight; target pickers pass it over.
+    bool IsUnreachableTarget(Unit const* target) const;
 
     Unit* SelectLowestHpGroupEnemyPublic();
     Unit* SelectAssistTankTargetPublic();
@@ -462,6 +464,13 @@ private:
     float _stillX = 0.0f;
     float _stillY = 0.0f;
     uint32 _stillMs = 0;
+    // Mobs the bot stood next to without line of sight (inside or behind world
+    // geometry): GUID -> getMSTime() until which no target picker takes them.
+    std::unordered_map<uint64, uint32> _unreachableTargets;
+    uint64 _noLosGuid = 0;
+    uint32 _noLosMs = 0;
+    // Counts time next to target without line of sight; true once it is given up on.
+    bool NoteTargetLineOfSight(Unit* target);
     uint8 _travelFailCount = 0;
     std::unordered_map<std::string, TravelPoint> _savedPositions;
     bool _forceVendor = false;
