@@ -719,6 +719,19 @@ void AddSC_boss_nalak();
 void AddSC_isle_of_thunder();
 void AddSC_instance_isle_of_thunder();
 void AddSC_instance_thunder_king_citadel();
+// Scenarios, 5.0 (ported from LoA)
+void AddSC_brewing_storm_scenario();
+void AddSC_instance_brewing_storm();
+void AddSC_greenstone_village();
+void AddSC_instance_greenstone_village();
+void AddSC_unga_ingoo();
+void AddSC_instance_unga_ingoo();
+void AddSC_crypt_of_forgotten_kings();
+void AddSC_instance_crypt_of_forgotten_kings();
+void AddSC_arena_of_annihiliation();
+void AddSC_instance_instance_arena_of_annihiliation();
+void AddSC_brewmoon_festival();
+void AddSC_instance_brewmoon_festival();
 void AddSC_jade_forest();
 void AddSC_the_veiled_stair();
 
@@ -1524,6 +1537,19 @@ void AddPandariaScripts()
     AddSC_isle_of_thunder();
     AddSC_instance_isle_of_thunder();
     AddSC_instance_thunder_king_citadel();
+    // Scenarios, 5.0 (ported from LoA)
+    AddSC_brewing_storm_scenario();
+    AddSC_instance_brewing_storm();
+    AddSC_greenstone_village();
+    AddSC_instance_greenstone_village();
+    AddSC_unga_ingoo();
+    AddSC_instance_unga_ingoo();
+    AddSC_crypt_of_forgotten_kings();
+    AddSC_instance_crypt_of_forgotten_kings();
+    AddSC_arena_of_annihiliation();
+    AddSC_instance_instance_arena_of_annihiliation();
+    AddSC_brewmoon_festival();
+    AddSC_instance_brewmoon_festival();
     AddSC_jade_forest();
     AddSC_the_veiled_stair();
 #endif

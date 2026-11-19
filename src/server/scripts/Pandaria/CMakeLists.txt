@@ -71,6 +71,24 @@ set(scripts_STAT_SRCS
   Pandaria/zone_isle_of_thunder.cpp
   Pandaria/Scenarios/IsleOfThunder/instance_isle_of_thunder.cpp
   Pandaria/Scenarios/IsleOfThunder/instance_thunder_king_citadel.cpp
+  Pandaria/Scenarios/BrewingStorm/brewing_storm.h
+  Pandaria/Scenarios/BrewingStorm/brewing_storm.cpp
+  Pandaria/Scenarios/BrewingStorm/instance_brewing_storm.cpp
+  Pandaria/Scenarios/GreenstoneVillage/greenstone_village.h
+  Pandaria/Scenarios/GreenstoneVillage/greenstone_village.cpp
+  Pandaria/Scenarios/GreenstoneVillage/instance_greenstone_village.cpp
+  Pandaria/Scenarios/UngaIngoo/unga_ingoo.h
+  Pandaria/Scenarios/UngaIngoo/unga_ingoo.cpp
+  Pandaria/Scenarios/UngaIngoo/instance_unga_ingoo.cpp
+  Pandaria/Scenarios/CryptOfForgottenKings/crypt_of_forgotten_kings.h
+  Pandaria/Scenarios/CryptOfForgottenKings/crypt_of_forgotten_kings.cpp
+  Pandaria/Scenarios/CryptOfForgottenKings/instance_crypt_of_forgotten_kings.cpp
+  Pandaria/Scenarios/ArenaOfAnnihiliation/arena_of_annihiliation.h
+  Pandaria/Scenarios/ArenaOfAnnihiliation/arena_of_annihiliation.cpp
+  Pandaria/Scenarios/ArenaOfAnnihiliation/instance_arena_of_annihiliation.cpp
+  Pandaria/Scenarios/BrewmoonFestival/brewmoon_festival.h
+  Pandaria/Scenarios/BrewmoonFestival/brewmoon_festival.cpp
+  Pandaria/Scenarios/BrewmoonFestival/instance_brewmoon_festival.cpp
   Pandaria/zone_the_jade_forest.cpp
   Pandaria/zone_the_veiled_stair.cpp
 )
