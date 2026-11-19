@@ -25,7 +25,7 @@
 #define ASSAULT_ON_ZANVESS_H_
 
 #include "SpellScript.h"
-#include "../pandaria_loa_compat.h"
+#include "../../pandaria_loa_compat.h"
 #include "Map.h"
 #include "Creature.h"
 #include "CreatureAIImpl.h"

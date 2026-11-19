@@ -25,7 +25,7 @@
 #define FALL_OF_THERAMORE_HORDE_SCENARIO_H_
 
 #include "SpellScript.h"
-#include "../pandaria_loa_compat.h"
+#include "../../pandaria_loa_compat.h"
 #include "Map.h"
 #include "Creature.h"
 #include "CreatureAIImpl.h"
