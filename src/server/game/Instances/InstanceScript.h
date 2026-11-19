@@ -223,6 +223,8 @@ public:
     uint64 GetScenarioGUID() const;
     // Criteria progress for every player in the instance, or only player.
     void SendScenarioProgressUpdate(CriteriaProgressData const& data, Player* player = NULL);
+    // Countdown frame (SMSG_START_TIMER, TIMER_CHALLENGE) of time seconds for every player in the instance.
+    void SendChallengeStartTimer(uint32 time);
     // Elapsed timer frame (TIMER_SCENARIO / TIMER_CHALLENGE) for every player in the instance.
     void SendChallengeStartElapsedTimer(uint32 timerId, uint32 time);
     void SendChallengeStopElapsedTimer(uint32 timerId, bool keepTimer = false);

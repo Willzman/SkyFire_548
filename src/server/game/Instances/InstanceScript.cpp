@@ -456,6 +456,15 @@ void InstanceScript::SendScenarioProgressUpdate(CriteriaProgressData const& prog
         instance->SendToPlayers(&data);
 }
 
+void InstanceScript::SendChallengeStartTimer(uint32 time)
+{
+    WorldPacket data(SMSG_START_TIMER, 4 + 4 + 4);
+    data << uint32(time);                                   // max time
+    data << uint32(time);                                   // time left
+    data << uint32(TIMER_CHALLENGE);
+    instance->SendToPlayers(&data);
+}
+
 void InstanceScript::SendChallengeStartElapsedTimer(uint32 timerId, uint32 time)
 {
     WorldPacket data(SMSG_START_ELAPSED_TIMER, 8);
