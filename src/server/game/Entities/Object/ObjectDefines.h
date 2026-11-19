@@ -22,6 +22,7 @@ enum HighGuid
     HIGHGUID_CORPSE = 0xF101,                      // blizz F100
     HIGHGUID_AREATRIGGER = 0xF102,                      // blizz F100
     HIGHGUID_BATTLEGROUND = 0x1F1,                       // new 4.x
+    HIGHGUID_SCENARIO = 0xF18,                       // blizz F180 (scenario instance: entry = instance id, low = scenario id)
     HIGHGUID_LOOT = 0xF19,                       // blizz F190 (loot object of a lootable source)
     HIGHGUID_MO_TRANSPORT = 0x1FC,                       // blizz 1FC0 (for GAMEOBJECT_TYPE_MO_TRANSPORT)
     HIGHGUID_GROUP = 0x1F5,
@@ -259,6 +260,7 @@ char const* GetLogNameForGuid(uint64 guid)
         case HIGHGUID_GROUP:        return "group";
         case HIGHGUID_GUILD:        return "guild";
         case HIGHGUID_LOOT:         return "loot";
+        case HIGHGUID_SCENARIO:     return "scenario";
         case HIGHGUID_AREATRIGGER:  return "areatrigger";
         default:
             return "<unknown>";
