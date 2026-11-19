@@ -618,6 +618,39 @@ bool PlayerbotAI::IsTravelArrived(float tol) const
     return (dx * dx + dy * dy) <= (tol * tol);
 }
 
+std::string PlayerbotAI::DescribeState() const
+{
+    if (!_bot)
+        return "no player";
+
+    uint32 quests = 0;
+    uint32 complete = 0;
+    for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
+        if (uint32 const questId = _bot->GetQuestSlotQuestId(slot))
+        {
+            ++quests;
+            if (_bot->GetQuestStatus(questId) == QUEST_STATUS_COMPLETE)
+                ++complete;
+        }
+
+    char buf[600];
+    snprintf(buf, sizeof(buf),
+        "%s lvl %u: tick %u, last step '%s'; %s%s%s%s; at %.1f %.1f %.1f map %u zone %u; motion %u; "
+        "travel %s (to %.1f %.1f %.1f, %.0f yd, fails %u); quests %u (%u complete), abandoned %u; "
+        "flags quests %d grind %d stay %d resting %d follow %d; group %d; hp %u/%u",
+        _bot->GetName().c_str(), uint32(_bot->getLevel()), _ticks, _lastStep.c_str(),
+        _bot->IsAlive() ? "alive" : "dead", _bot->IsInCombat() ? ", in combat" : "",
+        _bot->IsSitState() ? ", sitting" : "", BotMovement::IsCasting(_bot) ? ", casting" : "",
+        _bot->GetPositionX(), _bot->GetPositionY(), _bot->GetPositionZ(), _bot->GetMapId(), _bot->GetZoneId(),
+        uint32(_bot->GetMotionMaster()->GetCurrentMovementGeneratorType()),
+        _travel.active ? "on" : "off", _travel.x, _travel.y, _travel.z,
+        _travel.active ? _bot->GetExactDist(_travel.x, _travel.y, _travel.z) : 0.0f, uint32(_travelFailCount),
+        quests, complete, uint32(_abandonedQuests.size()),
+        int(_quests), int(_grind), int(_stay), int(_resting), int(ShouldFollowPublic()),
+        int(_bot->GetGroup() != nullptr), _bot->GetHealth(), _bot->GetMaxHealth());
+    return buf;
+}
+
 bool PlayerbotAI::RunTravel()
 {
     if (!_bot || _clientControlled || !_travel.active)
@@ -1415,6 +1448,8 @@ void PlayerbotAI::UpdateAI(uint32 diff)
 
     if (!BotUpdateSchedule::Advance(_updateTimer, diff))
         return;
+    ++_ticks;
+    _lastStep = "start";
 
     // Wander pauses are tracked in real time so they don't depend on the AI
     // throttle; clamp so a long hitch doesn't skip forever.
@@ -1474,19 +1509,31 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     if (!_bot->IsInCombat() && _bot->getAttackers().empty()
         && !IsBusyCasting(_bot)
         && BotRotation::TryMaintainBuffs(_bot))
+    {
+        _lastStep = "maintain buffs";
         return;
+    }
 
     if (UpdateQuestTest(BOT_AI_UPDATE_INTERVAL))
+    {
+        _lastStep = "quest test";
         return;
+    }
     if (HandleBattleground(BOT_AI_UPDATE_INTERVAL))
+    {
+        _lastStep = "battleground";
         return;
+    }
 
     // Nearby / open-world questing (one step per tick). Skip while drinking —
     // MovePoint would stand the bot and cancel regen.
     if (!_bot->IsInCombat() && _bot->getAttackers().empty()
         && !NeedsRestPublic() && !_resting && !HasFoodOrDrinkAura() && !_bot->IsSitState()
         && (_quests || _forceQuest) && HandleAutoQuesting())
+    {
+        _lastStep = "auto questing";
         return;
+    }
 
     // AC-style Trigger → Action → Queue. MoP rotations run inside the combat action.
     // Self-walk releases the keys only after a full decision, so a buff cast
@@ -1504,7 +1551,11 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     } selfWalkTick{ this };
 
     if (_aiEngine && _aiEngine->DoNextAction())
+    {
+        _lastStep = _aiEngine->LastActionName();
         return;
+    }
+    _lastStep = "fallback";
 
     // Fallback if the engine queued nothing useful (should be rare).
     if (_clientControlled && !_walk)

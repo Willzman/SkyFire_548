@@ -173,6 +173,9 @@ public:
     void ClearTravelDestination();
     bool IsTravelArrived(float tol = 3.0f) const;
 
+    // .playerbots state: what the bot did on its last AI tick and why it may be idle.
+    std::string DescribeState() const;
+
     Unit* SelectLowestHpGroupEnemyPublic();
     Unit* SelectAssistTankTargetPublic();
     Unit* SelectTankTargetPublic();
@@ -451,6 +454,9 @@ private:
     bool _pendingPullAoe = false;
 
     TravelDest _travel;
+    // Step of UpdateAI that ended the last tick, and the tick count so far.
+    std::string _lastStep = "none";
+    uint32 _ticks = 0;
     uint8 _travelFailCount = 0;
     std::unordered_map<std::string, TravelPoint> _savedPositions;
     bool _forceVendor = false;

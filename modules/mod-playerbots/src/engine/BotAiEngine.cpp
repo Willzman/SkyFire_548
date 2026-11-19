@@ -539,8 +539,12 @@ bool BotAiEngine::DoNextAction()
             continue;
 
         if (action->Execute())
+        {
+            _lastAction = item.name;
             return true;
+        }
     }
 
+    _lastAction.clear();
     return false;
 }
