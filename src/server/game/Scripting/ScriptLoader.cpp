@@ -745,6 +745,17 @@ void AddSC_battle_on_the_high_seas();
 void AddSC_instance_battle_on_the_high_seas();
 void AddSC_instance_little_patience();
 void AddSC_little_patience();
+// Scenarios, 5.3-5.4 (ported from LoA)
+void AddSC_blood_in_the_snow();
+void AddSC_instance_blood_in_the_snow();
+void AddSC_instance_secrets_of_ragefire();
+void AddSC_secrets_of_ragefire();
+void AddSC_dark_heart_of_pandaria();
+void AddSC_instance_dark_heart_of_pandaria();
+void AddSC_instance_proving_grounds();
+void AddSC_proving_grounds();
+void AddSC_instance_secret_ingridient();
+void AddSC_secret_ingridient();
 void AddSC_jade_forest();
 void AddSC_the_veiled_stair();
 
@@ -1576,6 +1587,17 @@ void AddPandariaScripts()
     AddSC_instance_battle_on_the_high_seas();
     AddSC_instance_little_patience();
     AddSC_little_patience();
+    // Scenarios, 5.3-5.4 (ported from LoA)
+    AddSC_blood_in_the_snow();
+    AddSC_instance_blood_in_the_snow();
+    AddSC_instance_secrets_of_ragefire();
+    AddSC_secrets_of_ragefire();
+    AddSC_dark_heart_of_pandaria();
+    AddSC_instance_dark_heart_of_pandaria();
+    AddSC_instance_proving_grounds();
+    AddSC_proving_grounds();
+    AddSC_instance_secret_ingridient();
+    AddSC_secret_ingridient();
     AddSC_jade_forest();
     AddSC_the_veiled_stair();
 #endif

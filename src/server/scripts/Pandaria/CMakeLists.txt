@@ -107,6 +107,21 @@ set(scripts_STAT_SRCS
   Pandaria/Scenarios/LittlePatience/little_patience.h
   Pandaria/Scenarios/LittlePatience/instance_little_patience.cpp
   Pandaria/Scenarios/LittlePatience/little_patience.cpp
+  Pandaria/Scenarios/BloodInTheSnow/blood_in_the_snow.h
+  Pandaria/Scenarios/BloodInTheSnow/blood_in_the_snow.cpp
+  Pandaria/Scenarios/BloodInTheSnow/instance_blood_in_the_snow.cpp
+  Pandaria/Scenarios/SecretsOfRagefire/secrets_of_ragefire.h
+  Pandaria/Scenarios/SecretsOfRagefire/instance_secrets_of_ragefire.cpp
+  Pandaria/Scenarios/SecretsOfRagefire/secrets_of_ragefire.cpp
+  Pandaria/Scenarios/DarkHeartOfPandaria/dark_heart_of_pandaria.h
+  Pandaria/Scenarios/DarkHeartOfPandaria/dark_heart_of_pandaria.cpp
+  Pandaria/Scenarios/DarkHeartOfPandaria/instance_dark_heart_of_pandaria.cpp
+  Pandaria/Scenarios/ProvingGrounds/proving_grounds.h
+  Pandaria/Scenarios/ProvingGrounds/instance_proving_grounds.cpp
+  Pandaria/Scenarios/ProvingGrounds/proving_grounds.cpp
+  Pandaria/Scenarios/SecretIngridient/secret_ingridient.h
+  Pandaria/Scenarios/SecretIngridient/instance_secret_ingridient.cpp
+  Pandaria/Scenarios/SecretIngridient/secret_ingridient.cpp
   Pandaria/zone_the_jade_forest.cpp
   Pandaria/zone_the_veiled_stair.cpp
 )
