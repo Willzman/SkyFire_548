@@ -36,6 +36,7 @@
 #include "World.h"
 #include "WorldSession.h"
 
+#include <cmath>
 #include <sstream>
 
 namespace
@@ -53,10 +54,13 @@ namespace
     uint32 const TRAVEL_STUCK_MS = 20 * IN_MILLISECONDS;
     uint32 const SOLO_REVIVE_MS = 30 * IN_MILLISECONDS;
     // Turn-in travel: how close counts as arrived, how long to wait there for
-    // the ender (AI ticks), and how many trips to make before giving up.
+    // the ender (AI ticks), and how many trips in a row that bring the bot no
+    // closer than ENDER_TRIP_PROGRESS yards to make before giving up. A fight on
+    // the way ends a trip, so trips that got closer do not count.
     float const ENDER_ARRIVED_RANGE = 5.0f;
     uint32 const ENDER_WAIT_TICKS = 20;
     uint32 const ENDER_MAX_TRIPS = 3;
+    float const ENDER_TRIP_PROGRESS = 10.0f;
     // Failed casts further apart than this are not "in a row".
     uint32 const SPELL_FAIL_WINDOW_MS = 30 * IN_MILLISECONDS;
     // A bot this close to an objective spawn was on site when its quest stalled.
@@ -219,6 +223,7 @@ bool PlayerbotAI::TurnInQuest(Quest const* quest, Object* giver)
     {
         _enderTrips.erase(questId);
         _enderWaits.erase(questId);
+        _enderBestDist.erase(questId);
         return true;
     }
 
@@ -629,6 +634,7 @@ bool PlayerbotAI::TravelToQuestEnder()
             // Not gone back to this session, so the bot gets on with its other quests.
             _enderTrips.erase(questId);
             _enderWaits.erase(questId);
+            _enderBestDist.erase(questId);
             _abandonedQuests.insert(questId);
             if (sPlayerbotMgr->ShouldAbandonStalledQuests())
                 AbandonQuest(questId);
@@ -637,6 +643,18 @@ bool PlayerbotAI::TravelToQuestEnder()
 
         if (TravelToSpawn(spawn))
         {
+            // Closer than at the start of every earlier trip: the last one was cut
+            // short (a fight, a rest), not blocked, so it is not held against the bot.
+            if (spawn.mapId == _bot->GetMapId())
+            {
+                float const dist = std::sqrt(dx * dx + dy * dy);
+                auto const best = _enderBestDist.find(questId);
+                if (best == _enderBestDist.end() || dist + ENDER_TRIP_PROGRESS <= best->second)
+                {
+                    _enderBestDist[questId] = dist;
+                    _enderTrips[questId] = 0;
+                }
+            }
             ++_enderTrips[questId];
             return true;
         }

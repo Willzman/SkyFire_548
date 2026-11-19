@@ -37,6 +37,8 @@ public:
     bool DoNextAction();
 
     BotState GetActiveState() const { return _activeState; }
+    // Action the last DoNextAction ran ("" when none ran).
+    char const* LastActionName() const { return _lastAction.c_str(); }
 
 private:
     void RegisterCoreActions();
@@ -48,6 +50,7 @@ private:
     BotState _activeState = BotState::NonCombat;
 
     BotQueue _queue;
+    std::string _lastAction;
     std::unordered_map<std::string, std::unique_ptr<BotAction>> _actions;
     std::vector<std::unique_ptr<BotTrigger>> _triggerOwners;
     std::vector<BotTriggerNode> _triggerNodes;

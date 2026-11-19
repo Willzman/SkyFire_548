@@ -263,6 +263,7 @@ public:
             { "remove", rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotRemoveCommand, "", },
             { "summon", rbac::RBAC_PERM_COMMAND_GM, false, &HandlePlayerbotSummonCommand, "", },
             { "list",   rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotListCommand,   "", },
+            { "state",  rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotStateCommand,  "", },
             { "reload", rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotReloadCommand, "", },
             { "create", rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotCreateCommand, "", },
             { "wipe",   rbac::RBAC_PERM_COMMAND_GM, true, &HandlePlayerbotWipeCommand,   "", },
@@ -1151,6 +1152,35 @@ public:
                 name = "<unknown>";
             handler->PSendSysMessage("  %s (GUID %u)", name.c_str(), GUID_LOPART(guid));
         }
+        return true;
+    }
+
+    // .playerbots state [name]: one line per bot (or the named one) with its AI state.
+    static bool HandlePlayerbotStateCommand(ChatHandler* handler, char const* args)
+    {
+        std::string wanted = args ? args : "";
+        if (!wanted.empty() && !normalizePlayerName(wanted))
+        {
+            handler->SendSysMessage("Invalid character name.");
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        std::vector<uint64> guids;
+        sPlayerbotMgr->GetBotGuids(guids);
+        uint32 shown = 0;
+        for (uint64 guid : guids)
+        {
+            PlayerbotAI* ai = sPlayerbotMgr->GetBotAI(guid);
+            if (!ai || !ai->GetBot())
+                continue;
+            if (!wanted.empty() && ai->GetBot()->GetName() != wanted)
+                continue;
+            handler->SendSysMessage(ai->DescribeState().c_str());
+            ++shown;
+        }
+        if (!shown)
+            handler->PSendSysMessage("No active bot%s%s.", wanted.empty() ? "" : " named ", wanted.c_str());
         return true;
     }
 };

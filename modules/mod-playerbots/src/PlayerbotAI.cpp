@@ -40,6 +40,8 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "PathGenerator.h"
+#include "VMapFactory.h"
+#include "IVMapManager.h"
 #include <unordered_set>
 #include "PetDefines.h"
 #include "Player.h"
@@ -80,6 +82,35 @@ namespace
     // per-tick cost of large bot populations low.
     constexpr uint32 BOT_AI_UPDATE_INTERVAL = BotUpdateSchedule::Interval;
     constexpr uint32 BOT_STRANDED_CHECK_INTERVAL = 30000;
+    // A solo bot out of combat that stays this close to one spot this long is stuck.
+    constexpr float BOT_STILL_RADIUS = 5.0f;
+    constexpr uint32 BOT_STILL_MS = 5 * MINUTE * IN_MILLISECONDS;
+    // Within this range a target without line of sight is inside or behind world
+    // geometry (a ranged bot farther out may just need to step around a corner).
+    constexpr float BOT_NO_LOS_NEAR = 8.0f;
+    constexpr uint32 BOT_NO_LOS_GIVE_UP_MS = 10 * IN_MILLISECONDS;
+    constexpr uint32 BOT_UNREACHABLE_MS = 10 * MINUTE * IN_MILLISECONDS;
+
+    // NearestAttackableUnitInObjectRangeCheck that passes over units the bot gave up on.
+    class BotGrindTargetCheck
+    {
+    public:
+        BotGrindTargetCheck(PlayerbotAI const* ai, Player const* bot, float range) : _ai(ai), _bot(bot), _range(range) { }
+        bool operator()(Unit* u)
+        {
+            if (u->isTargetableForAttack() && _bot->IsWithinDistInMap(u, _range) && !_bot->IsFriendlyTo(u)
+                && _bot->CanSeeOrDetect(u) && !_ai->IsUnreachableTarget(u))
+            {
+                _range = _bot->GetDistance(u);
+                return true;
+            }
+            return false;
+        }
+    private:
+        PlayerbotAI const* _ai;
+        Player const* _bot;
+        float _range;
+    };
 
     // Auto Shot / wand stay on CURRENT_AUTOREPEAT forever. Callers that mean
     // "am I mid cast-bar?" must skip autorepeat or hunters never act again.
@@ -616,6 +647,77 @@ bool PlayerbotAI::IsTravelArrived(float tol) const
     float const dx = _bot->GetPositionX() - _travel.x;
     float const dy = _bot->GetPositionY() - _travel.y;
     return (dx * dx + dy * dy) <= (tol * tol);
+}
+
+std::string PlayerbotAI::DescribeState() const
+{
+    if (!_bot)
+        return "no player";
+
+    uint32 quests = 0;
+    uint32 complete = 0;
+    for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
+        if (uint32 const questId = _bot->GetQuestSlotQuestId(slot))
+        {
+            ++quests;
+            if (_bot->GetQuestStatus(questId) == QUEST_STATUS_COMPLETE)
+                ++complete;
+        }
+
+    char buf[600];
+    snprintf(buf, sizeof(buf),
+        "%s lvl %u: tick %u, last step '%s'; %s%s%s%s; at %.1f %.1f %.1f map %u zone %u; motion %u; "
+        "travel %s (to %.1f %.1f %.1f, %.0f yd, fails %u); quests %u (%u complete), abandoned %u; "
+        "flags quests %d grind %d stay %d resting %d follow %d; group %d; hp %u/%u; still %u s",
+        _bot->GetName().c_str(), uint32(_bot->getLevel()), _ticks, _lastStep.c_str(),
+        _bot->IsAlive() ? "alive" : "dead", _bot->IsInCombat() ? ", in combat" : "",
+        _bot->IsSitState() ? ", sitting" : "", BotMovement::IsCasting(_bot) ? ", casting" : "",
+        _bot->GetPositionX(), _bot->GetPositionY(), _bot->GetPositionZ(), _bot->GetMapId(), _bot->GetZoneId(),
+        uint32(_bot->GetMotionMaster()->GetCurrentMovementGeneratorType()),
+        _travel.active ? "on" : "off", _travel.x, _travel.y, _travel.z,
+        _travel.active ? _bot->GetExactDist(_travel.x, _travel.y, _travel.z) : 0.0f, uint32(_travelFailCount),
+        quests, complete, uint32(_abandonedQuests.size()),
+        int(_quests), int(_grind), int(_stay), int(_resting), int(ShouldFollowPublic()),
+        int(_bot->GetGroup() != nullptr), _bot->GetHealth(), _bot->GetMaxHealth(), _stillMs / IN_MILLISECONDS);
+    std::string out = buf;
+
+    // What the bot is after: its victim, else its selection, else its chase target.
+    Unit* target = _bot->GetVictim();
+    char const* kind = "victim";
+    if (!target)
+    {
+        target = _bot->GetSelectedUnit();
+        kind = "selected";
+    }
+    if (!target && _chaseGuid)
+    {
+        target = ObjectAccessor::GetUnit(*_bot, _chaseGuid);
+        kind = "chase";
+    }
+    if (target)
+    {
+        Creature* creature = target->ToCreature();
+        snprintf(buf, sizeof(buf),
+            "; %s %s (entry %u) %.1f yd at %.1f %.1f %.1f, %s, LOS %d, can see %d, same phase %d, attackable %d, evading %d",
+            kind, target->GetName().c_str(), creature ? creature->GetEntry() : 0u, _bot->GetDistance(target),
+            target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
+            target->IsAlive() ? "alive" : "dead", int(_bot->IsWithinLOSInMap(target)),
+            int(_bot->CanSeeOrDetect(target)), int(_bot->InSamePhase(target)), int(_bot->IsValidAttackTarget(target)),
+            int(creature && creature->IsInEvadeMode()));
+        out += buf;
+
+        float const x1 = _bot->GetPositionX(), y1 = _bot->GetPositionY(), z1 = _bot->GetPositionZ() + 2.0f;
+        float const x2 = target->GetPositionX(), y2 = target->GetPositionY(), z2 = target->GetPositionZ() + 2.0f;
+        VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager();
+        snprintf(buf, sizeof(buf), "; vmap LOS %d (calc %d), map LOS %d, bot phase %u, target phase %u",
+            int(vmgr->isInLineOfSight(_bot->GetMapId(), x1, y1, z1, x2, y2, z2)), int(vmgr->isLineOfSightCalcEnabled()),
+            int(_bot->GetMap()->isInLineOfSight(x1, y1, z1, x2, y2, z2, _bot->GetPhaseMask())),
+            _bot->GetPhaseMask(), target->GetPhaseMask());
+        out += buf;
+    }
+    else
+        out += "; no target";
+    return out;
 }
 
 bool PlayerbotAI::RunTravel()
@@ -1415,6 +1517,7 @@ void PlayerbotAI::UpdateAI(uint32 diff)
 
     if (!BotUpdateSchedule::Advance(_updateTimer, diff))
         return;
+    ++_ticks;
 
     // Wander pauses are tracked in real time so they don't depend on the AI
     // throttle; clamp so a long hitch doesn't skip forever.
@@ -1437,6 +1540,42 @@ void PlayerbotAI::UpdateAI(uint32 diff)
                 return;
         }
     }
+
+    // A solo bot out of combat that has not left one spot for minutes is stuck in
+    // or on world geometry (seen on the roof of the Den in Valley of Trials, by
+    // Aldrassil in Shadowglen and at Sunstrider Isle): every path and line of
+    // sight from there fails, so it picks a target forever and never reaches it.
+    // Send it to its hearth point, as a player would hearth out.
+    if (!_clientControlled && !_stay && !_bot->GetGroup() && !_bot->IsInCombat() && !IsQuestTesting()
+        && !_bot->IsInFlight() && !_bot->GetTransport() && !_pendingTeleport.active)
+    {
+        if (_bot->GetMapId() != _stillMapId
+            || _bot->GetExactDist2dSq(_stillX, _stillY) > BOT_STILL_RADIUS * BOT_STILL_RADIUS)
+        {
+            _stillMapId = _bot->GetMapId();
+            _stillX = _bot->GetPositionX();
+            _stillY = _bot->GetPositionY();
+            _stillMs = 0;
+        }
+        else if ((_stillMs += BOT_AI_UPDATE_INTERVAL) >= BOT_STILL_MS)
+        {
+            _stillMs = 0;
+            sBotFindings->RecordAt(BotFindingType::Stuck, _bot, _bot->GetPositionX(), _bot->GetPositionY(),
+                _bot->GetPositionZ(), "stood still out of combat for 5 minutes (last step '" + _lastStep
+                + "'); sent to its hearth point");
+            ClearTravelDestination();
+            _pendingTeleport.mapId = _bot->m_homebindMapId;
+            _pendingTeleport.x = _bot->m_homebindX;
+            _pendingTeleport.y = _bot->m_homebindY;
+            _pendingTeleport.z = _bot->m_homebindZ;
+            _pendingTeleport.active = true;
+            _lastStep = "unstuck";
+            return;
+        }
+    }
+    else
+        _stillMs = 0;
+    _lastStep = "start";
 
     // Play-tester: passive findings, then a directed quest test if one is running.
     UpdateTester(BOT_AI_UPDATE_INTERVAL);
@@ -1474,19 +1613,31 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     if (!_bot->IsInCombat() && _bot->getAttackers().empty()
         && !IsBusyCasting(_bot)
         && BotRotation::TryMaintainBuffs(_bot))
+    {
+        _lastStep = "maintain buffs";
         return;
+    }
 
     if (UpdateQuestTest(BOT_AI_UPDATE_INTERVAL))
+    {
+        _lastStep = "quest test";
         return;
+    }
     if (HandleBattleground(BOT_AI_UPDATE_INTERVAL))
+    {
+        _lastStep = "battleground";
         return;
+    }
 
     // Nearby / open-world questing (one step per tick). Skip while drinking —
     // MovePoint would stand the bot and cancel regen.
     if (!_bot->IsInCombat() && _bot->getAttackers().empty()
         && !NeedsRestPublic() && !_resting && !HasFoodOrDrinkAura() && !_bot->IsSitState()
         && (_quests || _forceQuest) && HandleAutoQuesting())
+    {
+        _lastStep = "auto questing";
         return;
+    }
 
     // AC-style Trigger → Action → Queue. MoP rotations run inside the combat action.
     // Self-walk releases the keys only after a full decision, so a buff cast
@@ -1504,7 +1655,11 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     } selfWalkTick{ this };
 
     if (_aiEngine && _aiEngine->DoNextAction())
+    {
+        _lastStep = _aiEngine->LastActionName();
         return;
+    }
+    _lastStep = "fallback";
 
     // Fallback if the engine queued nothing useful (should be rare).
     if (_clientControlled && !_walk)
@@ -1863,6 +2018,10 @@ bool PlayerbotAI::HandleCombat()
         }
         return false;
     }
+
+    // Next to it with no line of sight for a while: it cannot be hit from here.
+    if (NoteTargetLineOfSight(target))
+        return false;
 
     // Only abort eat/drink once we actually have something to fight.
     StopResting();
@@ -2262,7 +2421,7 @@ Unit* PlayerbotAI::SelectTarget()
     }
 
     for (Unit* attacker : _bot->getAttackers())
-        if (attacker && attacker->IsAlive() && _bot->IsValidAttackTarget(attacker))
+        if (attacker && attacker->IsAlive() && _bot->IsValidAttackTarget(attacker) && !IsUnreachableTarget(attacker))
         {
             _holdAssist = false; // got aggro — fight back
             _targets.SetCurrentTarget(attacker);
@@ -2350,12 +2509,66 @@ Unit* PlayerbotAI::SelectTarget()
 Unit* PlayerbotAI::SelectGrindTarget()
 {
     Unit* target = nullptr;
-    Skyfire::NearestAttackableUnitInObjectRangeCheck check(_bot, _bot, BOT_LOOT_SEEK_DIST);
-    Skyfire::UnitLastSearcher<Skyfire::NearestAttackableUnitInObjectRangeCheck> searcher(_bot, target, check);
+    BotGrindTargetCheck check(this, _bot, BOT_LOOT_SEEK_DIST);
+    Skyfire::UnitLastSearcher<BotGrindTargetCheck> searcher(_bot, target, check);
     _bot->VisitNearbyObject(BOT_LOOT_SEEK_DIST, searcher);
     if (target && _bot->IsValidAttackTarget(target))
         return target;
     return nullptr;
+}
+
+bool PlayerbotAI::IsUnreachableTarget(Unit const* target) const
+{
+    if (!target)
+        return false;
+    auto const it = _unreachableTargets.find(target->GetGUID());
+    return it != _unreachableTargets.end() && int32(it->second - getMSTime()) > 0;
+}
+
+bool PlayerbotAI::NoteTargetLineOfSight(Unit* target)
+{
+    if (!target || _clientControlled || _bot->GetDistance(target) > BOT_NO_LOS_NEAR || _bot->IsWithinLOSInMap(target))
+    {
+        _noLosGuid = 0;
+        _noLosMs = 0;
+        return false;
+    }
+    if (target->GetGUID() != _noLosGuid)
+    {
+        _noLosGuid = target->GetGUID();
+        _noLosMs = 0;
+    }
+    _noLosMs += BOT_AI_UPDATE_INTERVAL;
+    if (_noLosMs < BOT_NO_LOS_GIVE_UP_MS)
+        return false;
+
+    // Spells and melee strikes all fail here (SPELL_FAILED_LINE_OF_SIGHT), so
+    // the bot would stand next to it for good. A spawn a player cannot hit
+    // either is worth a finding.
+    char note[200];
+    snprintf(note, sizeof(note), "no line of sight to %s (entry %u) from %.1f yd: nothing can hit it; passed over for 10 minutes",
+        target->GetName().c_str(), target->ToCreature() ? target->ToCreature()->GetEntry() : 0u, _bot->GetDistance(target));
+    sBotFindings->RecordAt(BotFindingType::Stuck, _bot, target->GetPositionX(), target->GetPositionY(),
+        target->GetPositionZ(), note);
+
+    for (auto it = _unreachableTargets.begin(); it != _unreachableTargets.end();)
+    {
+        if (int32(it->second - getMSTime()) <= 0)
+            it = _unreachableTargets.erase(it);
+        else
+            ++it;
+    }
+    _unreachableTargets[target->GetGUID()] = getMSTime() + BOT_UNREACHABLE_MS;
+    _noLosGuid = 0;
+    _noLosMs = 0;
+    if (_forcedTargetGuid == target->GetGUID())
+        ClearForcedTarget();
+    _targets.SetCurrentTarget(nullptr);
+    _chaseGuid = 0;
+    _bot->AttackStop();
+    _bot->SetSelection(0);
+    BotMovement::StopAndIdle(_bot);
+    return true;
 }
 
 Unit* PlayerbotAI::SelectQuestObjectiveTarget()
@@ -2381,7 +2594,7 @@ Unit* PlayerbotAI::SelectQuestObjectiveTarget()
     {
         if (!unit || !unit->IsAlive() || !needEntries.count(unit->GetEntry()))
             continue;
-        if (!_bot->IsValidAttackTarget(unit))
+        if (!_bot->IsValidAttackTarget(unit) || IsUnreachableTarget(unit))
             continue;
         float const dist = _bot->GetDistance(unit);
         if (dist > bestDist)
@@ -5475,7 +5688,20 @@ bool PlayerbotAI::NeedsVendorWorkPublic() const
         return false;
     if (_bot->IsInCombat() || GroupInCombat() || !_bot->getAttackers().empty())
         return false;
-    return NeedsRepair() || HasVendorJunk() || _forceVendor;
+    if (_forceVendor)
+        return true;
+    if (!NeedsRepair() && !HasVendorJunk())
+        return false;
+    // No vendor close by and none within Vendor.HubMaxDistance (Echo Isles): the
+    // vendor action would do nothing and still outrank wander and questing.
+    PlayerbotAI* self = const_cast<PlayerbotAI*>(this);
+    if (self->FindNearbyVendor() || self->FindNearbyRepairer())
+        return true;
+    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, NeedsRepair() && !HasVendorJunk());
+    if (!hub || hub->mapId != _bot->GetMapId())
+        return false;
+    float const maxDist = sPlayerbotMgr->GetVendorHubMaxDistance();
+    return _bot->GetExactDistSq(hub->x, hub->y, hub->z) <= maxDist * maxDist;
 }
 
 bool PlayerbotAI::NeedsUrgentVendorPublic() const
@@ -6612,13 +6838,19 @@ bool PlayerbotAI::HandleAutoQuesting()
     if (NeedsRestPublic() || _resting || HasFoodOrDrinkAura() || _bot->IsSitState())
         return false;
 
-    // Bag pressure → vendor hub before questing.
-    if (CountFreeBagSlots() < 3)
+    // Bag pressure → vendor before questing. With nothing to sell, or no vendor
+    // within reach (Echo Isles: the closest is 557 yd away, past
+    // Vendor.HubMaxDistance), the bot quests on with full bags: returning here
+    // without moving left it standing still for good.
+    if (CountFreeBagSlots() < 3 && HasVendorJunk())
     {
-        if (!FindNearbyVendor() && TravelToVendorHub(false))
+        if (FindNearbyVendor())
+        {
+            HandleVendor();
             return true;
-        HandleVendor();
-        return true;
+        }
+        if (TravelToVendorHub(false))
+            return true;
     }
 
     if (HasTravelDestination())

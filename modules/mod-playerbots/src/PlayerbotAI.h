@@ -173,6 +173,11 @@ public:
     void ClearTravelDestination();
     bool IsTravelArrived(float tol = 3.0f) const;
 
+    // .playerbots state: what the bot did on its last AI tick and why it may be idle.
+    std::string DescribeState() const;
+    // A mob the bot stood next to without line of sight; target pickers pass it over.
+    bool IsUnreachableTarget(Unit const* target) const;
+
     Unit* SelectLowestHpGroupEnemyPublic();
     Unit* SelectAssistTankTargetPublic();
     Unit* SelectTankTargetPublic();
@@ -451,6 +456,21 @@ private:
     bool _pendingPullAoe = false;
 
     TravelDest _travel;
+    // Step of UpdateAI that ended the last tick, and the tick count so far.
+    std::string _lastStep = "none";
+    uint32 _ticks = 0;
+    // Where the bot has stood since _stillMs began counting (stuck-in-place check).
+    uint32 _stillMapId = 0;
+    float _stillX = 0.0f;
+    float _stillY = 0.0f;
+    uint32 _stillMs = 0;
+    // Mobs the bot stood next to without line of sight (inside or behind world
+    // geometry): GUID -> getMSTime() until which no target picker takes them.
+    std::unordered_map<uint64, uint32> _unreachableTargets;
+    uint64 _noLosGuid = 0;
+    uint32 _noLosMs = 0;
+    // Counts time next to target without line of sight; true once it is given up on.
+    bool NoteTargetLineOfSight(Unit* target);
     uint8 _travelFailCount = 0;
     std::unordered_map<std::string, TravelPoint> _savedPositions;
     bool _forceVendor = false;
@@ -595,6 +615,8 @@ private:
     // Complete quest -> trips made to its ender / ticks spent waiting next to it.
     std::unordered_map<uint32, uint32> _enderTrips;
     std::unordered_map<uint32, uint32> _enderWaits;
+    // Complete quest -> closest 2D distance to its ender at the start of a trip.
+    std::unordered_map<uint32, float> _enderBestDist;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.
