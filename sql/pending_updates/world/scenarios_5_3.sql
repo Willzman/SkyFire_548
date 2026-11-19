@@ -1733,3 +1733,29 @@ INSERT INTO `gameobject` (`guid`, `id`, `map`, `spawnMask`, `phaseId`, `phaseGro
 (9613012, 211981, 1157, 4096, 0, 0, -756.273, 1427.16, 139.657, 0.270525, 0, 0, 0.134851, 0.990866, 300, 0, 1), -- LoA 20924
 (9613013, 211982, 1157, 4096, 0, 0, -794.358, 1416.6, 139.657, 0.270525, 0, 0, 0.134851, 0.990866, 300, 0, 1); -- LoA 20925
 
+
+-- Fixes for load errors seen after the first import on the dev realm
+-- spell_areatrigger_template: sat_darkheart_artifact
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 942;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (942, 0, 1, 2, 0, 0, 'sat_darkheart_artifact');
+-- spell_areatrigger_template: sat_ragefire_emberstrikes
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 987;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (987, 0, 1, 4, 0, 0, 'sat_ragefire_emberstrikes');
+-- spell_areatrigger_template: sat_bloodsnow_shimmerweed
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 997;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (997, 0, 1, 2, 0, 0, 'sat_bloodsnow_shimmerweed');
+-- spell_areatrigger_template: sat_darkheart_heart_corruption_visual
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1023;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1023, 0, 1, 10, 0, 0, 'sat_darkheart_heart_corruption_visual');
+-- spell_areatrigger_template: sat_proving_grounds_invoke_lava
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1067;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1067, 0, 1, 1.5, 1.5, 1.5, 'sat_proving_grounds_invoke_lava');
+-- spell_areatrigger_template: sat_proving_grounds_volatile_amber_globule
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1281;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1281, 0, 1, 3, 0, 0, 'sat_proving_grounds_volatile_amber_globule');
+
+-- Proving Grounds: LoA binds spell 142191 to 'spell_amber_globule_detonation', but its script registers this name
+DELETE FROM `spell_script_names` WHERE `spell_id` = 142191 AND `ScriptName` IN ('spell_amber_globule_detonation', 'spell_proving_grounds_amber_globule_detonation');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (142191, 'spell_proving_grounds_amber_globule_detonation');
+-- Xuen (71820): LoA's addon aura 175651 is not a 5.4.8 spell
+UPDATE `creature_template_addon` SET `auras` = '' WHERE `entry` = 71820;
