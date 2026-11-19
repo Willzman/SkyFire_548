@@ -82,6 +82,9 @@ namespace
     // per-tick cost of large bot populations low.
     constexpr uint32 BOT_AI_UPDATE_INTERVAL = BotUpdateSchedule::Interval;
     constexpr uint32 BOT_STRANDED_CHECK_INTERVAL = 30000;
+    // A solo bot out of combat that stays this close to one spot this long is stuck.
+    constexpr float BOT_STILL_RADIUS = 5.0f;
+    constexpr uint32 BOT_STILL_MS = 5 * MINUTE * IN_MILLISECONDS;
 
     // Auto Shot / wand stay on CURRENT_AUTOREPEAT forever. Callers that mean
     // "am I mid cast-bar?" must skip autorepeat or hunters never act again.
@@ -1512,6 +1515,41 @@ void PlayerbotAI::UpdateAI(uint32 diff)
                 return;
         }
     }
+
+    // A solo bot out of combat that has not left one spot for minutes is stuck in
+    // or on world geometry (seen on the roof of the Den in Valley of Trials, by
+    // Aldrassil in Shadowglen and at Sunstrider Isle): every path and line of
+    // sight from there fails, so it picks a target forever and never reaches it.
+    // Send it to its hearth point, as a player would hearth out.
+    if (!_clientControlled && !_stay && !_bot->GetGroup() && !_bot->IsInCombat() && !IsQuestTesting()
+        && !_bot->IsInFlight() && !_bot->GetTransport() && !_pendingTeleport.active)
+    {
+        if (_bot->GetMapId() != _stillMapId
+            || _bot->GetExactDist2dSq(_stillX, _stillY) > BOT_STILL_RADIUS * BOT_STILL_RADIUS)
+        {
+            _stillMapId = _bot->GetMapId();
+            _stillX = _bot->GetPositionX();
+            _stillY = _bot->GetPositionY();
+            _stillMs = 0;
+        }
+        else if ((_stillMs += BOT_AI_UPDATE_INTERVAL) >= BOT_STILL_MS)
+        {
+            _stillMs = 0;
+            sBotFindings->RecordAt(BotFindingType::Stuck, _bot, _bot->GetPositionX(), _bot->GetPositionY(),
+                _bot->GetPositionZ(), "stood still out of combat for 5 minutes (last step '" + _lastStep
+                + "'); sent to its hearth point");
+            ClearTravelDestination();
+            _pendingTeleport.mapId = _bot->m_homebindMapId;
+            _pendingTeleport.x = _bot->m_homebindX;
+            _pendingTeleport.y = _bot->m_homebindY;
+            _pendingTeleport.z = _bot->m_homebindZ;
+            _pendingTeleport.active = true;
+            _lastStep = "unstuck";
+            return;
+        }
+    }
+    else
+        _stillMs = 0;
 
     // Play-tester: passive findings, then a directed quest test if one is running.
     UpdateTester(BOT_AI_UPDATE_INTERVAL);

@@ -457,6 +457,11 @@ private:
     // Step of UpdateAI that ended the last tick, and the tick count so far.
     std::string _lastStep = "none";
     uint32 _ticks = 0;
+    // Where the bot has stood since _stillMs began counting (stuck-in-place check).
+    uint32 _stillMapId = 0;
+    float _stillX = 0.0f;
+    float _stillY = 0.0f;
+    uint32 _stillMs = 0;
     uint8 _travelFailCount = 0;
     std::unordered_map<std::string, TravelPoint> _savedPositions;
     bool _forceVendor = false;
