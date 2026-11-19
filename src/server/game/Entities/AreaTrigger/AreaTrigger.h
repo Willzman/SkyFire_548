@@ -25,6 +25,7 @@ public:
     virtual void OnInit() { }
     virtual void OnUpdate(uint32 /*diff*/) { }
     virtual void OnExpire() { }
+    virtual void OnDestinationReached() { } // end of the trigger's spline path
     virtual void OnDestroy() { }
 
     virtual void OnRemoveFromWorld();

@@ -29,6 +29,10 @@
 #include "DBCStores.h"
 #include "DynamicObject.h"
 #include "MoveSplineInit.h"
+#include "SpellAuras.h"
+#include "SpellScript.h"
+#include "Spell.h"
+#include "SpellMgr.h"
 
 namespace LoaCompat
 {
@@ -277,6 +281,58 @@ namespace LoaCompat
     inline void CastAtPos(Unit* caster, Position const& pos, uint32 spellId, bool triggered)
     {
         caster->CastSpell(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), spellId, triggered);
+    }
+
+    // LoA Unit::CastCustomSpell(x, y, z, spellId, bp0, bp1, bp2, triggered): cast at a position with base points.
+    inline void CastCustomAtPos(Unit* caster, float x, float y, float z, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo)
+            return;
+        SpellCastTargets targets;
+        targets.SetDst(x, y, z, caster->GetOrientation());
+        CustomSpellValues values;
+        if (bp0) values.AddSpellMod(SPELLVALUE_BASE_POINT0, *bp0);
+        if (bp1) values.AddSpellMod(SPELLVALUE_BASE_POINT1, *bp1);
+        if (bp2) values.AddSpellMod(SPELLVALUE_BASE_POINT2, *bp2);
+        caster->CastSpell(targets, spellInfo, &values, triggered ? TRIGGERED_FULL_MASK : TRIGGERED_NONE);
+    }
+
+    // LoA InstanceScript::DoSetAlternatePowerOnPlayers.
+    inline void SetAlternatePowerOnPlayers(InstanceScript* instance, int32 value)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                player->SetPower(POWER_ALTERNATE_POWER, value);
+    }
+
+    // LoA AuraScript::SetGuid / Aura::SetScriptGuid: aura scripts that take the call derive from AuraGuidHook too.
+    struct AuraGuidHook
+    {
+        virtual ~AuraGuidHook() { }
+        virtual void SetGuid(uint32 type, uint64 guid) = 0;
+    };
+
+    inline void SetScriptGuid(Aura* aura, uint32 type, uint64 guid)
+    {
+        if (!aura)
+            return;
+        for (std::list<AuraScript*>::iterator itr = aura->m_loadedScripts.begin(); itr != aura->m_loadedScripts.end(); ++itr)
+            if (AuraGuidHook* hook = dynamic_cast<AuraGuidHook*>(*itr))
+                hook->SetGuid(type, guid);
+    }
+
+    // LoA IAreaTriggerAura::IsInBox: target inside an axis-aligned box around the trigger's caster.
+    inline bool IsInBox(Unit* center, Unit* target, float extentsX, float extentsY, float extentsZ)
+    {
+        if (!center || !target)
+            return false;
+        return std::fabs(target->GetPositionX() - center->GetPositionX()) <= extentsX
+            && std::fabs(target->GetPositionY() - center->GetPositionY()) <= extentsY
+            && std::fabs(target->GetPositionZ() - center->GetPositionZ()) <= extentsZ / 2.0f;
     }
 
 } // namespace LoaCompat

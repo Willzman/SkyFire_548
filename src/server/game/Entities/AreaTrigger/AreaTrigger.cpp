@@ -371,6 +371,8 @@ void AreaTrigger::UpdateSplinePosition(uint32 diff)
 
         G3D::Vector3 const& lastSplinePosition = _spline->getPoint(_lastSplineIndex);
         GetMap()->AreaTriggerRelocation(this, lastSplinePosition.x, lastSplinePosition.y, lastSplinePosition.z, GetOrientation());
+        if (_script)
+            _script->OnDestinationReached();
         return;
     }
 
