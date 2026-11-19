@@ -5082,3 +5082,105 @@ INSERT INTO `gameobject` (`guid`, `id`, `map`, `spawnMask`, `phaseId`, `phaseGro
 (9603182, 216610, 1104, 4096, 0, 0, -1523.3, 1386.73, 20.6031, 0, 0, 0, 0, 1, 7200, 255, 1), -- LoA 537189
 (9603183, 216227, 1104, 4096, 0, 0, -1791.52, 1421.9, 12.8692, 1.27178, 0, 0, 0, 1, 7200, 255, 1); -- LoA 537209
 
+
+-- Fixes for load errors seen after the first import on the dev realm
+-- pickpocketing_loot_template for the new templates (LoA rows, lootmode 1)
+DELETE FROM `pickpocketing_loot_template` WHERE `entry` IN (67255,67263,67264,67266,67727,67748,67809,67818,67879,67892,68141,68142,68347,68474,68739,68775);
+INSERT INTO `pickpocketing_loot_template` (`entry`, `item`, `ChanceOrQuestChance`, `lootmode`, `groupid`, `mincountOrRef`, `maxcount`) VALUES
+(67255, 88156, 0.08, 1, 0, 1, 1),
+(67255, 88157, 0.08, 1, 0, 1, 1),
+(67255, 88165, 0.24, 1, 0, 1, 1),
+(67263, 88155, 0.06, 1, 0, 1, 1),
+(67263, 88157, 0.06, 1, 0, 1, 1),
+(67263, 88165, 0.18, 1, 0, 1, 1),
+(67264, 88155, 0.14, 1, 0, 1, 1),
+(67264, 88157, 0.05, 1, 0, 1, 1),
+(67264, 88165, 0.05, 1, 0, 1, 1),
+(67266, 88155, 0.17, 1, 0, 1, 1),
+(67266, 88156, 0.06, 1, 0, 1, 1),
+(67266, 88157, 0.06, 1, 0, 1, 1),
+(67266, 88165, 0.06, 1, 0, 1, 1),
+(67727, 87530, 0.14, 1, 0, 1, 1),
+(67727, 88154, 0.29, 1, 0, 1, 1),
+(67727, 88158, 0.24, 1, 0, 1, 1),
+(67727, 88165, 0.24, 1, 0, 1, 1),
+(67748, 88155, 0.1, 1, 0, 1, 1),
+(67748, 88156, 0.03, 1, 0, 1, 1),
+(67748, 88157, 0.03, 1, 0, 1, 1),
+(67748, 88165, 0.06, 1, 0, 1, 1),
+(67809, 88162, 0.06, 1, 0, 1, 1),
+(67809, 88163, 0.32, 1, 0, 1, 1),
+(67809, 88165, 0.06, 1, 0, 1, 1),
+(67818, 88154, 20, 1, 0, 1, 1),
+(67818, 88165, 80, 1, 0, 1, 1),
+(67879, 88162, 0.35, 1, 0, 1, 1),
+(67879, 88163, 0.35, 1, 0, 1, 1),
+(67879, 88164, 0.15, 1, 0, 1, 1),
+(67879, 88165, 0.1, 1, 0, 1, 1),
+(67892, 87530, 0.34, 1, 0, 1, 1),
+(67892, 88154, 0.08, 1, 0, 1, 1),
+(67892, 88165, 0.08, 1, 0, 1, 1),
+(68141, 87530, 0.34, 1, 0, 1, 1),
+(68141, 88154, 0.06, 1, 0, 1, 1),
+(68141, 88158, 0.03, 1, 0, 1, 1),
+(68141, 88165, 0.09, 1, 0, 1, 1),
+(68142, 87530, 0.27, 1, 0, 1, 1),
+(68142, 88154, 0.13, 1, 0, 1, 1),
+(68142, 88158, 0.07, 1, 0, 1, 1),
+(68142, 88165, 0.07, 1, 0, 1, 1),
+(68347, 88151, 0.03, 1, 0, 1, 1),
+(68347, 88152, 0.01, 1, 0, 1, 1),
+(68347, 88153, 0.01, 1, 0, 1, 1),
+(68347, 88165, 0.01, 1, 0, 1, 1),
+(68474, 87530, 0.37, 1, 0, 1, 1),
+(68474, 88154, 0.09, 1, 0, 1, 1),
+(68474, 88158, 0.05, 1, 0, 1, 1),
+(68474, 88165, 0.33, 1, 0, 1, 1),
+(68739, 87530, 0.41, 1, 0, 1, 1),
+(68739, 88154, 0.07, 1, 0, 1, 1),
+(68739, 88158, 0.07, 1, 0, 1, 1),
+(68739, 88165, 0.44, 1, 0, 1, 1),
+(68775, 88155, 0.09, 1, 0, 1, 1),
+(68775, 88156, 0.04, 1, 0, 1, 1);
+
+-- skinning_loot_template for the new templates (LoA rows, lootmode 1)
+DELETE FROM `skinning_loot_template` WHERE `entry` IN (67922,68348,68351,68353);
+INSERT INTO `skinning_loot_template` (`entry`, `item`, `ChanceOrQuestChance`, `lootmode`, `groupid`, `mincountOrRef`, `maxcount`) VALUES
+(67922, 72120, 4, 1, 1, 1, 6),
+(67922, 72201, 0.61, 1, 1, 1, 1),
+(67922, 79101, 2, 1, 1, 1, 5),
+(68348, 72120, 7, 1, 1, 1, 7),
+(68348, 72201, 0.63, 1, 1, 1, 1),
+(68351, 72120, 5, 1, 1, 1, 4),
+(68351, 72201, 0.28, 1, 1, 1, 1),
+(68353, 72120, 7, 1, 1, 1, 4),
+(68353, 72201, 0.87, 1, 1, 1, 1);
+
+-- spell_areatrigger_template: sat_dagger_in_dark_gas_bomb
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 514;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (514, 0, 1, 3, 0, 0, 'sat_dagger_in_dark_gas_bomb');
+-- spell_areatrigger_template: sat_dagger_in_dark_healing_ward
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 515;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (515, 0, 1, 8, 0, 0, 'sat_dagger_in_dark_healing_ward');
+-- spell_areatrigger_template: sat_dagger_in_dark_mogu_rune_powerup
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 556;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (556, 0, 1, 5, 0, 0, 'sat_dagger_in_dark_mogu_rune_powerup');
+-- spell_areatrigger_template: sat_dagger_in_dark_big_bad_voodoo
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 573;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (573, 0, 1, 20, 0, 0, 'sat_dagger_in_dark_big_bad_voodoo');
+-- spell_areatrigger_template: sat_high_seas_fire
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1009;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1009, 0, 1, 2, 2, 2, 'sat_high_seas_fire');
+-- scene_template: scene_theramore_explosion_horde
+DELETE FROM `scene_template` WHERE `SceneId` = 46;
+INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName`) VALUES (46, 1, 190, 'scene_theramore_explosion_horde');
+
+-- Battle on the High Seas: Zip Line (npc_high_seas_zip_back), summoned by the script only
+-- creature_template (1)
+DELETE FROM `creature_template` WHERE `entry` IN (67327);
+INSERT INTO `creature_template` (`entry`, `difficulty_entry_1`, `difficulty_entry_2`, `difficulty_entry_3`, `KillCredit1`, `KillCredit2`, `modelid1`, `modelid2`, `modelid3`, `modelid4`, `name`, `subname`, `IconName`, `gossip_menu_id`, `minlevel`, `maxlevel`, `exp`, `exp_unk`, `npcflag`, `speed_walk`, `speed_run`, `scale`, `mindmg`, `maxdmg`, `dmgschool`, `attackpower`, `dmg_multiplier`, `baseattacktime`, `rangeattacktime`, `unit_class`, `unit_flags`, `unit_flags2`, `dynamicflags`, `family`, `trainer_type`, `trainer_class`, `trainer_race`, `minrangedmg`, `maxrangedmg`, `rangedattackpower`, `type`, `type_flags`, `type_flags2`, `lootid`, `pickpocketloot`, `skinloot`, `resistance1`, `resistance2`, `resistance3`, `resistance4`, `resistance5`, `resistance6`, `spell1`, `spell2`, `spell3`, `spell4`, `spell5`, `spell6`, `spell7`, `spell8`, `PetSpellDataId`, `VehicleId`, `mingold`, `maxgold`, `AIName`, `MovementType`, `InhabitType`, `HoverHeight`, `Health_mod`, `Mana_mod`, `Mana_mod_extra`, `Armor_mod`, `RacialLeader`, `questItem1`, `questItem2`, `questItem3`, `questItem4`, `questItem5`, `questItem6`, `movementId`, `RegenHealth`, `mechanic_immune_mask`, `flags_extra`, `ScriptName`, `faction_A`, `faction_H`, `npc_rank`) VALUES
+(67327, 0, 0, 0, 0, 0, 1126, 11686, 0, 0, 'Zip Line', '', '', 0, 1, 1, 4, 0, 0, 1, 3.1, 1, 8, 15, 0, 42299, 1, 2000, 2000, 1, 33570816, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 1024, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2514, 0, 0, '', 0, 4, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 187, 1, 0, 128, 'npc_high_seas_zip_back', 2402, 2402, 0);
+
+-- A Little Patience: loot of the Misplaced Keg (gameobject 216608, loot id 45691), LoA row
+DELETE FROM `gameobject_loot_template` WHERE `entry` = 45691;
+INSERT INTO `gameobject_loot_template` (`entry`, `item`, `ChanceOrQuestChance`, `lootmode`, `groupid`, `mincountOrRef`, `maxcount`) VALUES (45691, 92739, 100, 1, 0, 1, 1);
