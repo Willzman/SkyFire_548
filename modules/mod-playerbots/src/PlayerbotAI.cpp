@@ -648,7 +648,36 @@ std::string PlayerbotAI::DescribeState() const
         quests, complete, uint32(_abandonedQuests.size()),
         int(_quests), int(_grind), int(_stay), int(_resting), int(ShouldFollowPublic()),
         int(_bot->GetGroup() != nullptr), _bot->GetHealth(), _bot->GetMaxHealth());
-    return buf;
+    std::string out = buf;
+
+    // What the bot is after: its victim, else its selection, else its chase target.
+    Unit* target = _bot->GetVictim();
+    char const* kind = "victim";
+    if (!target)
+    {
+        target = _bot->GetSelectedUnit();
+        kind = "selected";
+    }
+    if (!target && _chaseGuid)
+    {
+        target = ObjectAccessor::GetUnit(*_bot, _chaseGuid);
+        kind = "chase";
+    }
+    if (target)
+    {
+        Creature* creature = target->ToCreature();
+        snprintf(buf, sizeof(buf),
+            "; %s %s (entry %u) %.1f yd at %.1f %.1f %.1f, %s, LOS %d, can see %d, same phase %d, attackable %d, evading %d",
+            kind, target->GetName().c_str(), creature ? creature->GetEntry() : 0u, _bot->GetDistance(target),
+            target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
+            target->IsAlive() ? "alive" : "dead", int(_bot->IsWithinLOSInMap(target)),
+            int(_bot->CanSeeOrDetect(target)), int(_bot->InSamePhase(target)), int(_bot->IsValidAttackTarget(target)),
+            int(creature && creature->IsInEvadeMode()));
+        out += buf;
+    }
+    else
+        out += "; no target";
+    return out;
 }
 
 bool PlayerbotAI::RunTravel()
