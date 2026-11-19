@@ -595,6 +595,8 @@ private:
     // Complete quest -> trips made to its ender / ticks spent waiting next to it.
     std::unordered_map<uint32, uint32> _enderTrips;
     std::unordered_map<uint32, uint32> _enderWaits;
+    // Complete quest -> closest 2D distance to its ender at the start of a trip.
+    std::unordered_map<uint32, float> _enderBestDist;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.
