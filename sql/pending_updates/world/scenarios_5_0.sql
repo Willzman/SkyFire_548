@@ -2417,3 +2417,14 @@ INSERT INTO `waypoint_data` (`id`, `point`, `position_x`, `position_y`, `positio
 (9591209, 8, 1772.66, 377.932, 478.53, 0, 0, 1, 0, 100, 0),
 (9591209, 9, 1772.66, 377.932, 478.53, 0, 0, 1, 0, 100, 0);
 
+
+-- Fixes for load errors seen after the first import on the dev realm
+-- spell_areatrigger_template: sat_blanches_elexir
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 340;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (340, 0, 1, 3.5, 0, 0, 'sat_blanches_elexir');
+-- spell_areatrigger_template: sat_bo_rejuvinating_mist
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 346;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (346, 0, 1, 5, 0, 0, 'sat_bo_rejuvinating_mist');
+-- spell_areatrigger_template: sat_arena_of_annihiliation_whirlpool
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 385;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (385, 0, 1, 50, 0, 0, 'sat_arena_of_annihiliation_whirlpool');
