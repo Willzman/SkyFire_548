@@ -10134,6 +10134,10 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                     if (!target->CanSeeSpellClickOn(creature))
                         appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
 
+                if (Battleground* bg = target->GetBattleground())
+                    if (!bg->CanSeeSpellClick(target, this))
+                        appendValue &= ~UNIT_NPC_FLAG_SPELLCLICK;
+
                 fieldBuffer << uint32(appendValue);
             }
             else if (index == UNIT_FIELD_AURA_STATE)

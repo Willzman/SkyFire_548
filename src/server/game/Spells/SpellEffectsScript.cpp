@@ -65,6 +65,12 @@ void Spell::EffectDummy(SpellEffIndex effIndex)
     if (!unitTarget && !gameObjTarget && !itemTarget)
         return;
 
+    // Capturing (97372: Silvershard Mines track switch, 97388: Deepwind Gorge mine), as in Legends of Azeroth Pandaria
+    if (unitTarget && (m_spellInfo->Id == 97388 || m_spellInfo->Id == 97372))
+        if (Player* player = m_caster->ToPlayer())
+            if (Battleground* bg = player->GetBattleground())
+                bg->EventPlayerClickedOnFlag(player, unitTarget);
+
     uint32 spell_id = 0;
     int32 bp = 0;
     bool triggered = true;
