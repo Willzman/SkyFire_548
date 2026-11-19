@@ -235,6 +235,50 @@ namespace LoaCompat
             me->CastSpell(target, spellId, triggered);
     }
 
+    // LoA Unit::GetFirstMinionByEntry: first summoned creature with this entry that the unit controls.
+    inline Unit* GetFirstMinionByEntry(Unit* owner, uint32 entry)
+    {
+        for (Unit::ControlList::const_iterator itr = owner->m_Controlled.begin(); itr != owner->m_Controlled.end(); ++itr)
+            if ((*itr)->GetEntry() == entry && (*itr)->ToCreature() && (*itr)->ToCreature()->IsSummon())
+                return *itr;
+        return NULL;
+    }
+
+    // LoA GetFarthestPlayerInArea (ScriptedCreature): farthest non-GM player within range.
+    inline Player* GetFarthestPlayerInArea(WorldObject* owner, float range)
+    {
+        Player* farthest = NULL;
+        float dist = 0.0f;
+        std::list<Player*> players;
+        GetPlayerListInGrid(players, owner, range);
+        for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+        {
+            if ((*itr)->IsGameMaster())
+                continue;
+            float d = (*itr)->GetDistance2d(owner);
+            if (d > dist)
+            {
+                dist = d;
+                farthest = *itr;
+            }
+        }
+        return farthest;
+    }
+
+    // LoA WorldObject::GetRandomPoint(pos, dist) returning the point.
+    inline Position RandomPoint(WorldObject const* obj, Position const& center, float dist)
+    {
+        Position pos;
+        obj->GetRandomPoint(center, dist, pos);
+        return pos;
+    }
+
+    // LoA Unit::CastSpell(Position const&, ...): cast at a position.
+    inline void CastAtPos(Unit* caster, Position const& pos, uint32 spellId, bool triggered)
+    {
+        caster->CastSpell(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), spellId, triggered);
+    }
+
 } // namespace LoaCompat
 
 // LoA UnitAI.h spec target selectors (true = valid target). Usable with remove_if / SelectTarget.
