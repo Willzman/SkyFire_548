@@ -15,6 +15,7 @@
 #include "Opcodes.h"
 #include "Pet.h"
 #include "Player.h"
+#include "ScenarioMgr.h"
 #include "WorldSession.h"
 
 void InstanceScript::SaveToDB()
@@ -384,6 +385,92 @@ void InstanceScript::DoFinishLFGDungeon(uint32 dungeonId)
         if (Player* player = PlayerList.begin()->GetSource())
             if (Group* group = player->GetGroup())
                 sLFGMgr->FinishDungeon(group->GetGUID(), dungeonId);
+}
+
+uint32 InstanceScript::GetScenarioId() const
+{
+    if (!scenarioIdKnown)
+    {
+        scenarioId = sScenarioMgr->GetScenarioIdForMap(instance->GetId());
+        scenarioIdKnown = true;
+    }
+    return scenarioId;
+}
+
+uint64 InstanceScript::GetScenarioGUID() const
+{
+    uint32 const id = GetScenarioId();
+    return id ? MAKE_NEW_GUID(id, instance->GetInstanceId(), HIGHGUID_SCENARIO) : 0;
+}
+
+// Ported from Legends of Azeroth Pandaria (GPL v2). 5.4.8 18414 layout; the
+// quantity goes in as a GUID-shaped 64-bit value.
+void InstanceScript::SendScenarioProgressUpdate(CriteriaProgressData const& progressData, Player* player)
+{
+    ObjectGuid quantity = progressData.Quantity;
+    ObjectGuid instanceGuid = progressData.InstanceGuid;
+    WorldPacket data(SMSG_SCENARIO_PROGRESS_UPDATE);
+
+    data.WriteBit(instanceGuid[6]);
+    data.WriteBit(instanceGuid[4]);
+    data.WriteBit(instanceGuid[5]);
+    data.WriteBit(quantity[1]);
+    data.WriteBit(quantity[5]);
+    data.WriteBit(quantity[6]);
+    data.WriteBit(quantity[7]);
+    data.WriteBit(quantity[4]);
+    data.WriteBit(instanceGuid[1]);
+    data.WriteBit(quantity[0]);
+    data.WriteBit(instanceGuid[2]);
+    data.WriteBit(instanceGuid[3]);
+    data.WriteBit(quantity[2]);
+    data.WriteBit(quantity[3]);
+    data.WriteBit(instanceGuid[0]);
+    data.WriteBits(progressData.Flags, 4);
+    data.WriteBit(instanceGuid[7]);
+
+    data.WriteByteSeq(quantity[5]);
+    data.WriteByteSeq(quantity[2]);
+    data.WriteByteSeq(instanceGuid[7]);
+    data.WriteByteSeq(instanceGuid[4]);
+    data.WriteByteSeq(quantity[4]);
+    data.WriteByteSeq(quantity[0]);
+    data.WriteByteSeq(instanceGuid[1]);
+    data.WriteByteSeq(instanceGuid[2]);
+    data << uint32(progressData.TimeFromStart);
+    data.WriteByteSeq(quantity[3]);
+    data << uint32(progressData.Id);
+    data.WriteByteSeq(quantity[1]);
+    data.AppendPackedTime(progressData.Date);
+    data << uint32(progressData.TimeFromCreate);
+    data.WriteByteSeq(instanceGuid[0]);
+    data.WriteByteSeq(instanceGuid[3]);
+    data.WriteByteSeq(instanceGuid[6]);
+    data.WriteByteSeq(quantity[7]);
+    data.WriteByteSeq(quantity[6]);
+    data.WriteByteSeq(instanceGuid[5]);
+
+    if (player)
+        player->SendDirectMessage(&data);
+    else
+        instance->SendToPlayers(&data);
+}
+
+void InstanceScript::SendChallengeStartElapsedTimer(uint32 timerId, uint32 time)
+{
+    WorldPacket data(SMSG_START_ELAPSED_TIMER, 8);
+    data << uint32(time);
+    data << uint32(timerId);
+    instance->SendToPlayers(&data);
+}
+
+void InstanceScript::SendChallengeStopElapsedTimer(uint32 timerId, bool keepTimer)
+{
+    WorldPacket data(SMSG_STOP_ELAPSED_TIMER, 5);
+    data.WriteBit(keepTimer);
+    data.FlushBits();
+    data << uint32(timerId);
+    instance->SendToPlayers(&data);
 }
 
 // Cast spell on all players in instance

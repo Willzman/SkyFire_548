@@ -5,6 +5,7 @@
 
 #include "ScenarioMgr.h"
 #include "DBCStores.h"
+#include "InstanceScript.h"
 #include "Opcodes.h"
 #include "Player.h"
 #include "WorldPacket.h"
@@ -30,7 +31,8 @@ uint32 ScenarioMgr::GetCriteriaIdForScenarioStep(uint32 map, uint32 step) const
     return 0;
 }
 
-void ScenarioMgr::SendScenarioState(Player* player, uint32 map, int32 step, uint32 startTime, uint32 miscCriteriaTreeId, uint32 scenarioId, uint32 bonusData)
+void ScenarioMgr::SendScenarioState(Player* player, uint32 map, int32 step, uint32 startTime, uint32 miscCriteriaTreeId, uint32 scenarioId, uint32 bonusData,
+    ScenarioChallenge const* challengeData)
 {
     if (!player)
         return;
@@ -47,11 +49,11 @@ void ScenarioMgr::SendScenarioState(Player* player, uint32 map, int32 step, uint
     ByteBuffer bytesData;
 
     WorldPacket data(SMSG_SCENARIO_STATE);
-    data << uint32(0);                                      // challenge max wave
-    data << uint32(0);                                      // challenge timer
-    data << uint32(0);                                      // challenge medal
+    data << uint32(challengeData ? challengeData->MaxWave : 0);
+    data << uint32(challengeData ? challengeData->Timer : 0);
+    data << uint32(challengeData ? challengeData->Medal : 0);
     data << uint32(scenarioId ? scenarioId : GetScenarioIdForMap(map));
-    data << uint32(0);                                      // challenge current wave
+    data << uint32(challengeData ? challengeData->CurWave : 0);
     data << uint32(bonusData);
     data << uint32(step);
     data.WriteBits(criteriaTreeId ? 1 : 0, 19);
@@ -106,6 +108,10 @@ void ScenarioMgr::SendScenarioState(Player* player, uint32 map, int32 step, uint
         data.append(bytesData);
 
     player->SendDirectMessage(&data);
+
+    if (challengeData && challengeData->Timer)
+        if (InstanceScript* instance = player->GetInstanceScript())
+            instance->SendChallengeStartElapsedTimer(TIMER_SCENARIO, 0);
 
     if (step <= 0 || !criteriaTreeId)
         return;

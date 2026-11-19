@@ -26,6 +26,41 @@ class Creature;
 typedef std::set<GameObject*> DoorSet;
 typedef std::set<Creature*> MinionSet;
 
+// Challenge medals shown in the scenario frame (Proving Grounds).
+enum ChallengeMedals
+{
+    MedalTypeNone,
+    MedalTypeBronze,
+    MedalTypeSilver,
+    MedalTypeGold,
+    MaxMedalType,
+};
+
+// Timer ids of SMSG_START_ELAPSED_TIMER / SMSG_STOP_ELAPSED_TIMER.
+enum InstanceTimerTypes
+{
+    TIMER_PVP,
+    TIMER_CHALLENGE,
+    TIMER_SCENARIO,
+};
+
+// One criteria update for SMSG_SCENARIO_PROGRESS_UPDATE.
+struct CriteriaProgressData
+{
+    CriteriaProgressData(uint32 id, uint64 quantity, uint64 instanceGuid, uint32 date, uint32 startTime, uint8 flags)
+        : InstanceGuid(instanceGuid), Quantity(quantity), Id(id), Date(date), TimeFromStart(startTime),
+        TimeFromCreate(startTime), Flags(flags) { }
+    CriteriaProgressData() { }
+
+    uint64 InstanceGuid = 0;
+    uint64 Quantity = 0;
+    uint32 Id = 0;
+    uint32 Date = 0;
+    uint32 TimeFromStart = 0;
+    uint32 TimeFromCreate = 0;
+    uint8 Flags = 0;
+};
+
 enum EncounterFrameType
 {
     ENCOUNTER_FRAME_SET_COMBAT_RES_LIMIT = 0,
@@ -182,6 +217,16 @@ public:
     // Complete an LFG dungeon for the group in the instance (for encounters that have no creature credit)
     void DoFinishLFGDungeon(uint32 dungeonId);
 
+    // Scenarios: the scenario of this map (from LfgDungeons.dbc unless set) and its instance GUID.
+    void SetScenarioId(uint32 newScenarioId) { scenarioId = newScenarioId; scenarioIdKnown = true; }
+    uint32 GetScenarioId() const;
+    uint64 GetScenarioGUID() const;
+    // Criteria progress for every player in the instance, or only player.
+    void SendScenarioProgressUpdate(CriteriaProgressData const& data, Player* player = NULL);
+    // Elapsed timer frame (TIMER_SCENARIO / TIMER_CHALLENGE) for every player in the instance.
+    void SendChallengeStartElapsedTimer(uint32 timerId, uint32 time);
+    void SendChallengeStopElapsedTimer(uint32 timerId, bool keepTimer = false);
+
     // Cast spell on all players in instance
     void DoCastSpellOnPlayers(uint32 spell);
 
@@ -239,6 +284,8 @@ private:
     DoorInfoMap doors;
     MinionInfoMap minions;
     uint32 completedEncounters; // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
+    mutable uint32 scenarioId = 0;
+    mutable bool scenarioIdKnown = false;
 };
 
 template<class AI, class T>

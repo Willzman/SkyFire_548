@@ -10,6 +10,17 @@
 
 class Player;
 
+// Wave, medal and timer of a challenge scenario (Proving Grounds) for SMSG_SCENARIO_STATE.
+struct ScenarioChallenge
+{
+    uint32 CurWave;
+    uint32 MaxWave;
+    uint32 Medal;   // ChallengeMedals
+    uint32 Timer;   // seconds
+
+    ScenarioChallenge(uint32 curWave, uint32 maxWave, uint32 medal, uint32 timer) : CurWave(curWave), MaxWave(maxWave), Medal(medal), Timer(timer) { }
+};
+
 class ScenarioMgr
 {
 private:
@@ -27,7 +38,8 @@ public:
     uint32 GetCriteriaIdForScenarioStep(uint32 map, uint32 step) const;
 
     // Maps hosting several scenarios (Isle of Thunder) need the criteria tree and scenario passed explicitly.
-    void SendScenarioState(Player* player, uint32 map, int32 step, uint32 startTime, uint32 miscCriteriaTreeId = 0, uint32 scenarioId = 0, uint32 bonusData = 0);
+    void SendScenarioState(Player* player, uint32 map, int32 step, uint32 startTime, uint32 miscCriteriaTreeId = 0, uint32 scenarioId = 0, uint32 bonusData = 0,
+        ScenarioChallenge const* challengeData = NULL);
 };
 
 #define sScenarioMgr ScenarioMgr::Instance()
