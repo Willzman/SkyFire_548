@@ -89,6 +89,24 @@ set(scripts_STAT_SRCS
   Pandaria/Scenarios/BrewmoonFestival/brewmoon_festival.h
   Pandaria/Scenarios/BrewmoonFestival/brewmoon_festival.cpp
   Pandaria/Scenarios/BrewmoonFestival/instance_brewmoon_festival.cpp
+  Pandaria/Scenarios/FallOfTheramoreAlliance/fall_of_theramore_alliance.h
+  Pandaria/Scenarios/FallOfTheramoreAlliance/fall_of_theramore_alliance.cpp
+  Pandaria/Scenarios/FallOfTheramoreAlliance/instance_fall_of_theramore_alliance.cpp
+  Pandaria/Scenarios/FallOfTheramoreHorde/fall_of_theramore_horde.h
+  Pandaria/Scenarios/FallOfTheramoreHorde/fall_of_theramore_horde.cpp
+  Pandaria/Scenarios/FallOfTheramoreHorde/instance_fall_of_theramore_horde.cpp
+  Pandaria/Scenarios/AssaultOnZanvess/assault_on_zanvess.h
+  Pandaria/Scenarios/AssaultOnZanvess/assault_on_zanvess.cpp
+  Pandaria/Scenarios/AssaultOnZanvess/instance_assault_on_zanvess.cpp
+  Pandaria/Scenarios/DaggerInTheDark/dagger_in_the_dark.h
+  Pandaria/Scenarios/DaggerInTheDark/dagger_in_the_dark.cpp
+  Pandaria/Scenarios/DaggerInTheDark/instance_dagger_in_the_dark.cpp
+  Pandaria/Scenarios/BattleOnTheHighSeas/battle_on_the_high_seas.h
+  Pandaria/Scenarios/BattleOnTheHighSeas/battle_on_the_high_seas.cpp
+  Pandaria/Scenarios/BattleOnTheHighSeas/instance_battle_on_the_high_seas.cpp
+  Pandaria/Scenarios/LittlePatience/little_patience.h
+  Pandaria/Scenarios/LittlePatience/instance_little_patience.cpp
+  Pandaria/Scenarios/LittlePatience/little_patience.cpp
   Pandaria/zone_the_jade_forest.cpp
   Pandaria/zone_the_veiled_stair.cpp
 )

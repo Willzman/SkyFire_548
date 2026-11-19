@@ -732,6 +732,19 @@ void AddSC_arena_of_annihiliation();
 void AddSC_instance_instance_arena_of_annihiliation();
 void AddSC_brewmoon_festival();
 void AddSC_instance_brewmoon_festival();
+// Scenarios, Theramore and 5.1-5.2 (ported from LoA)
+void AddSC_fall_of_theramore_alliance_scenario();
+void AddSC_instance_fall_of_theramore_alliance();
+void AddSC_fall_of_theramore_horde_scenario();
+void AddSC_instance_fall_of_theramore_horde();
+void AddSC_assault_on_zanvess();
+void AddSC_instance_assault_on_zanvess();
+void AddSC_dagger_in_the_dark();
+void AddSC_instance_dagger_in_the_dark();
+void AddSC_battle_on_the_high_seas();
+void AddSC_instance_battle_on_the_high_seas();
+void AddSC_instance_little_patience();
+void AddSC_little_patience();
 void AddSC_jade_forest();
 void AddSC_the_veiled_stair();
 
@@ -1550,6 +1563,19 @@ void AddPandariaScripts()
     AddSC_instance_instance_arena_of_annihiliation();
     AddSC_brewmoon_festival();
     AddSC_instance_brewmoon_festival();
+    // Scenarios, Theramore and 5.1-5.2 (ported from LoA)
+    AddSC_fall_of_theramore_alliance_scenario();
+    AddSC_instance_fall_of_theramore_alliance();
+    AddSC_fall_of_theramore_horde_scenario();
+    AddSC_instance_fall_of_theramore_horde();
+    AddSC_assault_on_zanvess();
+    AddSC_instance_assault_on_zanvess();
+    AddSC_dagger_in_the_dark();
+    AddSC_instance_dagger_in_the_dark();
+    AddSC_battle_on_the_high_seas();
+    AddSC_instance_battle_on_the_high_seas();
+    AddSC_instance_little_patience();
+    AddSC_little_patience();
     AddSC_jade_forest();
     AddSC_the_veiled_stair();
 #endif
