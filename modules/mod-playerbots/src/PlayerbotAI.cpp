@@ -668,7 +668,7 @@ std::string PlayerbotAI::DescribeState() const
     snprintf(buf, sizeof(buf),
         "%s lvl %u: tick %u, last step '%s'; %s%s%s%s; at %.1f %.1f %.1f map %u zone %u; motion %u; "
         "travel %s (to %.1f %.1f %.1f, %.0f yd, fails %u); quests %u (%u complete), abandoned %u; "
-        "flags quests %d grind %d stay %d resting %d follow %d; group %d; hp %u/%u",
+        "flags quests %d grind %d stay %d resting %d follow %d; group %d; hp %u/%u; still %u s",
         _bot->GetName().c_str(), uint32(_bot->getLevel()), _ticks, _lastStep.c_str(),
         _bot->IsAlive() ? "alive" : "dead", _bot->IsInCombat() ? ", in combat" : "",
         _bot->IsSitState() ? ", sitting" : "", BotMovement::IsCasting(_bot) ? ", casting" : "",
@@ -678,7 +678,7 @@ std::string PlayerbotAI::DescribeState() const
         _travel.active ? _bot->GetExactDist(_travel.x, _travel.y, _travel.z) : 0.0f, uint32(_travelFailCount),
         quests, complete, uint32(_abandonedQuests.size()),
         int(_quests), int(_grind), int(_stay), int(_resting), int(ShouldFollowPublic()),
-        int(_bot->GetGroup() != nullptr), _bot->GetHealth(), _bot->GetMaxHealth());
+        int(_bot->GetGroup() != nullptr), _bot->GetHealth(), _bot->GetMaxHealth(), _stillMs / IN_MILLISECONDS);
     std::string out = buf;
 
     // What the bot is after: its victim, else its selection, else its chase target.
@@ -5688,7 +5688,20 @@ bool PlayerbotAI::NeedsVendorWorkPublic() const
         return false;
     if (_bot->IsInCombat() || GroupInCombat() || !_bot->getAttackers().empty())
         return false;
-    return NeedsRepair() || HasVendorJunk() || _forceVendor;
+    if (_forceVendor)
+        return true;
+    if (!NeedsRepair() && !HasVendorJunk())
+        return false;
+    // No vendor close by and none within Vendor.HubMaxDistance (Echo Isles): the
+    // vendor action would do nothing and still outrank wander and questing.
+    PlayerbotAI* self = const_cast<PlayerbotAI*>(this);
+    if (self->FindNearbyVendor() || self->FindNearbyRepairer())
+        return true;
+    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, NeedsRepair() && !HasVendorJunk());
+    if (!hub || hub->mapId != _bot->GetMapId())
+        return false;
+    float const maxDist = sPlayerbotMgr->GetVendorHubMaxDistance();
+    return _bot->GetExactDistSq(hub->x, hub->y, hub->z) <= maxDist * maxDist;
 }
 
 bool PlayerbotAI::NeedsUrgentVendorPublic() const
