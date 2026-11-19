@@ -40,6 +40,8 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "PathGenerator.h"
+#include "VMapFactory.h"
+#include "IVMapManager.h"
 #include <unordered_set>
 #include "PetDefines.h"
 #include "Player.h"
@@ -673,6 +675,15 @@ std::string PlayerbotAI::DescribeState() const
             target->IsAlive() ? "alive" : "dead", int(_bot->IsWithinLOSInMap(target)),
             int(_bot->CanSeeOrDetect(target)), int(_bot->InSamePhase(target)), int(_bot->IsValidAttackTarget(target)),
             int(creature && creature->IsInEvadeMode()));
+        out += buf;
+
+        float const x1 = _bot->GetPositionX(), y1 = _bot->GetPositionY(), z1 = _bot->GetPositionZ() + 2.0f;
+        float const x2 = target->GetPositionX(), y2 = target->GetPositionY(), z2 = target->GetPositionZ() + 2.0f;
+        VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager();
+        snprintf(buf, sizeof(buf), "; vmap LOS %d (calc %d), map LOS %d, bot phase %u, target phase %u",
+            int(vmgr->isInLineOfSight(_bot->GetMapId(), x1, y1, z1, x2, y2, z2)), int(vmgr->isLineOfSightCalcEnabled()),
+            int(_bot->GetMap()->isInLineOfSight(x1, y1, z1, x2, y2, z2, _bot->GetPhaseMask())),
+            _bot->GetPhaseMask(), target->GetPhaseMask());
         out += buf;
     }
     else
@@ -6692,13 +6703,19 @@ bool PlayerbotAI::HandleAutoQuesting()
     if (NeedsRestPublic() || _resting || HasFoodOrDrinkAura() || _bot->IsSitState())
         return false;
 
-    // Bag pressure → vendor hub before questing.
-    if (CountFreeBagSlots() < 3)
+    // Bag pressure → vendor before questing. With nothing to sell, or no vendor
+    // within reach (Echo Isles: the closest is 557 yd away, past
+    // Vendor.HubMaxDistance), the bot quests on with full bags: returning here
+    // without moving left it standing still for good.
+    if (CountFreeBagSlots() < 3 && HasVendorJunk())
     {
-        if (!FindNearbyVendor() && TravelToVendorHub(false))
+        if (FindNearbyVendor())
+        {
+            HandleVendor();
             return true;
-        HandleVendor();
-        return true;
+        }
+        if (TravelToVendorHub(false))
+            return true;
     }
 
     if (HasTravelDestination())
