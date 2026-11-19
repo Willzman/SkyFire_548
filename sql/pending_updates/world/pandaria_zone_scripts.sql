@@ -1081,3 +1081,10 @@ INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName
 -- stun hooks match neither spell, so the core never ran it.
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_timeless_isle_crane_wings', 'spell_crane_wings');
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (144385, 'spell_crane_wings');
+
+-- Sha of Anger: #129 (D19) cleared this binding while the script did not exist; boss_sha_of_anger.cpp now registers it.
+UPDATE `creature_template` SET `ScriptName` = 'boss_sha_of_anger' WHERE `entry` = 60491;
+
+-- Townlong Steppes: LoA's condition for spell 122523 (burn the mantid corpse), checked by cond_burn_mantid_corpse
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 17 AND `SourceEntry` = 122523 AND `ConditionTypeOrReference` = 29 AND `ScriptName` = 'cond_burn_mantid_corpse';
+INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES (17,0,122523,0,0,29,0,62128,7,0,1,0,0,'cond_burn_mantid_corpse',NULL);
