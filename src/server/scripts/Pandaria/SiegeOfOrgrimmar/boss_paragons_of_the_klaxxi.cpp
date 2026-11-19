@@ -4572,9 +4572,9 @@ class spell_paragon_volatile_poultice : public AuraScript
 
     void HandleOnProc(AuraEffect const* aurEff, ProcEventInfo& eventInfo)
     {
-        if (eventInfo.GetHealInfo() && eventInfo.GetActor() && !eventInfo.GetActor()->HasAura(SPELL_VOLATILE_POULTICE_STORAGE))
+        if (eventInfo.GetHealInfo() && eventInfo.GetHealInfo()->GetHeal() && eventInfo.GetActor() && !eventInfo.GetActor()->HasAura(SPELL_VOLATILE_POULTICE_STORAGE))
         {
-            int32 healAbsorb = (int32)eventInfo.GetHealInfo();
+            int32 healAbsorb = (int32)eventInfo.GetHealInfo()->GetHeal();
 
             if (Unit* owner = GetOwner()->ToUnit())
                 if (Unit* target = eventInfo.GetActor())
