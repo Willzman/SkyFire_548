@@ -73,6 +73,23 @@ set(scripts_STAT_SRCS
   Pandaria/Scenarios/IsleOfThunder/instance_thunder_king_citadel.cpp
   Pandaria/zone_the_jade_forest.cpp
   Pandaria/zone_the_veiled_stair.cpp
+  Pandaria/zone_dread_wastes.cpp
+  Pandaria/zone_isle_of_giants.cpp
+  Pandaria/zone_krasarang_wilds.cpp
+  Pandaria/zone_kun_lai_summit.cpp
+  Pandaria/zone_townlong_steppes.cpp
+  Pandaria/zone_vale_of_eternal_blossoms.cpp
+  Pandaria/zone_valley_of_the_four_winds_loa.cpp
+  Pandaria/boss_galion.cpp
+  Pandaria/boss_oondasta.cpp
+  Pandaria/boss_sha_of_anger.cpp
+  Pandaria/TimelessIsle/timeless_isle.h
+  Pandaria/TimelessIsle/boss_chi_ji.cpp
+  Pandaria/TimelessIsle/boss_niuzao.cpp
+  Pandaria/TimelessIsle/boss_ordos.cpp
+  Pandaria/TimelessIsle/boss_xuen.cpp
+  Pandaria/TimelessIsle/boss_yu_lon.cpp
+  Pandaria/TimelessIsle/zone_timeless_isle.cpp
 )
 
 message("  -> Prepared: Pandaria")
