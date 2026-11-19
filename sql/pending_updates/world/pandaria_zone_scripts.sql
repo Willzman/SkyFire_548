@@ -1028,3 +1028,56 @@ INSERT INTO `creature_text` (`entry`, `groupid`, `id`, `text`, `type`, `language
 DELETE FROM `creature_text` WHERE `entry` = 73666;
 INSERT INTO `creature_text` (`entry`, `groupid`, `id`, `text`, `type`, `language`, `probability`, `emote`, `duration`, `sound`, `comment`) VALUES
 (73666, 0, 0, 'Your challenge has been answered, outsider. Ordon, claim this area in the name of the Burning God!', 14, 0, 100, 0, 0, 0, '');
+
+-- Spell area triggers and scenes the scripts register (LoA rows)
+-- spell_areatrigger_template: sat_vfw_ground_and_pound
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 426;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (426, 0, 1, 2, 0, 0, 'sat_vfw_ground_and_pound');
+-- spell_areatrigger_template: sat_gift_of_chi_ji
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 453;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (453, 0, 1, 4, 4, 4, 'sat_gift_of_chi_ji');
+-- spell_areatrigger_template: sat_yulon_jadefire_wall
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1087;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1087, 0, 1, 15, 0, 0, 'sat_yulon_jadefire_wall');
+-- spell_areatrigger_template: sat_ordos_pool_of_fire
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1090;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1090, 0, 1, 15, 0, 0, 'sat_ordos_pool_of_fire');
+-- spell_areatrigger_template: sat_sprite_ward
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1232;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1232, 0, 0, 15, 15, 15, 'sat_sprite_ward');
+-- spell_areatrigger_template: sat_evermaw_time_lock
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1305;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1305, 0, 1, 3, 0, 0, 'sat_evermaw_time_lock');
+-- spell_areatrigger_template: sat_fire_blossom
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1306;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1306, 0, 1, 11, 0, 0, 'sat_fire_blossom');
+-- spell_areatrigger_template: sat_storm_blossom
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1307;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1307, 0, 1, 11, 0, 0, 'sat_storm_blossom');
+-- spell_areatrigger_template: sat_evermaw_time_rift
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1311;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1311, 0, 1, 3, 0, 0, 'sat_evermaw_time_rift');
+-- spell_areatrigger_template: sat_evermaw_devour
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1312;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1312, 0, 1, 60, 0, 0, 'sat_evermaw_devour');
+-- spell_areatrigger_template: sat_burning_pitch
+DELETE FROM `spell_areatrigger_template` WHERE `Entry` = 1320;
+INSERT INTO `spell_areatrigger_template` (`Entry`, `Flags`, `CollisionType`, `Radius`, `ScaleX`, `ScaleY`, `ScriptName`) VALUES (1320, 0, 0, 3.5, 5, 5, 'sat_burning_pitch');
+-- scene_template: scene_lorewalker_stories
+DELETE FROM `scene_template` WHERE `SceneId` = 28;
+INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName`) VALUES (28, 0, 179, 'scene_lorewalker_stories');
+-- scene_template: scene_klaxxi_head_explosion
+DELETE FROM `scene_template` WHERE `SceneId` = 72;
+INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName`) VALUES (72, 0, 212, 'scene_klaxxi_head_explosion');
+-- scene_template: scene_memory_wine
+DELETE FROM `scene_template` WHERE `SceneId` = 137;
+INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName`) VALUES (137, 0, 300, 'scene_memory_wine');
+-- scene_template: scene_why_do_we_fight
+DELETE FROM `scene_template` WHERE `SceneId` = 244;
+INSERT INTO `scene_template` (`SceneId`, `Flags`, `ScriptPackageID`, `ScriptName`) VALUES (244, 25, 524, 'scene_why_do_we_fight');
+
+-- Crane Wings (144385, Gleaming Crane Statue): its feather-fall aura script is spell_crane_wings (rewards the
+-- Mist-Covered Treasure Chest quest on removal). LoA binds 144385 and 26013 to spell_timeless_isle_crane_wings, whose
+-- stun hooks match neither spell, so the core never ran it.
+DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('spell_timeless_isle_crane_wings', 'spell_crane_wings');
+INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (144385, 'spell_crane_wings');
