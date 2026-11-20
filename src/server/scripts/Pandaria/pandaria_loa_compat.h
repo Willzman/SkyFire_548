@@ -32,6 +32,65 @@
 
 namespace LoaCompat
 {
+    // LoA Position::NormalizePitch
+    inline float NormalizePitch(float o)
+    {
+        if (o > -float(M_PI) && o < float(M_PI))
+            return o;
+        return Position::NormalizeOrientation(o + float(M_PI)) - float(M_PI);
+    }
+
+    // LoA InstanceScript::DoKilledMonsterKredit: quest credit for every player in the instance who has the quest
+    inline void DoKilledMonsterKredit(InstanceScript* instance, uint32 questId, uint32 entry, uint64 guid = 0)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                if (player->GetQuestStatus(questId) == QUEST_STATUS_INCOMPLETE)
+                    player->KilledMonsterCredit(entry, guid);
+    }
+
+    // LoA InstanceScript::DoModifyPlayerCurrencies
+    inline void DoModifyPlayerCurrencies(InstanceScript* instance, uint32 id, int32 value)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                player->ModifyCurrency(id, value);
+    }
+
+    // LoA instance scripts keep door data in a std::vector; SkyFire's LoadDoorData wants a {0}-terminated array.
+    inline DoorData const* TerminatedDoorData(std::vector<DoorData>& data)
+    {
+        if (data.empty() || data.back().entry != 0)
+        {
+            DoorData end = { 0, 0, DOOR_TYPE_ROOM, 0 };
+            data.push_back(end);
+        }
+        return &data[0];
+    }
+
+    // ...and LoA's door arrays have no terminator either: copy them once into a terminated vector.
+    template<size_t N>
+    inline DoorData const* TerminatedDoorData(DoorData const (&data)[N])
+    {
+        static std::map<DoorData const*, std::vector<DoorData> > copies;   // per array (two arrays can have the same size)
+        std::vector<DoorData>& copy = copies[&data[0]];
+        if (copy.empty())
+        {
+            copy.assign(data, data + N);
+            if (copy.back().entry != 0)
+            {
+                DoorData end = { 0, 0, DOOR_TYPE_ROOM, 0 };
+                copy.push_back(end);
+            }
+        }
+        return &copy[0];
+    }
     enum Roles
     {
         ROLES_DPS    = 0,

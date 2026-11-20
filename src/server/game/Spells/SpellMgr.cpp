@@ -4207,6 +4207,197 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->AttributesEx &= ~0x10000000; // SPELL_ATTR1_DONT_DISPLAY_IN_AURA_BAR
                 spellInfo->Effects[EFFECT_1].Effect = 0;
                 break;
+            // End Time (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // END TIME SPELLS
+            //
+            // Trash
+            case 109952: // Cadaver Toss
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 102066: // Flesh Rip
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            // Echo of Tyrande
+            case 102242: // Tears of Elune script
+                spellInfo->MaxAffectedTargets = 2;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 102244: // Tears of Elune dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_2_YARDS);
+                break;
+            case 102542: // Achievement
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 102002: // Shrink
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                break;
+            case 102193: // Moonbolt
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 102149: // Moonlance dmg
+                spellInfo->ExcludeTargetAuraSpell = 102149;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 102414: // Dark Moonlight
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
+                break;
+            case 102173: // Stardust
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 102151: // Moonlance summon 1
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_5_YARDS);
+                break;
+            // Echo of Sylvanas
+            case 101397: // Death Grip aoe
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            case 101200: // Summon Ghoul
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+                break;
+            case 100865: // Wracking Pain target aura
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+                break;
+            case 101257: // Wracking Pain dmg
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_100_YARDS);
+                break;
+            case 101547: // Blighted Arrows
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_DEST_AREA_ENTRY;
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                break;
+            case 101401: // Blighted Arrows
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = 4;
+                break;
+            // Echo of Baine
+            case 101619: // Magma
+                spellInfo->AttributesEx3 &= ~SPELL_ATTR3_NO_DONE_BONUS;
+                break;
+            case 101840: // Magma Blast
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 101601: // Throw Totem
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(36);
+                break;
+            case 101625: // Pulverize aoe
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 101627: // Pulverize triggered
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_TRIGGERED;
+                break;
+            case 101815: // Pulverize gobject
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_TRIGGERED;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_20_YARDS);
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            // Echo of Jaina
+            case 101812: // Blink
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_DUMMY;
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            // Murozond
+            case 102364: // Blessing of Bronze Dragons
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                break;
+            // ENDOF END TIME SPELLS
+            // Well of Eternity (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // WELL OF_ ETERNITY SPELLS
+            //
+            // Trash
+            case 108474: // Crushing Leap
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
+                break;
+            case 105720: // Demon Grip
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            case 102937: // Demon Grip Root
+                spellInfo->Effects[EFFECT_0].BasePoints = -99;
+                break;
+            // Perotharn
+            case 105496: // Track player
+                spellInfo->Speed = SPEED_CHARGE;
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            case 107536: // Punishing Flame dmg
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            // Queen Azshara
+            case 102478: // Ice Fling
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 103241: // Total Obedience
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_INSTAKILL;
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = 0;
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                spellInfo->Effects[EFFECT_1].ApplyAuraName = 0;
+                spellInfo->Effects[EFFECT_2].Effect = 0;
+                spellInfo->Effects[EFFECT_2].ApplyAuraName = 0;
+                break;
+            // Mannoroth
+            case 104648: // Nether Portal
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_YARDS);
+                break;
+            case 104678: // Debilitating Flay
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 105073: // Wrath of Elune
+                spellInfo->MaxAffectedTargets = 3;
+                break;
+            case 105054: // Summon Felhound
+            case 105058: // Summon Felguard
+            case 105059: // Summon Devastator
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DB;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            case 105523: // Magistrike Arc
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            // ENDOF WELL OF ETERNITY SPELLS
+            // Hour of Twilight (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // HOUR OF TWILIGHT
+            //
+            case 102475: // thrall lava burst
+            case 104130: // thrall lightning chain
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            case 103905: // Molten Fury
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_CAN_TARGET_UNTARGETABLE;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            // ENDOF HOUR OF TWILIGHT
+            // Hour of Twilight, bosses (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // HOUR OF TWILIGHT SPELLS
+            //
+            // Arcurion
+            case 102480: // Icy Boulder aoe
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            // Archbishop Benedictus
+            case 103600: // Purifying Light targeting
+            case 103768: // Corrupting Twilight targeting
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                break;
+            case 103648: // Purifying Blast
+            case 103776: // Twilight Bolt
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            case 102915: // Shroud of Luminosity
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            // ENDOF HOUR OF TWILIGHT SPELLS
             // Stormstout Brewery (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 106847: // Barrel Toss
                 spellInfo->Effects[0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_DEST_AREA_ENEMY);
