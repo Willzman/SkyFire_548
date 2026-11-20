@@ -32,6 +32,111 @@
 
 namespace LoaCompat
 {
+    // LoA phase masks. SkyFire phases by phase id and ignores the mask, so LoA's SetPhaseMask hid nothing. Each mask bit
+    // above bit 0 becomes a private phase id (LOA_PHASE_BASE + bit, no Phase.dbc id is that high); bit 0 is the normal
+    // world (169, the fallback phase). Mask 1: no phase (seen by everyone); 256: only in phase LOA_PHASE_BASE + 8, i.e.
+    // hidden from players; 17: 169 plus LOA_PHASE_BASE + 4 (still seen by everyone). Spawns hidden in LoA's DB
+    // (phaseMask 256) get `phaseId` LOA_PHASE_BASE + 8 in our SQL.
+    static uint32 const LOA_PHASE_BASE = 990000;
+    inline void SetPhaseMask(WorldObject* obj, uint32 mask, bool update)
+    {
+        if (!obj)
+            return;
+        obj->SetPhaseMask(mask, false);
+        bool hadLoaPhase = false;
+        for (uint32 bit = 1; bit < 32; ++bit)
+            if (obj->IsPhased(LOA_PHASE_BASE + bit))
+            {
+                hadLoaPhase = true;
+                obj->SetPhased(LOA_PHASE_BASE + bit, false, false);
+            }
+        bool other = (mask & ~1u) != 0;
+        if (other)
+        {
+            for (uint32 bit = 1; bit < 32; ++bit)
+                if (mask & (1u << bit))
+                    obj->SetPhased(LOA_PHASE_BASE + bit, false, true);
+            if (mask & 1)
+                obj->SetPhased(169, false, true);
+            else if (obj->IsPhased(169))
+                obj->SetPhased(169, false, false);
+        }
+        else if (hadLoaPhase && obj->IsPhased(169))
+            obj->SetPhased(169, false, false);
+        if (update && obj->IsInWorld())
+            obj->UpdateObjectVisibility();
+    }
+    // LoA InstanceScript::DoNearTeleportPlayers
+    inline void NearTeleportPlayers(InstanceScript* instance, Position const& pos, bool casting = false)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                player->NearTeleportTo(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), pos.GetOrientation(), casting);
+    }
+
+    // LoA InstanceScript::DoStartMovie (the instance script's OnMovieEnded runs when each player's client ends it)
+    inline void StartMovie(InstanceScript* instance, uint32 movieId)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                player->SendMovieStart(movieId);
+    }
+
+    // LoA Unit::RemoveAuraFromStack with a stack count
+    inline void RemoveAuraFromStack(Unit* unit, uint32 spellId, uint64 casterGUID, AuraRemoveMode mode, uint32 num)
+    {
+        if (!unit)
+            return;
+        for (uint32 i = 0; i < num && unit->HasAura(spellId, casterGUID); ++i)
+            unit->RemoveAuraFromStack(spellId, casterGUID, mode);
+    }
+
+    // LoA InstanceScript::DoRemoveAuraFromStackOnPlayers
+    inline void RemoveAuraFromStackOnPlayers(InstanceScript* instance, uint32 spellId, uint64 casterGUID = 0, AuraRemoveMode mode = AURA_REMOVE_BY_DEFAULT, uint32 num = 1)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                RemoveAuraFromStack(player, spellId, casterGUID, mode, num);
+    }
+
+    // LoA InstanceScript::DoSetAlternatePowerOnPlayers (named apart from the MoP raid branches' copy)
+    inline void SetAltPowerOnPlayers(InstanceScript* instance, int32 value)
+    {
+        if (!instance || !instance->instance)
+            return;
+        Map::PlayerList const& players = instance->instance->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                player->SetPower(POWER_ALTERNATE_POWER, value);
+    }
+
+    // LoA WorldObject::IsSpawnedInLFRDungeon: SkyFire has its own raid finder difficulty
+    inline bool IsSpawnedInLFRDungeon(WorldObject const* obj)
+    {
+        Map const* map = obj ? obj->FindMap() : NULL;
+        return map && map->IsRaid() && map->GetDifficulty() == DIFFICULTY_25MAN_LFR;
+    }
+
+    // LoA ScriptedAI::CheckInArea: evade when the creature leaves its area
+    inline bool CheckInArea(Creature* me, uint32 areaId)
+    {
+        if (me->GetAreaId() != areaId)
+        {
+            me->AI()->EnterEvadeMode();
+            return false;
+        }
+        return true;
+    }
+
     // LoA Unit::ApplyUberImmune: immune to the movement-impairing and loss-of-control mechanics (except disarm)
     inline void ApplyUberImmune(Unit* unit, uint32 spellId, bool apply)
     {

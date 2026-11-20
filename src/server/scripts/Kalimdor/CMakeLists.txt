@@ -43,6 +43,32 @@ set(scripts_STAT_SRCS
   Kalimdor/CavernsOfTime/HourofTwilight/hour_of_twilight.cpp
   Kalimdor/CavernsOfTime/HourofTwilight/hour_of_twilight.h
   Kalimdor/CavernsOfTime/HourofTwilight/instance_hour_of_twilight.cpp
+  Kalimdor/HallsOfOrigination/boss_ammunae.cpp
+  Kalimdor/HallsOfOrigination/boss_isiset.cpp
+  Kalimdor/HallsOfOrigination/boss_rajh.cpp
+  Kalimdor/HallsOfOrigination/boss_setesh.cpp
+  Kalimdor/HallsOfOrigination/halls_of_origination.cpp
+  Kalimdor/Firelands/boss_baleroc.cpp
+  Kalimdor/Firelands/boss_bethtilac.cpp
+  Kalimdor/Firelands/boss_lord_rhyolith.cpp
+  Kalimdor/Firelands/boss_lord_rhyolith.h
+  Kalimdor/Firelands/boss_majordomo_staghelm.cpp
+  Kalimdor/Firelands/boss_ragnaros_firelands.cpp
+  Kalimdor/Firelands/boss_ragnaros_firelands.h
+  Kalimdor/Firelands/boss_shannox.cpp
+  Kalimdor/Firelands/firelands.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_hagara.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_madness_of_deathwing.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_morchok.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_spine_of_deathwing.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_ultraxion.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_warlord_zonozz.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_warmaster_blackhorn.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/boss_warmaster_blackhorn.h
+  Kalimdor/CavernsOfTime/DragonSoul/boss_yorsahj_the_unsleeping.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/dragon_soul.cpp
+  Kalimdor/CavernsOfTime/DragonSoul/dragon_soul.h
+  Kalimdor/CavernsOfTime/DragonSoul/instance_dragon_soul.cpp
   Kalimdor/CavernsOfTime/EscapeFromDurnholdeKeep/boss_captain_skarloc.cpp
   Kalimdor/CavernsOfTime/BattleForMountHyjal/boss_archimonde.cpp
   Kalimdor/CavernsOfTime/BattleForMountHyjal/hyjalAI.h

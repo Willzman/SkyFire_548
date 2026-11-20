@@ -183,6 +183,8 @@ public:
     //Called when a player successfully enters the instance.
     virtual void OnPlayerEnter(Player* /*player*/) { }
     virtual void OnPlayerLeave(Player* /*player*/) { }
+    // Called when a player's client ends a movie (CMSG_COMPLETE_MOVIE) inside the instance.
+    virtual void OnMovieEnded(Player* /*player*/) { }
 
     //Handle open / close objects
     //use HandleGameObject(0, boolen, GO); in OnObjectCreate in instance scripts

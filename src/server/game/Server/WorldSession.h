@@ -918,6 +918,7 @@ public:                                                 // opcodes handlers
     void HandleGetChannelMemberCount(WorldPacket& recvPacket);
 
     void HandleCompleteCinematic(WorldPacket& recvPacket);
+    void HandleCompleteMovie(WorldPacket& recvPacket);
     void HandleNextCinematicCamera(WorldPacket& recvPacket);
 
     void HandlePageTextQueryOpcode(WorldPacket& recvPacket);
