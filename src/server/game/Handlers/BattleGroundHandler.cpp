@@ -20,6 +20,7 @@
 #include "Log.h"
 #include "Object.h"
 #include "Opcodes.h"
+#include "RatedPvp.h"
 #include "Player.h"
 
 void WorldSession::HandleBattlemasterHelloOpcode(WorldPacket& recvData)
@@ -645,7 +646,7 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     uint32 arenaRating = 0;
     uint32 matchmakerRating = 0;
 
-    uint8 arenatype = ArenaTeam::GetTypeBySlot(arenaslot);
+    uint8 arenatype = RatedPvpTeam::GetTypeBySlot(arenaslot);
 
     //check existance
     Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(BattlegroundTypeId::BATTLEGROUND_AA);
@@ -676,19 +677,12 @@ void WorldSession::HandleBattlemasterJoinArena(WorldPacket& recvData)
     if (grp->GetLeaderGUID() != _player->GetGUID())
         return;
 
-    /*
-    uint32 ateamId = _player->GetArenaTeamId(arenaslot);
-    // check real arenateam existence only here (if it was moved to group->CanJoin .. () then we would ahve to get it twice)
-    ArenaTeam* at = sArenaTeamMgr->GetArenaTeamById(ateamId);
-    if (!at)
-    {
-        _player->GetSession()->SendNotInArenaTeamPacket(arenatype);
+    // MoP has no arena teams: the group's average personal rating and matchmaker rating for this bracket
+    if (arenaslot >= PVP_SLOT_RATED_BG)
         return;
-    }
-    */
-
-    arenaRating = 1;
-    matchmakerRating = 1;
+    RatedPvpTeam ratedTeam(RatedPvpSlot(arenaslot), grp);
+    arenaRating = std::max<uint32>(ratedTeam.GetRating(), 1);
+    matchmakerRating = ratedTeam.GetMatchmakerRating();
 
     BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
 

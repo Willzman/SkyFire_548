@@ -23,6 +23,7 @@
 #include "CreatureAI.h"
 #include "DatabaseEnv.h"
 #include "Player.h"
+#include "RatedPvp.h"
 //#include "DBCStructure.h"
 #include "DB2Stores.h"
 #include "DisableMgr.h"
@@ -5318,6 +5319,10 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_RATED_PVP_INFO);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_BGDATA);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
@@ -8191,7 +8196,7 @@ uint32 Player::_GetCurrencyWeekCap(const CurrencyTypesEntry* currency) const
         }
         case CURRENCY_TYPE_CONQUEST_META_ARENA:
         {
-            uint32 arenaCap = Skyfire::Currency::ConquestRatingCalculator(0) * CURRENCY_PRECISION;
+            uint32 arenaCap = Skyfire::Currency::ConquestRatingCalculator(GetMaxArenaRating()) * CURRENCY_PRECISION;
             if (arenaCap < 1350)
                 arenaCap = 1350;
 
@@ -8199,7 +8204,7 @@ uint32 Player::_GetCurrencyWeekCap(const CurrencyTypesEntry* currency) const
         }
         case CURRENCY_TYPE_CONQUEST_META_RBG:
         {
-            uint32 bgCap = Skyfire::Currency::BgConquestRatingCalculator(0) * CURRENCY_PRECISION;
+            uint32 bgCap = Skyfire::Currency::BgConquestRatingCalculator(GetMaxArenaRating()) * CURRENCY_PRECISION;
             if (bgCap < 1650)
                 bgCap = 1650;
 
@@ -24918,4 +24923,20 @@ void Player::UpdatePhasing()
     RebuildTerrainSwaps(); // to set default map swaps
 
     GetSession()->SendSetPhaseShift(GetPhases(), GetTerrainSwaps(), GetWorldMapSwaps());
+}
+
+uint32 Player::GetArenaPersonalRating(uint8 slot) const
+{
+    RatedPvpInfo const* info = sRatedPvpMgr->GetInfo(RatedPvpSlot(slot), GetGUID());
+    return info ? info->Rating : 0;
+}
+
+// The conquest cap follows the best of the 2v2, 3v3 and rated battleground ratings (as in LoA; 5v5 does not count).
+uint32 Player::GetMaxArenaRating() const
+{
+    uint32 maxRating = 0;
+    for (uint8 slot = PVP_SLOT_ARENA_2v2; slot < PVP_SLOT_MAX; ++slot)
+        if (slot != PVP_SLOT_ARENA_5v5)
+            maxRating = std::max(maxRating, GetArenaPersonalRating(slot));
+    return maxRating;
 }

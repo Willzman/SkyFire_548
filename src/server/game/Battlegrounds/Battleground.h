@@ -11,6 +11,7 @@
 #include "GameObject.h"
 #include "Object.h"
 #include "SharedDefines.h"
+#include <memory>
 #include "WorldPacket.h"
 #include "WorldStateBuilder.h"
 
@@ -22,6 +23,7 @@ class Unit;
 class WorldObject;
 class WorldPacket;
 class BattlegroundMap;
+class RatedPvpTeam;
 
 struct PvPDifficultyEntry;
 struct WorldSafeLocsEntry;
@@ -463,6 +465,19 @@ public:
     int32 GetArenaTeamRatingChangeForTeam(uint32 Team) const { return m_ArenaTeamRatingChanges[GetTeamIndexByTeamId(Team)]; }
     int32 GetArenaTeamRatingChangeByIndex(uint32 index) const { return m_ArenaTeamRatingChanges[index]; }
     void SetArenaMatchmakerRating(uint32 Team, uint32 MMR) { m_ArenaTeamMMR[GetTeamIndexByTeamId(Team)] = MMR; }
+    // rated matches: the players of each side with their personal ratings (RatedPvp.h)
+    void SetRatedTeam(uint32 Team, std::shared_ptr<RatedPvpTeam> team) { m_ratedTeams[GetTeamIndexByTeamId(Team)] = team; }
+    RatedPvpTeam* GetRatedTeam(uint32 Team) const { return m_ratedTeams[GetTeamIndexByTeamId(Team)].get(); }
+    // team rating before and after the match, for the scoreboard (SMSG_PVP_LOG_DATA)
+    struct RatedResult { uint32 OldRating = 0; uint32 NewRating = 0; uint32 MatchmakerRating = 0; };
+    RatedResult const& GetRatedResult(uint32 teamIndex) const { return m_ratedResults[teamIndex]; }
+    void SetRatedResult(uint32 Team, uint32 oldRating, int32 change, uint32 mmr)
+    {
+        RatedResult& result = m_ratedResults[GetTeamIndexByTeamId(Team)];
+        result.OldRating = oldRating;
+        result.NewRating = (int32(oldRating) + change < 0) ? 0 : uint32(int32(oldRating) + change);
+        result.MatchmakerRating = mmr;
+    }
     uint32 GetArenaMatchmakerRating(uint32 Team) const { return m_ArenaTeamMMR[GetTeamIndexByTeamId(Team)]; }
     uint32 GetArenaMatchmakerRatingByIndex(uint32 index) const { return m_ArenaTeamMMR[index]; }
     void CheckArenaAfterTimerConditions();
@@ -657,6 +672,8 @@ private:
 
     // Arena team ids by team
     uint32 m_ArenaTeamIds[BG_TEAMS_COUNT];
+    std::shared_ptr<RatedPvpTeam> m_ratedTeams[BG_TEAMS_COUNT];
+    RatedResult m_ratedResults[BG_TEAMS_COUNT];
 
     int32 m_ArenaTeamRatingChanges[BG_TEAMS_COUNT];
     uint32 m_ArenaTeamMMR[BG_TEAMS_COUNT];

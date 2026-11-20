@@ -984,6 +984,7 @@ public:                                                 // opcodes handlers
 
     // Battlefield
     void HandleBattlefieldRatedInfoRequest(WorldPacket& recvData);
+    void SendRatedPvpInfo();                                // SMSG_BATTLEFIELD_RATED_INFO from the rated PvP store
     void SendBfInvitePlayerToWar(uint64 guid, uint32 zoneId, uint32 time);
     void SendBfInvitePlayerToQueue(uint64 guid);
     void SendBfQueueInviteResponse(uint64 guid, uint32 zoneId, bool canQueue = true, bool full = false);

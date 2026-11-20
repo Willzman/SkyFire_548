@@ -2358,15 +2358,10 @@ public:
     void SendDeclineGuildInvitation(std::string declinerName, bool autoDecline = false);
     static void RemovePetitionsAndSigns(uint64 guid, uint32 type);
 
-    uint32 GetArenaPersonalRating(uint8 /*slot*/) const
-    {
-        return 0;
-    }
+    uint32 GetArenaPersonalRating(uint8 slot) const;           // rated PvP store (RatedPvp.h); slot 3 = rated battleground
+    uint32 GetMaxArenaRating() const;                        // highest of 2v2, 3v3 and rated battleground (LoA)
 
-    uint32 GetRBGPersonalRating() const
-    {
-        return 0;
-    }
+    uint32 GetRBGPersonalRating() const { return GetArenaPersonalRating(3); }
 
     DifficultyID GetDifficulty(MapEntry const* mapEntry) const;
     DifficultyID GetDungeonDifficulty() const { return m_dungeonDifficulty; }

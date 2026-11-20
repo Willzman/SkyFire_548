@@ -667,6 +667,12 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_REP_DEATH_GATE_RETURN, "REPLACE INTO character_death_gate_return (guid, map, posX, posY, posZ, o) VALUES (?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_DEATH_GATE_RETURN, "DELETE FROM character_death_gate_return WHERE guid = ?", CONNECTION_ASYNC);
 
+    // Rated PvP (from Legends of Azeroth Pandaria 5.4.8)
+    PrepareStatement(CHAR_SEL_RATED_PVP_INFO, "SELECT r.guid, r.slot, r.`rank`, r.rating, r.matchmaker_rating, r.week_best, r.week_games, r.week_wins, r.season_best, r.season_games, r.season_wins, r.last_week_best, r.win_streak FROM rated_pvp_info r JOIN characters c ON r.guid = c.guid WHERE r.season = ? AND c.deleteDate IS NULL", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_INS_RATED_PVP_INFO, "INSERT IGNORE INTO rated_pvp_info (guid, slot, season, rating, matchmaker_rating) VALUES (?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_RATED_PVP_INFO, "UPDATE rated_pvp_info SET `rank` = ?, rating = ?, matchmaker_rating = ?, week_best = ?, week_games = ?, week_wins = ?, season_best = ?, season_games = ?, season_wins = ?, last_week_best = ?, win_streak = ? WHERE guid = ? AND slot = ? AND season = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_RATED_PVP_INFO_WEEKLY, "UPDATE rated_pvp_info SET last_week_best = week_best, week_best = 0, week_games = 0, week_wins = 0 WHERE season = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_CHAR_RATED_PVP_INFO, "DELETE FROM rated_pvp_info WHERE guid = ?", CONNECTION_ASYNC);
     // blackmarket
     PrepareStatement(CHAR_SEL_BLACKMARKET_AUCTIONS, "SELECT auctionId, templateId, startTime, currentBidder, currentBid, minIncrement, numBids FROM blackmarket_auctions", CONNECTION_SYNCH);
     PrepareStatement(CHAR_DEL_BLACKMARKET_AUCTION, "DELETE FROM blackmarket_auctions WHERE auctionId = ?", CONNECTION_ASYNC);

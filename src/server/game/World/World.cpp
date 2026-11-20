@@ -11,6 +11,7 @@
 #include "AchievementMgr.h"
 #include "AddonMgr.h"
 #include "ArenaTeamMgr.h"
+#include "RatedPvp.h"
 #include "AuctionHouseMgr.h"
 #include "BattlefieldMgr.h"
 #include "BattlegroundMgr.h"
@@ -1683,6 +1684,9 @@ void World::SetInitialWorldSettings()
     SF_LOG_INFO("server.loading", "Loading Dungeon boss data...");
     sObjectMgr->LoadInstanceEncounters();
 
+    SF_LOG_INFO("server.loading", "Loading rated PvP ratings...");
+    sRatedPvpMgr->LoadFromDB();
+
     SF_LOG_INFO("server.loading", "Loading LFG rewards...");
     sLFGMgr->LoadRewards();
 
@@ -3202,6 +3206,7 @@ void World::ResetDailyQuests()
 void World::ResetCurrencyWeekCap()
 {
     CharacterDatabase.Execute("UPDATE `character_currency` SET `weekly_quantity` = 0");
+    sRatedPvpMgr->ResetWeek();                                    // rated PvP week stats reset with the conquest cap
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
         if (itr->second->GetPlayer())
