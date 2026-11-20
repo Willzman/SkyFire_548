@@ -1682,10 +1682,10 @@ void World::SetInitialWorldSettings()
     sLFGMgr->LoadLFGDungeons();
 
     SF_LOG_INFO("server.loading", "Loading Dungeon boss data...");
-    sObjectMgr->LoadInstanceEncounters();
-
     SF_LOG_INFO("server.loading", "Loading rated PvP ratings...");
     sRatedPvpMgr->LoadFromDB();
+
+    sObjectMgr->LoadInstanceEncounters();
 
     SF_LOG_INFO("server.loading", "Loading LFG rewards...");
     sLFGMgr->LoadRewards();
