@@ -32,6 +32,17 @@
 
 namespace LoaCompat
 {
+    // LoA Unit::ApplyUberImmune: immune to the movement-impairing and loss-of-control mechanics (except disarm)
+    inline void ApplyUberImmune(Unit* unit, uint32 spellId, bool apply)
+    {
+        if (!unit)
+            return;
+        if (apply)
+            unit->RemoveAurasWithMechanic(IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK, AURA_REMOVE_BY_DEFAULT, spellId);
+        for (uint32 mech = MECHANIC_CHARM; mech != MECHANIC_WOUNDED; ++mech)
+            if (mech != MECHANIC_DISARM && ((1 << mech) & IMMUNE_TO_MOVEMENT_IMPAIRMENT_AND_LOSS_CONTROL_MASK))
+                unit->ApplySpellImmune(spellId, IMMUNITY_MECHANIC, mech, apply);
+    }
     // LoA Position::NormalizePitch
     inline float NormalizePitch(float o)
     {

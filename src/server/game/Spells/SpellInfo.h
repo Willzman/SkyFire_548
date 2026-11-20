@@ -84,6 +84,7 @@ enum SpellCustomAttributes
     SPELL_ATTR0_CU_DONT_SAVE_AURA_TO_DB = 0x00080000,     // aura isn't saved on logout/pet dismiss
     SPELL_ATTR0_CU_ALWAYS_CHECK_LOS = 0x00100000,         // targets need line of sight even if the spell is triggered
     SPELL_ATTR0_CU_ALWAYS_SEND_TO_CLIENT = 0x00200000,    // always send SPELL_START/SPELL_GO, even when triggered
+    SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS = 0x00400000, // auras from different casters stack as one aura (from Legends of Azeroth Pandaria)
 
     SPELL_ATTR0_CU_NEGATIVE = SPELL_ATTR0_CU_NEGATIVE_EFF0 | SPELL_ATTR0_CU_NEGATIVE_EFF1 | SPELL_ATTR0_CU_NEGATIVE_EFF2
 };

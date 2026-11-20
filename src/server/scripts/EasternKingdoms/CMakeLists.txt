@@ -37,6 +37,23 @@ set(scripts_STAT_SRCS
   EasternKingdoms/BlackrockMountain/BlackwingLair/boss_nefarian.cpp
   EasternKingdoms/BlackrockMountain/BlackwingLair/boss_flamegor.cpp
   EasternKingdoms/BlackrockMountain/BlackwingLair/blackwing_lair.h
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/blackwing_descent.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/blackwing_descent.h
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_atramedes.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_bwd_nefarian.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_chimaeron.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_magmaw.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_maloriak.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/boss_omnotron_defence_system.cpp
+  EasternKingdoms/BlackrockMountain/BlackwingDescent/instance_blackwing_descent.cpp
+  EasternKingdoms/BastionOfTwilight/bastion_of_twilight.cpp
+  EasternKingdoms/BastionOfTwilight/bastion_of_twilight.h
+  EasternKingdoms/BastionOfTwilight/boss_chogall.cpp
+  EasternKingdoms/BastionOfTwilight/boss_council_of_ascendents.cpp
+  EasternKingdoms/BastionOfTwilight/boss_halfus_wyrmbreaker.cpp
+  EasternKingdoms/BastionOfTwilight/boss_sinestra.cpp
+  EasternKingdoms/BastionOfTwilight/boss_theralion_and_valiona.cpp
+  EasternKingdoms/BastionOfTwilight/instance_bastion_of_twilight.cpp
   EasternKingdoms/BlackrockMountain/BlackrockSpire/boss_pyroguard_emberseer.cpp
   EasternKingdoms/BlackrockMountain/BlackrockSpire/boss_drakkisath.cpp
   EasternKingdoms/BlackrockMountain/BlackrockSpire/boss_warmaster_voone.cpp
