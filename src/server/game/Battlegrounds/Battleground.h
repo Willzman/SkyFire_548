@@ -202,7 +202,11 @@ enum ScoreType
     SCORE_DESTROYED_WALL = 19,
     //VOP
     SCORE_ORB_CONTROL = 20,
-    SCORE_ORB_SCORE = 21
+    SCORE_ORB_SCORE = 21,
+    //SM and DG
+    SCORE_CART_CONTROLLED = 22,
+    SCORE_CART_CAPTURES = 23,
+    SCORE_CART_RETURNS = 24
 };
 
 
@@ -494,6 +498,9 @@ public:
     // Battleground events
     virtual void EventPlayerDroppedFlag(Player* /*player*/) { }
     virtual void EventPlayerClickedOnFlag(Player* /*player*/, GameObject* /*target_obj*/) { }
+    virtual void EventPlayerClickedOnFlag(Player* /*player*/, Unit* /*target*/) { }      // capture spells 97372 / 97388 on a creature (Silvershard Mines track switches, Deepwind Gorge mines)
+    virtual bool CanSeeSpellClick(Player const* /*player*/, Unit const* /*clicked*/) { return true; }
+    void SendClearFlagsPositions();
     void EventPlayerLoggedIn(Player* player);
     void EventPlayerLoggedOut(Player* player);
     virtual void EventPlayerDamagedGO(Player* /*player*/, GameObject* /*go*/, uint32 /*eventType*/) { }

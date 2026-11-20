@@ -27,6 +27,9 @@
 #include "BattlegroundTV.h"
 #include "BattlegroundVOP.h"
 #include "BattlegroundWS.h"
+#include "BattlegroundSM.h"
+#include "BattlegroundDG.h"
+#include "BattlegroundTTP.h"
 #include "Chat.h"
 #include "DisableMgr.h"
 #include "Formulas.h"
@@ -464,6 +467,17 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                         buff << uint32(((BattlegroundVOPScore*)score)->OrbControl);         // orb possession
                         buff << uint32(((BattlegroundVOPScore*)score)->OrbScore);           // victory points
                         break;
+                    case 727:                                   // SM
+                        data->WriteBits(1, 22);
+                        buff << uint32(((BattlegroundSMScore*)score)->MineCartCaptures);
+                        break;
+                    case 1105:                                  // DG
+                        data->WriteBits(4, 22);
+                        buff << uint32(((BattlegroundDGScore*)score)->CapturedCart);
+                        buff << uint32(((BattlegroundDGScore*)score)->ReturnedCart);
+                        buff << uint32(((BattlegroundDGScore*)score)->AssaultedMines);
+                        buff << uint32(((BattlegroundDGScore*)score)->DefendedMines);
+                        break;
                     default:
                         data->WriteBits(0, 22);
                         break;
@@ -516,6 +530,17 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
                 buff << uint32(((BattlegroundVOPScore*)score)->OrbControl);         // orb possession
                 buff << uint32(((BattlegroundVOPScore*)score)->OrbScore);           // victory Points
                 break;
+            case BattlegroundTypeId::BATTLEGROUND_SM:
+                data->WriteBits(1, 22);
+                buff << uint32(((BattlegroundSMScore*)score)->MineCartCaptures);
+                break;
+            case BattlegroundTypeId::BATTLEGROUND_DG:
+                data->WriteBits(4, 22);
+                buff << uint32(((BattlegroundDGScore*)score)->CapturedCart);
+                buff << uint32(((BattlegroundDGScore*)score)->ReturnedCart);
+                buff << uint32(((BattlegroundDGScore*)score)->AssaultedMines);
+                buff << uint32(((BattlegroundDGScore*)score)->DefendedMines);
+                break;
             case BattlegroundTypeId::BATTLEGROUND_NA:
             case BattlegroundTypeId::BATTLEGROUND_BE:
             case BattlegroundTypeId::BATTLEGROUND_AA:
@@ -523,6 +548,7 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
             case BattlegroundTypeId::BATTLEGROUND_DS:
             case BattlegroundTypeId::BATTLEGROUND_RV:
             case BattlegroundTypeId::BATTLEGROUND_TV:
+            case BattlegroundTypeId::BATTLEGROUND_TTP:
                 data->WriteBits(0, 22);
                 break;
             default:
@@ -870,6 +896,15 @@ Battleground* BattlegroundMgr::CreateNewBattleground(BattlegroundTypeId original
         case BattlegroundTypeId::BATTLEGROUND_TV:
             bg = new BattlegroundTV(*(BattlegroundTV*)bg_template);
             break;
+        case BattlegroundTypeId::BATTLEGROUND_TTP:
+            bg = new BattlegroundTTP(*(BattlegroundTTP*)bg_template);
+            break;
+        case BattlegroundTypeId::BATTLEGROUND_SM:
+            bg = new BattlegroundSM(*(BattlegroundSM*)bg_template);
+            break;
+        case BattlegroundTypeId::BATTLEGROUND_DG:
+            bg = new BattlegroundDG(*(BattlegroundDG*)bg_template);
+            break;
         case BattlegroundTypeId::BATTLEGROUND_RB:
         case BattlegroundTypeId::BATTLEGROUND_AA:
             bg = new Battleground(*bg_template);
@@ -966,6 +1001,15 @@ bool BattlegroundMgr::CreateBattleground(CreateBattlegroundData& data)
             break;
         case BattlegroundTypeId::BATTLEGROUND_TV:
             bg = new BattlegroundTV;
+            break;
+        case BattlegroundTypeId::BATTLEGROUND_TTP:
+            bg = new BattlegroundTTP;
+            break;
+        case BattlegroundTypeId::BATTLEGROUND_SM:
+            bg = new BattlegroundSM;
+            break;
+        case BattlegroundTypeId::BATTLEGROUND_DG:
+            bg = new BattlegroundDG;
             break;
         case BattlegroundTypeId::BATTLEGROUND_BFG:
             bg = new BattlegroundBFG;
@@ -1251,6 +1295,10 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
             return BATTLEGROUND_QUEUE_WS;
         case BattlegroundTypeId::BATTLEGROUND_VOP:
             return BATTLEGROUND_QUEUE_VOP;
+        case BattlegroundTypeId::BATTLEGROUND_SM:
+            return BATTLEGROUND_QUEUE_SM;
+        case BattlegroundTypeId::BATTLEGROUND_DG:
+            return BATTLEGROUND_QUEUE_DG;
         case BattlegroundTypeId::BATTLEGROUND_AA:
         case BattlegroundTypeId::BATTLEGROUND_BE:
         case BattlegroundTypeId::BATTLEGROUND_DS:
@@ -1258,6 +1306,7 @@ BattlegroundQueueTypeId BattlegroundMgr::BGQueueTypeId(BattlegroundTypeId bgType
         case BattlegroundTypeId::BATTLEGROUND_RL:
         case BattlegroundTypeId::BATTLEGROUND_RV:
         case BattlegroundTypeId::BATTLEGROUND_TV:
+        case BattlegroundTypeId::BATTLEGROUND_TTP:
             switch (arenaType)
             {
                 case ARENA_TYPE_2v2:
@@ -1298,6 +1347,10 @@ BattlegroundTypeId BattlegroundMgr::BGTemplateId(BattlegroundQueueTypeId bgQueue
             return BattlegroundTypeId::BATTLEGROUND_RB;
         case BATTLEGROUND_QUEUE_VOP:
             return BattlegroundTypeId::BATTLEGROUND_VOP;
+        case BATTLEGROUND_QUEUE_SM:
+            return BattlegroundTypeId::BATTLEGROUND_SM;
+        case BATTLEGROUND_QUEUE_DG:
+            return BattlegroundTypeId::BATTLEGROUND_DG;
         case BATTLEGROUND_QUEUE_2v2:
         case BATTLEGROUND_QUEUE_3v3:
         case BATTLEGROUND_QUEUE_5v5:

@@ -2013,3 +2013,12 @@ bool Battleground::CheckAchievementCriteriaMeet(uint32 criteriaId, Player const*
     SF_LOG_ERROR("bg.battleground", "Battleground::CheckAchievementCriteriaMeet: No implementation for criteria %u", criteriaId);
     return false;
 }
+
+// Empties the flag carrier positions on the battleground map (LoA Battleground::SendClearFlagsPositions).
+void Battleground::SendClearFlagsPositions()
+{
+    WorldPacket data(SMSG_BATTLEFIELD_PLAYER_POSITIONS, 3);
+    data.WriteBits(0, 20);
+    data.FlushBits();
+    SendPacketToAll(&data);
+}
