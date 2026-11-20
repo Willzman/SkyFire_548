@@ -6,6 +6,7 @@
 #include "Common.h"
 #include "DatabaseEnv.h"
 #include "Group.h"
+#include "InstanceScript.h"
 #include "GroupMgr.h"
 #include "LFGMgr.h"
 #include "Log.h"
@@ -176,6 +177,25 @@ void WorldSession::HandleGroupInviteOpcode(WorldPacket& recvData)
         return;
     }
 
+    // No invites into or out of a challenge mode run once it has started (as in Legends of Azeroth Pandaria)
+    {
+        bool inChallenge = false;
+        if (InstanceScript* instance = GetPlayer()->GetInstanceScript())
+            inChallenge = instance->instance->IsChallengeDungeon() && instance->IsChallengeModeStarted();
+        if (InstanceScript* instance = player->GetInstanceScript())
+            inChallenge = inChallenge || (instance->instance->IsChallengeDungeon() && instance->IsChallengeModeStarted());
+        if (Group* myGroup = GetPlayer()->GetGroup())
+            for (GroupReference* itr = myGroup->GetFirstMember(); itr && !inChallenge; itr = itr->next())
+                if (Player* member = itr->GetSource())
+                    if (InstanceScript* instance = member->GetInstanceScript())
+                        inChallenge = instance->instance->IsChallengeDungeon() && instance->IsChallengeModeStarted();
+
+        if (inChallenge)
+        {
+            SendPartyResult(PartyOperation::PARTY_OP_INVITE, memberName, PartyResult::ERR_IGNORING_YOU_S);
+            return;
+        }
+    }
     Group* group = GetPlayer()->GetGroup();
     if (group && group->isBGGroup())
         group = GetPlayer()->GetOriginalGroup();

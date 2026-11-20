@@ -378,6 +378,7 @@ public:
     bool IsInstance() const { return IsRaid() || IsDungeon() || IsScenario(); }
     bool IsDungeon() const { return i_mapEntry && i_mapEntry->IsDungeon(); }
     bool IsScenario() const { return i_mapEntry && i_mapEntry->IsScenario(); }
+    bool IsChallengeDungeon() const { return IsNonRaidInstance() && i_spawnMode == DIFFICULTY_CHALLENGE; }
     bool IsNonRaidInstance() const { return i_mapEntry && i_mapEntry->IsNonRaidInstance(); }
     bool IsRaid() const { return i_mapEntry && i_mapEntry->IsRaid(); }
     bool IsRaidOrHeroicDungeon() const { return IsRaid() || i_spawnMode == DIFFICULTY_HEROIC; }

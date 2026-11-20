@@ -35,7 +35,7 @@ public:
     }
 
     uint32 GetScenarioIdForMap(uint32 map) const;
-    uint32 GetCriteriaIdForScenarioStep(uint32 map, uint32 step) const;
+    uint32 GetCriteriaIdForScenarioStep(uint32 map, uint32 step, uint32 scenarioId = 0) const;
 
     // Maps hosting several scenarios (Isle of Thunder) need the criteria tree and scenario passed explicitly.
     void SendScenarioState(Player* player, uint32 map, int32 step, uint32 startTime, uint32 miscCriteriaTreeId = 0, uint32 scenarioId = 0, uint32 bonusData = 0,

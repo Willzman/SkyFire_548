@@ -4734,6 +4734,10 @@ void Unit::setDeathState(DeathState s)
         // players in instance don't have ZoneScript, but they have InstanceScript
         if (ZoneScript* zoneScript = GetZoneScript() ? GetZoneScript() : GetInstanceScript())
             zoneScript->OnUnitDeath(this);
+
+        if (Creature* creature = ToCreature())
+            if (InstanceScript* instanceScript = GetInstanceScript())
+                instanceScript->OnChallengeCreatureDeath(creature);
     }
     else if (s == DeathState::JUST_RESPAWNED)
         RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE); // clear skinnable for creature and player (at battleground)

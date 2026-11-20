@@ -719,6 +719,46 @@ typedef UNORDERED_MAP<uint32, std::vector<uint32>> TerrainUIPhaseInfo;
 typedef UNORDERED_MAP<uint32, std::vector<PhaseInfoStruct>> PhaseInfo;
 class PlayerDumpReader;
 
+// Challenge modes (ported from Legends of Azeroth Pandaria 5.4.8): the realm's best group and the best guild group
+// per map (group_completed_challenges / guild_completed_challenges), and the rewards per map (challenge_mode_rewards).
+struct RealmCompletedChallenge
+{
+    struct ChallengeMember
+    {
+        ChallengeMember() : Guid(0), SpecId(0) { }
+        uint64 Guid;
+        uint32 SpecId;
+    };
+
+    RealmCompletedChallenge() : GuildId(0), AttemptId(0), CompletionTime(0), CompletionDate(0), MedalEarned(0), MembersCount(0) { }
+
+    uint32 GuildId;
+    uint32 AttemptId;
+    uint32 CompletionTime;  // milliseconds
+    uint32 CompletionDate;  // unix time
+    uint8 MedalEarned;
+    uint8 MembersCount;
+    ChallengeMember Members[5];
+};
+
+struct ChallengeReward
+{
+    ChallengeReward() : MapId(0), TitleID(0), AchievementID(0)
+    {
+        for (uint8 i = 0; i < 4; ++i)
+            MoneyReward[i] = ValorReward[i] = 0;
+    }
+
+    uint32 MapId;
+    uint32 MoneyReward[4];  // by medal: none, bronze, silver, gold
+    uint32 ValorReward[4];
+    uint32 TitleID;         // realm best: title and achievement
+    uint32 AchievementID;
+};
+
+typedef std::map<uint32, RealmCompletedChallenge> CompletedChallengesByMap;
+typedef std::map<uint32, ChallengeReward> ChallengeRewardsMap;
+
 class ObjectMgr
 {
     friend class PlayerDumpReader;
@@ -1016,6 +1056,29 @@ public:
     void LoadGossipMenuItemsLocales();
     void LoadPointOfInterestLocales();
     void LoadInstanceTemplate();
+
+    // Challenge modes
+    void LoadRealmCompletedChallenges();
+    void LoadChallengeRewards();
+    void AddGroupCompletedChallenge(uint32 mapId, RealmCompletedChallenge const& challengers) { m_GroupsCompletedChallenges[mapId] = challengers; }
+    void AddGuildCompletedChallenge(uint32 mapId, RealmCompletedChallenge const& challengers) { m_GuildsCompletedChallenges[(uint64(mapId) << 32) | challengers.GuildId] = challengers; }
+    RealmCompletedChallenge* GetGroupCompletedChallengeForMap(uint32 mapId)
+    {
+        CompletedChallengesByMap::iterator itr = m_GroupsCompletedChallenges.find(mapId);
+        return itr != m_GroupsCompletedChallenges.end() ? &itr->second : NULL;
+    }
+    // a guild's best run of a map (LoA kept only the realm's fastest guild)
+    RealmCompletedChallenge* GetGuildCompletedChallengeForMap(uint32 mapId, uint32 guildId)
+    {
+        std::map<uint64, RealmCompletedChallenge>::iterator itr = m_GuildsCompletedChallenges.find((uint64(mapId) << 32) | guildId);
+        return itr != m_GuildsCompletedChallenges.end() ? &itr->second : NULL;
+    }
+    ChallengeReward const* GetChallengeRewardsForMap(uint32 mapId) const
+    {
+        ChallengeRewardsMap::const_iterator itr = m_ChallengeRewardsMap.find(mapId);
+        return itr != m_ChallengeRewardsMap.end() ? &itr->second : NULL;
+    }
+    ChallengeRewardsMap const& GetChallengeRewards() const { return m_ChallengeRewardsMap; }
     void LoadInstanceEncounters();
     void LoadMailLevelRewards();
     void LoadVehicleTemplateAccessories();
@@ -1467,6 +1530,10 @@ public:
     }
 
 private:
+    CompletedChallengesByMap m_GroupsCompletedChallenges;
+    std::map<uint64 /*map << 32 | guild*/, RealmCompletedChallenge> m_GuildsCompletedChallenges;
+    ChallengeRewardsMap m_ChallengeRewardsMap;
+
     // first free id for selected id type
     uint32 _auctionId;
     uint64 _equipmentSetGuid;

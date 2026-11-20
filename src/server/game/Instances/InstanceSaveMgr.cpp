@@ -81,7 +81,8 @@ InstanceSave* InstanceSaveManager::AddInstanceSave(uint32 mapId, uint32 instance
     {
         // initialize reset time
         // for normal instances if no creatures are killed the instance will reset in two hours
-        if (entry->map_type == MAP_RAID || difficulty > DIFFICULTY_NORMAL)
+        // challenge modes reset like normal dungeons (as in LoA)
+        if (entry->map_type == MAP_RAID || (difficulty > DIFFICULTY_NORMAL && difficulty != DIFFICULTY_CHALLENGE))
             resetTime = GetResetTimeFor(mapId, difficulty);
         else
         {

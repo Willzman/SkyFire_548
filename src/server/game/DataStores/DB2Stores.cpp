@@ -31,6 +31,7 @@ DB2Storage<BroadcastTextEntry>              sBroadcastTextStore(BroadcastTextfmt
 DB2Storage<ItemCurrencyCostEntry>           sItemCurrencyCostStore(ItemCurrencyCostfmt);
 DB2Storage<ItemEntry>                       sItemStore(Itemfmt, &DB2Utilities::HasItemEntry, &DB2Utilities::WriteItemDbReply);
 DB2Storage<ItemExtendedCostEntry>           sItemExtendedCostStore(ItemExtendedCostEntryfmt);
+DB2Storage<MapChallengeModeEntry>           sMapChallengeModeStore(MapChallengeModeEntryfmt);
 DB2Storage<ItemSparseEntry>                 sItemSparseStore(ItemSparsefmt, &DB2Utilities::HasItemSparseEntry, &DB2Utilities::WriteItemSparseDbReply);
 DB2Storage<ItemToBattlePetEntry>            sItemToBattlePetStore(ItemToBattlePetfmt);
 //DB2Storage<ItemToMountSpellEntry>           sItemToMountSpellStore(ItemToMountSpellfmt);
@@ -137,6 +138,7 @@ void LoadDB2Stores(std::string const& dataPath)
     //LoadDB2(availableDb2Locales, bad_db2_files, sGameObjectsStore,              db2Path, "GameObjects.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sItemCurrencyCostStore, db2Path, "ItemCurrencyCost.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sItemExtendedCostStore, db2Path, "ItemExtendedCost.db2");
+    LoadDB2(availableDb2Locales, bad_db2_files, sMapChallengeModeStore, db2Path, "MapChallengeMode.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sItemSparseStore, db2Path, "Item-sparse.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sItemStore, db2Path, "Item.db2");
     LoadDB2(availableDb2Locales, bad_db2_files, sItemToBattlePetStore, db2Path, "ItemToBattlePet.db2");

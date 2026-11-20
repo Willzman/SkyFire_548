@@ -23,6 +23,9 @@ class Player;
 class GameObject;
 class Creature;
 
+struct ChallengeDungeonData;
+struct RealmCompletedChallenge;
+
 typedef std::set<GameObject*> DoorSet;
 typedef std::set<Creature*> MinionSet;
 
@@ -229,6 +232,16 @@ public:
     void SendChallengeStartElapsedTimer(uint32 timerId, uint32 time);
     void SendChallengeStopElapsedTimer(uint32 timerId, bool keepTimer = false);
 
+    // Challenge modes (ported from Legends of Azeroth Pandaria 5.4.8, GPL v2; see ChallengeMode.cpp). The core drives
+    // them for every challenge-difficulty instance of the nine dungeons that have one: no dungeon script needs to.
+    bool IsChallengeModeStarted() const { return challengeStarted; }
+    bool IsChallengeModeCompleted() const { return challengeCompleted; }
+    uint32 GetChallengeTime() const { return challengeTime; }
+    void SetChallengeModeStarted();                         // the Challenger's Orb
+    void UpdateChallengeMode(uint32 diff);                  // from InstanceMap::Update
+    void OnChallengePlayerEnter(Player* player);            // from InstanceMap::AddPlayerToMap
+    void OnChallengeGameObjectCreate(GameObject* go);       // the start doors
+    void OnChallengeCreatureDeath(Creature* creature);      // the "enemies defeated" counter
     // Cast spell on all players in instance
     void DoCastSpellOnPlayers(uint32 spell);
 
@@ -288,7 +301,26 @@ private:
     uint32 completedEncounters; // completed encounter mask, bit indexes are DungeonEncounter.dbc boss numbers, used for packets
     mutable uint32 scenarioId = 0;
     mutable bool scenarioIdKnown = false;
-};
+
+    // Challenge modes
+    ChallengeDungeonData const* GetChallengeData() const;
+    void OnChallengeBossDone(uint32 bossId);
+    void TryCompleteChallenge();
+    void SendChallengeNewPlayerRecord();
+    void SendChallengeModeComplete(uint32 money, uint32 valor);
+    void SaveChallengeDatasIfNeeded();
+    void SaveNewGroupChallenge(uint32 guildId = 0);
+    void RewardChallengers(uint32& money, uint32& valor);
+    void RewardNewRealmRecord(RealmCompletedChallenge const* oldChallenge);
+
+    std::vector<uint64> challengeDoorGuids;
+    uint32 challengeStartDelay = 0;
+    uint32 challengeTime = 0;
+    uint32 challengeEnemies = 0;
+    uint32 challengeBossesDone = 0;                         // bit per entry of the dungeon's boss list
+    uint8 challengeMedal = 0;                               // ChallengeMedals
+    bool challengeStarted = false;
+    bool challengeCompleted = false;};
 
 template<class AI, class T>
 AI* GetInstanceAI(T* obj, char const* scriptName)

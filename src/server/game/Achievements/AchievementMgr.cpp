@@ -1180,6 +1180,7 @@ void AchievementMgr<T>::UpdateAchievementCriteria(AchievementCriteriaTypes type,
             case ACHIEVEMENT_CRITERIA_TYPE_WIN_PET_BATTLE:
             case ACHIEVEMENT_CRITERIA_TYPE_REACH_BATTLE_PET_LEVEL:
             case ACHIEVEMENT_CRITERIA_TYPE_CAPTURE_BATTLE_PET2:
+            case ACHIEVEMENT_CRITERIA_TYPE_WIN_CHALLENGE_DUNGEON:
                 SetCriteriaProgress(achievementCriteria, 1, referencePlayer, PROGRESS_ACCUMULATE);
                 break;
                 // std case: increment at miscValue1
@@ -1608,6 +1609,7 @@ bool AchievementMgr<T>::IsCompletedCriteriaForAchievement(CriteriaEntry const* c
         case ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST:
         case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL:
         case ACHIEVEMENT_CRITERIA_TYPE_EXPLORE_AREA:
+        case ACHIEVEMENT_CRITERIA_TYPE_WIN_CHALLENGE_DUNGEON:
             return progress->counter >= 1;
         case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SKILL_LEVEL:
             return progress->counter >= (criteriaTree->criteriaCount * 75);
@@ -2709,6 +2711,10 @@ bool AchievementMgr<T>::RequirementsSatisfied(CriteriaEntry const* achievementCr
             if (!miscValue1 || miscValue1 != achievementCriteria->cast_spell.spellID)
                 return false;
             break;
+        case ACHIEVEMENT_CRITERIA_TYPE_WIN_CHALLENGE_DUNGEON:
+            if (!miscValue1 || miscValue1 != achievementCriteria->win_challenge_dungeon.mapID)
+                return false;
+            break;
         case ACHIEVEMENT_CRITERIA_TYPE_LEARN_SPELL:
             if (miscValue1 && miscValue1 != achievementCriteria->learn_spell.spellID)
                 return false;
@@ -3069,6 +3075,10 @@ bool AchievementMgr<T>::AdditionalRequirementsSatisfied(CriteriaEntry const* cri
                 if (miscValue1 != reqValue)
                     return false;
                 break;
+            case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_NEED_CHALLENGE_MEDAL: // 83, as in LoA
+                if (miscValue2 < reqValue)
+                    return false;
+                break;
             default:
                 break;
         }
@@ -3211,6 +3221,8 @@ char const* AchievementGlobalMgr::GetCriteriaTypeString(AchievementCriteriaTypes
             return "BE_SPELL_TARGET2";
         case ACHIEVEMENT_CRITERIA_TYPE_SPECIAL_PVP_KILL:
             return "SPECIAL_PVP_KILL";
+        case ACHIEVEMENT_CRITERIA_TYPE_WIN_CHALLENGE_DUNGEON:
+            return "WIN_CHALLENGE_DUNGEON";
         case ACHIEVEMENT_CRITERIA_TYPE_FISH_IN_GAMEOBJECT:
             return "FISH_IN_GAMEOBJECT";
         case ACHIEVEMENT_CRITERIA_TYPE_EARNED_PVP_TITLE:

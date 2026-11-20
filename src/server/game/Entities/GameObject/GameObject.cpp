@@ -13,6 +13,7 @@
 #include "GridNotifiersImpl.h"
 #include "Group.h"
 #include "GroupMgr.h"
+#include "InstanceScript.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
 #include "Player.h"
@@ -141,6 +142,10 @@ void GameObject::AddToWorld()
     {
         if (m_zoneScript)
             m_zoneScript->OnGameObjectCreate(this);
+
+        if (InstanceMap* instanceMap = GetMap()->ToInstanceMap())
+            if (InstanceScript* instanceScript = instanceMap->GetInstanceScript())
+                instanceScript->OnChallengeGameObjectCreate(this);
 
         sObjectAccessor->AddObject(this);
 
