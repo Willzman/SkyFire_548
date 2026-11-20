@@ -113,6 +113,19 @@ set(scripts_STAT_SRCS
   Kalimdor/DireMaul/instance_dire_maul.cpp
   Kalimdor/HallsOfOrigination/halls_of_origination.h
   Kalimdor/HallsOfOrigination/instance_halls_of_origination.cpp
+  Kalimdor/TheVortexPinnacle/boss_altairus.cpp
+  Kalimdor/TheVortexPinnacle/boss_asaad.cpp
+  Kalimdor/TheVortexPinnacle/boss_grand_vizier_ertan.cpp
+  Kalimdor/TheVortexPinnacle/instance_the_vortex_pinnacle.cpp
+  Kalimdor/TheVortexPinnacle/the_vortex_pinnacle.cpp
+  Kalimdor/TheVortexPinnacle/the_vortex_pinnacle.h
+  Kalimdor/LostCityOfTheTolvir/boss_general_husam.cpp
+  Kalimdor/LostCityOfTheTolvir/boss_high_prophet_barim.cpp
+  Kalimdor/LostCityOfTheTolvir/boss_lockmaw_augh.cpp
+  Kalimdor/LostCityOfTheTolvir/boss_siamat.cpp
+  Kalimdor/LostCityOfTheTolvir/instance_lost_city_of_the_tolvir.cpp
+  Kalimdor/LostCityOfTheTolvir/lost_city_of_the_tolvir.cpp
+  Kalimdor/LostCityOfTheTolvir/lost_city_of_the_tolvir.h
   Kalimdor/HallsOfOrigination/boss_temple_guardian_anhuur.cpp
   Kalimdor/HallsOfOrigination/boss_earthrager_ptah.cpp
   Kalimdor/HallsOfOrigination/boss_anraphet.cpp
