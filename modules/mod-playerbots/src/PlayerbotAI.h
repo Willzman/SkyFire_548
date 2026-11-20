@@ -175,6 +175,9 @@ public:
 
     // .playerbots state: what the bot did on its last AI tick and why it may be idle.
     std::string DescribeState() const;
+    // Units holding the bot on their threat list (who keeps it in combat): name,
+    // entry, distance, whether they can reach it, their victim. "nobody" if none.
+    std::string DescribeThreatHolders() const;
     // A mob the bot stood next to without line of sight; target pickers pass it over.
     bool IsUnreachableTarget(Unit const* target) const;
 
