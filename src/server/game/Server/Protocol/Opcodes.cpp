@@ -86,6 +86,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEFIELD_STATUS,                      0x1F9E, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleBattlefieldStatusOpcode         ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN,                       0x0769, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleBattlemasterJoinOpcode          ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN_ARENA,                 0x02D2, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleBattlemasterJoinArena           ); // 5.4.8 18414
+    DEFINE_OPCODE_HANDLER(CMSG_BATTLEMASTER_JOIN_RATED,                 0x0674, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleBattlemasterJoinRated           ); // 5.4.8 18414 (value from Legends of Azeroth Pandaria)
     DEFINE_OPCODE_HANDLER(CMSG_BATTLE_PAY_CHAR_BOOST,                   0x08E3, STATUS_AUTHED,                       PROCESS_THREADUNSAFE, &WorldSession::HandleBattlePayCharBoost              ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_BATTLE_PAY_CONFIRM_PURCHASE_RESPONSE,    0x0812, STATUS_UNHANDLED,                    PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL                           ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_BATTLE_PAY_GET_PRODUCT_LIST,             0x0DE0, STATUS_UNHANDLED,                    PROCESS_THREADUNSAFE, &WorldSession::Handle_NULL                           ); // 5.4.8 18414

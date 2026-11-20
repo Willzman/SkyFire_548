@@ -147,6 +147,7 @@ private:
     typedef std::map<BattlegroundTypeId, uint8> BattlegroundSelectionWeightMap; // TypeId and its selectionWeight
     BattlegroundSelectionWeightMap m_ArenaSelectionWeights;
     BattlegroundSelectionWeightMap m_BGSelectionWeights;
+    BattlegroundSelectionWeightMap m_RatedBGSelectionWeights;
     std::vector<ScheduledQueueUpdate> m_QueueUpdateScheduler;
     uint32 m_NextRatedArenaUpdate;
     bool   m_ArenaTesting;

@@ -346,6 +346,7 @@ public:
     void SetMinPlayers(uint32 MinPlayers) { m_MinPlayers = MinPlayers; }
     void SetLevelRange(uint32 min, uint32 max) { m_LevelMin = min; m_LevelMax = max; }
     void SetRated(bool state) { m_IsRated = state; }
+    void SetRatedBG(bool state) { m_IsRatedBG = state; }       // a rated battleground (10v10), rated like an arena (LoA)
     void SetArenaType(uint8 type) { m_ArenaType = type; }
     void SetArenaorBGType(bool _isArena) { m_IsArena = _isArena; }
     void SetWinner(uint8 winner) { m_Winner = winner; }
@@ -371,6 +372,8 @@ public:
     bool isArena() const { return m_IsArena; }
     bool isBattleground() const { return !m_IsArena; }
     bool isRated() const { return m_IsRated; }
+    bool IsRatedBG() const { return m_IsRatedBG; }
+    bool IsRatedMatch() const { return (isArena() && isRated()) || IsRatedBG(); }
 
     typedef std::map<uint64, BattlegroundPlayer> BattlegroundPlayerMap;
     BattlegroundPlayerMap const& GetPlayers() const { return m_Players; }
@@ -625,6 +628,7 @@ private:
     uint8  m_Winner;                                    // 0=alliance, 1=horde, 2=none
     int32  m_StartDelayTime;
     bool   m_IsRated;                                   // is this battle rated?
+    bool   m_IsRatedBG = false;
     bool   m_PrematureCountDown;
     uint32 m_PrematureCountDownTimer;
     char const* m_Name;
