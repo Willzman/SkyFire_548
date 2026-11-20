@@ -2031,7 +2031,7 @@ bool PlayerbotAI::HandleCombat()
         }
         // Strict heal: stay at cast range from the tank/fight — never formation-follow
         // the master mid-combat (that dragged healers through melee).
-        if (!_healerDps)
+        if (!HealerDealsDamage())
         {
             if (GroupInCombat() || !_bot->getAttackers().empty())
             {
@@ -2330,7 +2330,7 @@ bool PlayerbotAI::HandleCombatCastOnly()
             StopResting();
             return true;
         }
-        if (!_healerDps)
+        if (!HealerDealsDamage())
             return GroupInCombat() || !_bot->getAttackers().empty();
     }
     else if (_offHeal && CanOffHealClass() && HandleHealing(BOT_OFFHEAL_BELOW_PCT))
@@ -2775,9 +2775,18 @@ bool PlayerbotAI::IsPureCaster() const
     return IsRangedClass() || GetCombatRole() == CombatRole::Healer;
 }
 
+bool PlayerbotAI::HealerDealsDamage() const
+{
+    // AC AiFactory gives ungrouped random and self bots "dps assist", and every
+    // healer "healer dps" outside restricted maps. Without it a solo priest
+    // (healer until it picks a spec at level 10) never attacks: it stood beside
+    // a mob that held it in combat for two days.
+    return _healerDps || (_bot && !_bot->GetGroup());
+}
+
 bool PlayerbotAI::IsMeleeHealerDps() const
 {
-    if (!_bot || !_healerDps || GetCombatRole() != CombatRole::Healer)
+    if (!_bot || !HealerDealsDamage() || GetCombatRole() != CombatRole::Healer)
         return false;
     switch (_bot->getClass())
     {

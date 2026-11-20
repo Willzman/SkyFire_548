@@ -340,6 +340,9 @@ private:
     bool IsPureCaster() const;
     // Healer dps that fights in melee: mistweaver, holy paladin, resto catweave.
     bool IsMeleeHealerDps() const;
+    // A healer deals damage when nobody needs heals: with +healer dps, or always
+    // when it has no group (nobody else will kill what attacks it).
+    bool HealerDealsDamage() const;
     // Hunter ranged Auto Shot (spell 75), not melee Attack().
     bool IsHunterRanged() const;
     bool GroupInCombat() const;
