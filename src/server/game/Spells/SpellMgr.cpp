@@ -5028,6 +5028,141 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 140001: // Event Cleanup (unk effect 426)
                 spellInfo->Effects[EFFECT_0].Effect = 0;
                 break;
+            // Timeless Isle (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // TIMELESS ISLE
+            //
+            case 144539: // Jadefire Wall Damage
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            case 144545: // Jadefire Bolt Selector
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 144640: // Leap
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            // ENDOF TIMELESS ISLE
+            // Stormstout Brewery, the rest (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 106768: // Brew Barrel Periodic Trigger
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
+            case 106808: // Ground Pound
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                break;
+            // STORMSTOUT BREWERY ENDOF
+            // Scenarios (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // SCENARIOS:
+            //
+            case 131641: // Rain of Sha
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_10_YARDS);
+                break;
+            case 125510: // Speed of Jinja
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                break;
+            case 121886: // Throw Keg in Cauldron
+            case 141812: // Cannon Launch
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                break;
+            case 121872: // Cleaver Toss
+                spellInfo->Attributes &= ~SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+                break;
+            case 133556: // Bombard
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            case 133557: // Bombard damage
+                spellInfo->Attributes |= SPELL_ATTR0_LEVEL_DAMAGE_CALCULATION;
+                break;
+            case 122142: // Earth Shattering
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 120349: // Fire Trap
+            case 123800: // Lightning Trap
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 134985: // Meet the scout (Show`s like DB_TARGET, not nearby entry in sniff data)
+            case 134996: // Meet the scout
+            case 134089: // Meet the scout (Horde)
+            case 136170: // Meet the scout
+                spellInfo->Effects[0].TargetA = TARGET_DEST_DB;
+                break;
+            case 142139: // Stone Rain
+                spellInfo->Effects[EFFECT_0].BasePoints = 32500;
+                break;
+            case 139186: // Eternal Banishment (seems like not summoner, static spawn)
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            case 134210: // Memory of Relicvary
+                spellInfo->AreaGroupId = 0; // wrong section, shouldn`t require black temple map
+                break;
+            case 125564: // Whirlpool
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
+                spellInfo->Effects[EFFECT_2].Effect = 0;
+                break;
+            case 132776: // Summon Rope Swing
+            case 132787: // Summon Net Climber
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER; // should have same like 141133 for corrent work
+                break;
+            case 144374: // Invoke Lava
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 142629: // Banana Storm Eff
+            case 142191: // Amber Globule Detonation
+            case 133156: // Electric Field
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 142238: // Heal Illusion
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            // ENDOF SCENARIOS:
+            // Mogu'shan Vaults, the rest (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 116272: // Banishment
+                spellInfo->Effects[EFFECT_0].MiscValue = 6; // Set Phase to 6
+                break;
+            case 20005: // Chilled
+                spellInfo->Mechanic = MECHANIC_SNARE;
+                break;
+            case 89640: // Water Spirit
+                spellInfo->Effects[EFFECT_0].BasePoints = 5000;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
+                break;
+            case 130649: // Life Spirit
+                spellInfo->Effects[EFFECT_0].BasePoints = 20000;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
+                break;
+            // ENDOF MOGU'SHAN VAULT
+            // Terrace of Endless Spring, the rest (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            case 123461: //Get Away!
+                /*spellInfo->Effects[2].Effect = SPELL_EFFECT_APPLY_AURA;
+                spellInfo->Effects[2].ApplyAuraName = SPELL_AURA_APPLY_CREATURE_IMMUNITIES;
+                spellInfo->Effects[2].MiscValue = 1614;
+                spellInfo->Effects[2].MiscValueB = 0;
+                spellInfo->Effects[2].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[2].TargetB = 0;*/
+                break;
+            case 119841: // Fearless
+                spellInfo->Effects[0].TargetB = TARGET_DEST_DB;
+                spellInfo->Effects[1].TargetB = TARGET_DEST_DB;
+                break;
+            case 117988: // Defiled Ground
+                spellInfo->Effects[0].Effect = 0;
+                spellInfo->Effects[1].Mechanic = MECHANIC_NONE;
+                break;
+            case 117163: // Water bolt
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CANT_CRIT;
+                break;
+            case 122777: // Nightmares [idk, seems like not 8]
+                spellInfo->Effects[EFFECT_0].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_7_YARDS);
+                spellInfo->Effects[EFFECT_1].MaxRadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_7_YARDS);
+                break;
+            case 122718: // Force and Ferve
+                spellInfo->Attributes |= SPELL_ATTR0_IMPOSSIBLE_DODGE_PARRY_BLOCK;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_HIT_RESULT;
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_IGNORE_RESISTANCES;
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            // ENDOF TERRACE OF ENDLESS SPRING
             // Siege of Niuzao Temple (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 119990: // Summon Sappling
                 spellInfo->Effects[EFFECT_0].TargetA = SpellImplicitTargetInfo(TARGET_UNIT_TARGET_ANY);
