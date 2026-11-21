@@ -786,3 +786,74 @@ void WorldSession::HandleRequestConquestFormulaConstants(WorldPacket& /*recvData
 
     SendPacket(&data);
 }
+
+// Rated battleground (10v10), ported from Legends of Azeroth Pandaria 5.4.8: the leader queues a group of ten;
+// two groups are matched by matchmaker rating like rated arenas and play a random battleground of BattleMasterList 100.
+void WorldSession::HandleBattlemasterJoinRated(WorldPacket& /*recvData*/)
+{
+    SF_LOG_DEBUG("network", "WORLD: CMSG_BATTLEMASTER_JOIN_RATED");
+
+    if (_player->InBattleground())
+        return;
+
+    Battleground* bg = sBattlegroundMgr->GetBattlegroundTemplate(BattlegroundTypeId::BATTLEGROUND_RATED_10_VS_10);
+    if (!bg)
+    {
+        SF_LOG_ERROR("network", "Battleground: template bg (rated 10 vs 10) not found");
+        return;
+    }
+
+    if (DisableMgr::IsDisabledFor(DISABLE_TYPE_BATTLEGROUND, uint32(BattlegroundTypeId::BATTLEGROUND_RATED_10_VS_10), NULL))
+        return;
+
+    BattlegroundTypeId bgTypeId = bg->GetTypeID();
+    BattlegroundQueueTypeId bgQueueTypeId = BattlegroundMgr::BGQueueTypeId(bgTypeId, 0);
+    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(bg->GetMapId(), _player->getLevel());
+    if (!bracketEntry)
+        return;
+
+    Group* grp = _player->GetGroup();
+    if (!grp || grp->GetLeaderGUID() != _player->GetGUID())
+        return;
+
+    RatedPvpTeam ratedTeam(PVP_SLOT_RATED_BG, grp);
+    uint32 rating = std::max<uint32>(ratedTeam.GetRating(), 1);
+    uint32 matchmakerRating = std::max<uint32>(ratedTeam.GetMatchmakerRating(), 1);
+
+    uint32 memberCount = sBattlegroundMgr->isTesting() ? 1 : bg->GetMaxPlayersPerTeam();
+    GroupJoinBattlegroundResult err = grp->CanJoinBattlegroundQueue(bg, bgQueueTypeId, memberCount, memberCount, true, 0);
+
+    BattlegroundQueue& bgQueue = sBattlegroundMgr->GetBattlegroundQueue(bgQueueTypeId);
+    GroupQueueInfo* ginfo = NULL;
+    uint32 avgTime = 0;
+    if (err == GroupJoinBattlegroundResult::ERR_BATTLEGROUND_NONE)
+    {
+        ginfo = bgQueue.AddGroup(_player, grp, bgTypeId, bracketEntry, 0, true, true, rating, matchmakerRating);
+        avgTime = bgQueue.GetAverageQueueWaitTime(ginfo, bracketEntry->GetBracketId());
+    }
+
+    for (GroupReference* itr = grp->GetFirstMember(); itr != NULL; itr = itr->next())
+    {
+        Player* member = itr->GetSource();
+        if (!member)
+            continue;
+
+        if (err != GroupJoinBattlegroundResult::ERR_BATTLEGROUND_NONE)
+        {
+            WorldPacket data;
+            sBattlegroundMgr->BuildStatusFailedPacket(&data, bg, _player, 0, err);
+            member->GetSession()->SendPacket(&data);
+            continue;
+        }
+
+        uint32 queueSlot = member->AddBattlegroundQueueId(bgQueueTypeId);
+        member->AddBattlegroundQueueJoinTime(bgTypeId, ginfo->JoinTime);
+
+        WorldPacket data;
+        sBattlegroundMgr->BuildBattlegroundStatusPacket(&data, bg, member, queueSlot, STATUS_WAIT_QUEUE, avgTime, ginfo->JoinTime, 0);
+        member->GetSession()->SendPacket(&data);
+    }
+
+    if (err == GroupJoinBattlegroundResult::ERR_BATTLEGROUND_NONE)
+        sBattlegroundMgr->ScheduleQueueUpdate(matchmakerRating, 0, bgQueueTypeId, bgTypeId, bracketEntry->GetBracketId());
+}

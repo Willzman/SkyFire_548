@@ -772,18 +772,21 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
     uint32 MinPlayersPerTeam = bg_template->GetMinPlayersPerTeam();
     uint32 MaxPlayersPerTeam = bg_template->GetMaxPlayersPerTeam();
 
+    bool const ratedBG = bgTypeId == BattlegroundTypeId::BATTLEGROUND_RATED_10_VS_10;
     if (bg_template->isArena())
     {
         MaxPlayersPerTeam = arenaType;
         MinPlayersPerTeam = sBattlegroundMgr->isArenaTesting() ? 1 : arenaType;
     }
+    else if (ratedBG && sBattlegroundMgr->isTesting())
+        MinPlayersPerTeam = 1;
     else if (sBattlegroundMgr->isTesting())
         MinPlayersPerTeam = 1;
 
     m_SelectionPools[TEAM_ALLIANCE].Init();
     m_SelectionPools[TEAM_HORDE].Init();
 
-    if (bg_template->isBattleground())
+    if (bg_template->isBattleground() && !ratedBG)
     {
         if (CheckPremadeMatch(bracket_id, MinPlayersPerTeam, MaxPlayersPerTeam))
         {
@@ -829,7 +832,7 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
             bg2->StartBattleground();
         }
     }
-    else if (bg_template->isArena())
+    else if (bg_template->isArena() || ratedBG)              // rated arenas and rated battlegrounds: one premade group per side, matched by MMR
     {
         // found out the minimum and maximum ratings the newly added team should battle against
         // arenaRating is the rating of the latest joined team, or 0

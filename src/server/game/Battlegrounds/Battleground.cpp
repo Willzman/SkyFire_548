@@ -11,6 +11,7 @@
 #include "BattlePetMgr.h"
 #include "Chat.h"
 #include "Creature.h"
+#include "Config.h"
 #include "Formulas.h"
 #include "GridNotifiersImpl.h"
 #include "Group.h"
@@ -757,8 +758,8 @@ void Battleground::EndBattleground(uint32 winner)
     //we must set it this way, because end time is sent in packet!
     SetRemainingTime(TIME_AUTOCLOSE_BATTLEGROUND);
 
-    // arena rating calculation
-    if (isArena() && isRated())
+    // arena and rated battleground rating calculation
+    if (IsRatedMatch())
     {
         winnerArenaTeam = GetRatedTeam(winner);
         loserArenaTeam = GetRatedTeam(GetOtherTeam(winner));
@@ -821,7 +822,7 @@ void Battleground::EndBattleground(uint32 winner)
         if (itr->second.OfflineRemoveTime)
         {
             //if rated arena match - make member lost!
-            if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
+            if (IsRatedMatch() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
             {
                 if (team == winner)
                     winnerArenaTeam->OfflineMemberLost(itr->first, loserMatchmakerRating, winnerMatchmakerChange);
@@ -856,15 +857,26 @@ void Battleground::EndBattleground(uint32 winner)
         }
 
         // per player calculation
-        if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
+        if (IsRatedMatch() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
         {
             if (team == winner)
             {
                 // update achievement BEFORE personal rating update
                 uint32 rating = player->GetArenaPersonalRating(winnerArenaTeam->GetSlot());
-                player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, rating ? rating : 1);
-                player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_ARENA, GetMapId());
-                player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(WorldIntConfigs::CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD));
+                if (IsRatedBG())
+                {
+                    // rated battleground (as in Legends of Azeroth Pandaria): 400 conquest by default
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_BATTLEGROUND, 1);
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_REACH_BG_RATING, rating);
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_RBG, sConfigMgr->GetIntDefault("Currency.ConquestPointsRatedBgReward", 400) * CURRENCY_PRECISION);
+                }
+                else
+                {
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, rating ? rating : 1);
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_ARENA, GetMapId());
+                    // the config is in whole points (default 180); conquest is counted in hundredths
+                    player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(WorldIntConfigs::CONFIG_CURRENCY_CONQUEST_POINTS_ARENA_REWARD) * CURRENCY_PRECISION);
+                }
 
                 winnerArenaTeam->MemberWon(player, loserMatchmakerRating, winnerMatchmakerChange);
             }
@@ -873,10 +885,10 @@ void Battleground::EndBattleground(uint32 winner)
                 loserArenaTeam->MemberLost(player, winnerMatchmakerRating, loserMatchmakerChange);
 
                 // Arena lost => reset the win_rated_arena having the "no_lose" condition
-                player->ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, ACHIEVEMENT_CRITERIA_CONDITION_NO_LOSE);
+                if (!IsRatedBG())
+                    player->ResetAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, ACHIEVEMENT_CRITERIA_CONDITION_NO_LOSE);
             }
         }
-
         uint32 winnerKills = player->GetRandomWinner() ? sWorld->getIntConfig(WorldIntConfigs::CONFIG_BG_REWARD_WINNER_HONOR_LAST) : sWorld->getIntConfig(WorldIntConfigs::CONFIG_BG_REWARD_WINNER_HONOR_FIRST);
         uint32 loserKills = player->GetRandomWinner() ? sWorld->getIntConfig(WorldIntConfigs::CONFIG_BG_REWARD_LOSER_HONOR_LAST) : sWorld->getIntConfig(WorldIntConfigs::CONFIG_BG_REWARD_LOSER_HONOR_FIRST);
 
@@ -897,7 +909,7 @@ void Battleground::EndBattleground(uint32 winner)
                     player->SetRandomWinner(true);
                 }
             }
-            else // 50cp awarded for each non-rated battleground won
+            else if (!IsRatedBG()) // 50cp awarded for each non-rated battleground won
                 player->ModifyCurrency(CURRENCY_TYPE_CONQUEST_META_ARENA, sWorld->getIntConfig(WorldIntConfigs::CONFIG_BG_REWARD_WINNER_CONQUEST_LAST));
 
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1);
@@ -908,7 +920,7 @@ void Battleground::EndBattleground(uint32 winner)
                     if (Guild* guild = sGuildMgr->GetGuildById(guildId))
                     {
                         guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_BG, 1, 0, 0, NULL, player);
-                        if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
+                        if (IsRatedMatch() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
                             guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_WIN_RATED_ARENA, std::max<uint32>(winnerArenaTeam->GetRating(), 1), 0, 0, NULL, player);
                     }
             }
@@ -933,7 +945,7 @@ void Battleground::EndBattleground(uint32 winner)
         player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_BATTLEGROUND, 1);
     }
 
-    if (isArena() && isRated() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
+    if (IsRatedMatch() && winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
     {
         /*
         // save the stat changes

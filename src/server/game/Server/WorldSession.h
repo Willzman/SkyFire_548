@@ -962,6 +962,7 @@ public:                                                 // opcodes handlers
     void HandleBattlefieldListOpcode(WorldPacket& recvData);
     void HandleBattlefieldLeaveOpcode(WorldPacket& recvData);
     void HandleBattlemasterJoinArena(WorldPacket& recvData);
+    void HandleBattlemasterJoinRated(WorldPacket& recvData);
     void HandleReportPvPAFK(WorldPacket& recvData);
     void HandleRequestPvpOptions(WorldPacket& recvData);
     void HandleRequestPvpReward(WorldPacket& recvData);
