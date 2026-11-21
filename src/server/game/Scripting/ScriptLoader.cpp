@@ -698,6 +698,23 @@ void AddSC_instance_terrace_of_endless_spring();
 void AddSC_terrace_of_endless_spring();
 // Valley of the four Winds
 void AddSC_valley_of_the_four_winds();
+// Pandaria zones, world bosses and Timeless Isle (ported from LoA)
+void AddSC_dread_wastes();
+void AddSC_isle_of_giants();
+void AddSC_krasarang_wilds();
+void AddSC_kun_lai_summit();
+void AddSC_townlong_steppes();
+void AddSC_vale_of_eternal_blossoms();
+void AddSC_valley_of_the_four_winds_loa();
+void AddSC_boss_galion();
+void AddSC_boss_oondasta();
+void AddSC_boss_sha_of_anger();
+void AddSC_boss_chi_ji();
+void AddSC_boss_niuzao();
+void AddSC_boss_ordos();
+void AddSC_boss_xuen();
+void AddSC_boss_yu_lon();
+void AddSC_timeless_isle();
 // Shado-Pan Monastery
 void AddSC_boss_gu_cloudstrike();
 void AddSC_boss_master_snowdrift();
@@ -1540,6 +1557,23 @@ void AddPandariaScripts()
     AddSC_terrace_of_endless_spring();
     // Valley of the four Winds
     AddSC_valley_of_the_four_winds();
+    // Pandaria zones, world bosses and Timeless Isle (ported from LoA)
+    AddSC_dread_wastes();
+    AddSC_isle_of_giants();
+    AddSC_krasarang_wilds();
+    AddSC_kun_lai_summit();
+    AddSC_townlong_steppes();
+    AddSC_vale_of_eternal_blossoms();
+    AddSC_valley_of_the_four_winds_loa();
+    AddSC_boss_galion();
+    AddSC_boss_oondasta();
+    AddSC_boss_sha_of_anger();
+    AddSC_boss_chi_ji();
+    AddSC_boss_niuzao();
+    AddSC_boss_ordos();
+    AddSC_boss_xuen();
+    AddSC_boss_yu_lon();
+    AddSC_timeless_isle();
     // Shado-Pan Monastery
     AddSC_boss_gu_cloudstrike();
     AddSC_boss_master_snowdrift();
