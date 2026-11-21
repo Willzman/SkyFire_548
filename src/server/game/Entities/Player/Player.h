@@ -394,6 +394,18 @@ struct ActionButton
 
 typedef std::map<uint8, ActionButton> ActionButtonList;
 
+// Challenge mode record of one map (ported from Legends of Azeroth Pandaria 5.4.8)
+struct CompletedChallenge
+{
+    CompletedChallenge() : BestTime(0), LastTime(0), BestMedal(0), BestMedalDate(0) { }
+
+    uint32 BestTime;        // milliseconds
+    uint32 LastTime;        // milliseconds
+    uint8 BestMedal;        // ChallengeMedals
+    uint32 BestMedalDate;   // unix time
+};
+
+typedef std::map<uint32 /*mapId*/, CompletedChallenge> CompletedChallengesMap;
 struct PlayerCreateInfoItem
 {
     PlayerCreateInfoItem(uint32 id, uint32 amount) : item_id(id), item_amount(amount) { }
@@ -923,6 +935,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_RESEARCH_HISTORY = 40,
     PLAYER_LOGIN_QUERY_LOAD_RESEARCH_PROJECTS = 41,
     PLAYER_LOGIN_QUERY_LOAD_DEATH_GATE_RETURN,
+    PLAYER_LOGIN_QUERY_LOAD_COMPLETED_CHALLENGES,
     MAX_PLAYER_LOGIN_QUERY
 };
 
@@ -1702,6 +1715,16 @@ public:
     bool IsUseEquipedWeapon(bool mainhand) const;
     bool IsTwoHandUsed() const;
     void SendNewItem(Item* item, uint32 count, bool received, bool created, bool broadcast = false);
+    // Challenge modes: best and last time and medal per map (character_completed_challenges)
+    bool HasChallengeCompleted(uint32 mapId) const { return m_CompletedChallenges.find(mapId) != m_CompletedChallenges.end(); }
+    CompletedChallenge* GetCompletedChallenge(uint32 mapId)
+    {
+        CompletedChallengesMap::iterator itr = m_CompletedChallenges.find(mapId);
+        return itr != m_CompletedChallenges.end() ? &itr->second : NULL;
+    }
+    void AddCompletedChallenge(uint32 mapId, CompletedChallenge const& challenge) { m_CompletedChallenges.insert(std::make_pair(mapId, challenge)); }
+    CompletedChallengesMap const& GetCompletedChallenges() const { return m_CompletedChallenges; }
+    void _LoadCompletedChallenges(PreparedQueryResult result);
     bool BuyItemFromVendorSlot(uint64 vendorguid, uint32 vendorslot, uint32 item, uint8 count, uint8 bag, uint8 slot);
     bool BuyCurrencyFromVendorSlot(ObjectGuid VendorGUID, uint32 vendorSlot, uint32 currency, uint32 count);
     bool _StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 count, uint8 bag, uint8 slot, int32 price, ItemTemplate const* pProto, Creature* pVendor, VendorItem const* crItem, bool bStore);
@@ -3419,6 +3442,7 @@ protected:
     void _SaveEquipmentSets(SQLTransaction& trans);
     void _SaveBGData(SQLTransaction& trans);
     WorldLocation m_deathGateReturn;
+    CompletedChallengesMap m_CompletedChallenges;
     void _SaveDeathGateReturn(SQLTransaction& trans);
     void _SaveGlyphs(SQLTransaction& trans);
     void _SaveTalents(SQLTransaction& trans);

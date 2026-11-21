@@ -1683,6 +1683,10 @@ void World::SetInitialWorldSettings()
     SF_LOG_INFO("server.loading", "Loading Dungeon boss data...");
     sObjectMgr->LoadInstanceEncounters();
 
+    SF_LOG_INFO("server.loading", "Loading Challenge Mode records and rewards...");
+    sObjectMgr->LoadChallengeRewards();
+    sObjectMgr->LoadRealmCompletedChallenges();
+
     SF_LOG_INFO("server.loading", "Loading LFG rewards...");
     sLFGMgr->LoadRewards();
 

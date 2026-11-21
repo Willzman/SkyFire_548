@@ -667,6 +667,15 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_REP_DEATH_GATE_RETURN, "REPLACE INTO character_death_gate_return (guid, map, posX, posY, posZ, o) VALUES (?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_DEL_DEATH_GATE_RETURN, "DELETE FROM character_death_gate_return WHERE guid = ?", CONNECTION_ASYNC);
 
+    // Challenge modes (from Legends of Azeroth Pandaria 5.4.8)
+    PrepareStatement(CHAR_SEL_COMPLETED_CHALLENGES, "SELECT map, best_time, last_time, best_medal, best_medal_date FROM character_completed_challenges WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_COMPLETED_CHALLENGE, "INSERT INTO character_completed_challenges (guid, map, best_time, last_time, best_medal, best_medal_date) VALUES (?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_UPD_COMPLETED_CHALLENGE, "UPDATE character_completed_challenges SET best_time = ?, last_time = ?, best_medal = ?, best_medal_date = ? WHERE guid = ? AND map = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_CHAR_COMPLETED_CHALLENGES, "DELETE FROM character_completed_challenges WHERE guid = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_GROUP_CHALLENGE, "INSERT INTO group_completed_challenges (map, attemptId, completion_time, completion_date, medal_earned, group_members, member_1_guid, member_1_spec, member_2_guid, member_2_spec, member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_GROUP_CHALLENGE, "DELETE FROM group_completed_challenges WHERE map = ?", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_INS_GUILD_CHALLENGE, "REPLACE INTO guild_completed_challenges (map, guildId, attemptId, completion_time, completion_date, medal_earned, guild_members, member_1_guid, member_1_spec, member_2_guid, member_2_spec, member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_DEL_GUILD_CHALLENGE, "DELETE FROM guild_completed_challenges WHERE map = ? AND guildId = ?", CONNECTION_ASYNC);
     // blackmarket
     PrepareStatement(CHAR_SEL_BLACKMARKET_AUCTIONS, "SELECT auctionId, templateId, startTime, currentBidder, currentBid, minIncrement, numBids FROM blackmarket_auctions", CONNECTION_SYNCH);
     PrepareStatement(CHAR_DEL_BLACKMARKET_AUCTION, "DELETE FROM blackmarket_auctions WHERE auctionId = ?", CONNECTION_ASYNC);

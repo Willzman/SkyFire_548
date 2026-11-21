@@ -135,6 +135,7 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(CMSG_CAST_SPELL,                              0x0206, STATUS_LOGGEDIN,                     PROCESS_THREADSAFE,   &WorldSession::HandleCastSpellOpcode                 ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_CHALLENGE_MODE_REQUEST_LEADERS,          0x15DB, STATUS_LOGGEDIN,                     PROCESS_THREADSAFE,   &WorldSession::HandleChallengeModeRequestLeaders     ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_CHALLENGE_MODE_REQUEST_MAP_STATS,        0x1C5A, STATUS_LOGGEDIN,                     PROCESS_THREADSAFE,   &WorldSession::HandleChallengeModeRequestMapStats    ); // 5.4.8 18414
+    DEFINE_OPCODE_HANDLER(CMSG_RESET_CHALLENGE_MODE,                    0x1D61, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleResetChallengeMode              ); // 5.4.8 18414 (value from Legends of Azeroth Pandaria)
     DEFINE_OPCODE_HANDLER(CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE,      0x08F8, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleChangeSeatsOnControlledVehicle  ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_CHANNEL_ANNOUNCEMENTS,                   0x06AF, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleChannelAnnouncements            ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_CHANNEL_BAN,                             0x08BF, STATUS_LOGGEDIN,                     PROCESS_THREADUNSAFE, &WorldSession::HandleChannelBan                      ); // 5.4.8 18414
@@ -638,6 +639,9 @@ void OpcodeTable::InitializeServerTable()
     DEFINE_OPCODE_HANDLER(SMSG_CAST_FAILED,                                    0x143A, STATUS_NEVER    ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(SMSG_CATEGORY_COOLDOWN,                              0x01DB, STATUS_NEVER    ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_ALL_MAP_STATS,                   0x11C2, STATUS_NEVER    ); // 5.4.8 18414
+    DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_COMPLETE,                        0x14E0, STATUS_NEVER    ); // 5.4.8 18414 (value from Legends of Azeroth Pandaria)
+    DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_MAP_STATS_UPDATE,                0x083E, STATUS_NEVER    ); // 5.4.8 18414 (value from Legends of Azeroth Pandaria)
+    DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_NEW_PLAYER_RECORD,               0x10C3, STATUS_NEVER    ); // 5.4.8 18414 (value from Legends of Azeroth Pandaria)
     DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_REQUEST_LEADERS_RESULT,          0x182E, STATUS_NEVER    ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(SMSG_CHALLENGE_MODE_REWARDS,                         0x168A, STATUS_NEVER    ); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(SMSG_CHANNEL_LIST,                                   0x0B22, STATUS_NEVER    ); // 5.4.8 18414

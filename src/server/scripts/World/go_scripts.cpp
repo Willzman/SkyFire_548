@@ -36,6 +36,7 @@ EndContentData */
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
 #include "GameObjectAI.h"
+#include "InstanceScript.h"
 #include "Spell.h"
 #include "Player.h"
 #include "WorldSession.h"
@@ -1431,8 +1432,49 @@ public:
     }
 };
 
+/*######
+## go_challenge_orb (Challenger's Orb 211674), ported from Legends of Azeroth Pandaria 5.4.8 (GPL v2):
+## starts the challenge mode of the dungeon (InstanceScript::SetChallengeModeStarted)
+######*/
+
+enum ChallengeOrb
+{
+    GOSSIP_MENU_CHALLENGE_ORB   = 13872     // option 0: "Yes, start the Challenge."
+};
+
+class go_challenge_orb : public GameObjectScript
+{
+public:
+    go_challenge_orb() : GameObjectScript("go_challenge_orb") { }
+
+    bool OnGossipHello(Player* player, GameObject* go) OVERRIDE
+    {
+        if (InstanceScript* instance = go->GetInstanceScript())
+            if (instance->instance->IsChallengeDungeon() && !instance->IsChallengeModeStarted() && !instance->IsChallengeModeCompleted())
+                player->ADD_GOSSIP_ITEM_DB(GOSSIP_MENU_CHALLENGE_ORB, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+
+        player->SEND_GOSSIP_MENU(DEFAULT_GOSSIP_MESSAGE, go->GetGUID());
+        return true;
+    }
+
+    bool OnGossipSelect(Player* player, GameObject* go, uint32 /*sender*/, uint32 /*action*/) OVERRIDE
+    {
+        player->CLOSE_GOSSIP_MENU();
+
+        InstanceScript* instance = go->GetInstanceScript();
+        if (!instance || !instance->instance->IsChallengeDungeon() || instance->IsChallengeModeStarted() || instance->IsChallengeModeCompleted())
+            return true;
+
+        go->SetGoState(GOState::GO_STATE_ACTIVE);
+        go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+        instance->SetChallengeModeStarted();
+        return true;
+    }
+};
+
 void AddSC_go_scripts()
 {
+    new go_challenge_orb();
     new go_soulwell();
     new go_cat_figurine();
     new go_barov_journal();

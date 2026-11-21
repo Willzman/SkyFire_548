@@ -1320,6 +1320,12 @@ struct CriteriaEntry
             uint32  skillLine;                              // 2
         } learn_skill_line;
 
+        // ACHIEVEMENT_CRITERIA_TYPE_WIN_CHALLENGE_DUNGEON  = 71
+        struct
+        {
+            uint32  mapID;                                  // 2
+        } win_challenge_dungeon;
+
         struct
         {
             uint32 criteriaArg1;                            // 2

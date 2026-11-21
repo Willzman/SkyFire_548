@@ -3065,7 +3065,10 @@ bool InstanceMap::AddPlayerToMap(Player* player)
     Map::AddPlayerToMap(player);
 
     if (i_data)
+    {
         i_data->OnPlayerEnter(player);
+        i_data->OnChallengePlayerEnter(player);
+    }
 
     return true;
 }
@@ -3075,7 +3078,10 @@ void InstanceMap::Update(const uint32 t_diff)
     Map::Update(t_diff);
 
     if (i_data)
+    {
         i_data->Update(t_diff);
+        i_data->UpdateChallengeMode(t_diff);
+    }
 }
 
 void InstanceMap::RemovePlayerFromMap(Player* player, bool remove)
@@ -3254,6 +3260,7 @@ bool Map::IsHeroic() const
             case DIFFICULTY_25MAN_HEROIC:
             case DIFFICULTY_HEROIC:
             case DIFFICULTY_SCE_HEROIC:
+            case DIFFICULTY_CHALLENGE:          // challenge modes run on the heroic dungeon (as LoA's IsHeroic)
                 return true;
             default:
                 return false;
