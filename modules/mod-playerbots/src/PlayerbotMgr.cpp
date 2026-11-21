@@ -2284,7 +2284,7 @@ namespace
         int qualityMin = std::max(0, std::min(minQuality, qualityCap));
 
         std::ostringstream key;
-        key << "v4|" << where << '|' << level << '|' << classBit << '|' << raceBit << '|'
+        key << "v5|" << where << '|' << level << '|' << classBit << '|' << raceBit << '|'
             << minReq << '|' << qualityMin << '|' << qualityCap << '|' << primaryStat
             << '|' << exclude << '|' << uint32(g_gearPool) << '|' << g_gearRoll.maxItemLevel;
         std::string const cacheKey = key.str();
@@ -2309,6 +2309,12 @@ namespace
         if (g_gearRoll.maxItemLevel)
             maxItemLevel = std::min(maxItemLevel, g_gearRoll.maxItemLevel);
         uint32 const minItemLevel = level > 5 ? (level > 10 ? level - 5 : 3) : 1;
+        // Many old-world quest rewards and dungeon drops have RequiredLevel 0 in
+        // 5.4.8 (Item-sparse.db2 agrees), so the RequiredLevel window lets them
+        // through at any level and the soft ceiling above let a level-1 bot wear
+        // ilvl 48. Judge those by item level instead: before level 60 a
+        // level-appropriate item is within a few item levels of the character.
+        uint32 const noReqMaxItemLevel = std::min(maxItemLevel, level + 5u);
 
         std::vector<ItemTemplate const*> found;
         for (auto const* bucket : buckets)
@@ -2328,6 +2334,8 @@ namespace
                 if (proto->Quality >= ITEM_QUALITY_RARE && proto->ItemLevel < 10 && proto->RequiredLevel <= 10)
                     continue;
                 if (proto->ItemLevel > maxItemLevel || proto->ItemLevel < minItemLevel)
+                    continue;
+                if (!proto->RequiredLevel && proto->ItemLevel > noReqMaxItemLevel)
                     continue;
                 if (!(proto->AllowableClass & classBit) || !(proto->AllowableRace & raceBit))
                     continue;

@@ -9918,3 +9918,101 @@ SceneTemplate const* ObjectMgr::GetSceneTemplate(uint32 sceneId) const
 
     return &citr->second;
 }
+
+// Challenge modes (ported from Legends of Azeroth Pandaria 5.4.8, GPL v2)
+void ObjectMgr::LoadRealmCompletedChallenges()
+{
+    uint32 oldMSTime = getMSTime();
+    uint32 count = 0;
+    m_GroupsCompletedChallenges.clear();
+    m_GuildsCompletedChallenges.clear();
+
+    //                                                  0         1              2                3             4              5              6             7              8             9
+    QueryResult result = CharacterDatabase.Query("SELECT map, attemptId, completion_time, completion_date, medal_earned, group_members, member_1_guid, member_1_spec, member_2_guid, member_2_spec, "
+    //                                              10             11             12             13             14             15
+        "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM group_completed_challenges");
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            RealmCompletedChallenge& challenge = m_GroupsCompletedChallenges[fields[0].GetUInt32()];
+            challenge.GuildId = 0;
+            challenge.AttemptId = fields[1].GetUInt32();
+            challenge.CompletionTime = fields[2].GetUInt32();
+            challenge.CompletionDate = fields[3].GetUInt32();
+            challenge.MedalEarned = fields[4].GetUInt8();
+            challenge.MembersCount = fields[5].GetUInt8();
+            for (uint8 i = 0; i < 5; ++i)
+            {
+                uint32 lowGuid = fields[6 + i * 2].GetUInt32();
+                challenge.Members[i].Guid = lowGuid ? MAKE_NEW_GUID(lowGuid, 0, HIGHGUID_PLAYER) : 0;
+                challenge.Members[i].SpecId = fields[7 + i * 2].GetUInt32();
+            }
+            ++count;
+        }
+        while (result->NextRow());
+    }
+
+    // Each guild's best group per map.
+    //                                         0      1         2             3                4               5             6              7             8              9             10
+    result = CharacterDatabase.Query("SELECT map, guildId, attemptId, completion_time, completion_date, medal_earned, guild_members, member_1_guid, member_1_spec, member_2_guid, member_2_spec, "
+    //                                  11             12             13             14             15             16
+        "member_3_guid, member_3_spec, member_4_guid, member_4_spec, member_5_guid, member_5_spec FROM guild_completed_challenges");
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            RealmCompletedChallenge& challenge = m_GuildsCompletedChallenges[(uint64(fields[0].GetUInt32()) << 32) | fields[1].GetUInt32()];
+            challenge.GuildId = fields[1].GetUInt32();
+            challenge.AttemptId = fields[2].GetUInt32();
+            challenge.CompletionTime = fields[3].GetUInt32();
+            challenge.CompletionDate = fields[4].GetUInt32();
+            challenge.MedalEarned = fields[5].GetUInt8();
+            challenge.MembersCount = fields[6].GetUInt8();
+            for (uint8 i = 0; i < 5; ++i)
+            {
+                uint32 lowGuid = fields[7 + i * 2].GetUInt32();
+                challenge.Members[i].Guid = lowGuid ? MAKE_NEW_GUID(lowGuid, 0, HIGHGUID_PLAYER) : 0;
+                challenge.Members[i].SpecId = fields[8 + i * 2].GetUInt32();
+            }
+            ++count;
+        }
+        while (result->NextRow());
+    }
+
+    SF_LOG_INFO("server.loading", ">> Loaded %u challenge mode records in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadChallengeRewards()
+{
+    uint32 oldMSTime = getMSTime();
+    m_ChallengeRewardsMap.clear();
+
+    //                                               0       1            2             3            4           5            6              7            8         9          10
+    QueryResult result = WorldDatabase.Query("SELECT map, none_money, bronze_money, silver_money, gold_money, none_valor, bronze_valor, silver_valor, gold_valor, title, platinum_achievement FROM challenge_mode_rewards");
+    if (!result)
+    {
+        SF_LOG_INFO("server.loading", ">> Loaded 0 challenge mode rewards. DB table `challenge_mode_rewards` is empty.");
+        return;
+    }
+
+    do
+    {
+        Field* fields = result->Fetch();
+        uint32 mapId = fields[0].GetUInt32();
+        ChallengeReward& reward = m_ChallengeRewardsMap[mapId];
+        reward.MapId = mapId;
+        for (uint8 i = 0; i < 4; ++i)
+        {
+            reward.MoneyReward[i] = fields[1 + i].GetUInt32();
+            reward.ValorReward[i] = fields[5 + i].GetUInt32();
+        }
+        reward.TitleID = fields[9].GetUInt32();
+        reward.AchievementID = fields[10].GetUInt32();
+    }
+    while (result->NextRow());
+
+    SF_LOG_INFO("server.loading", ">> Loaded %u challenge mode rewards in %u ms", uint32(m_ChallengeRewardsMap.size()), GetMSTimeDiffToNow(oldMSTime));
+}

@@ -23,6 +23,7 @@ char const BroadcastTextfmt[] = "nxxxxxxxxxxxx";
 //char const Creaturefmt[] = "nxxxxxxxxxxxxxxxxx";
 //char const GameObjectsfmt[] = "nxxxxxxxxxxxxxxxx";
 char const ItemCurrencyCostfmt[] = "xn";
+char const MapChallengeModeEntryfmt[] = "nixxxiiixx";
 char const ItemExtendedCostEntryfmt[] = "nxxiiiiiiiiiiiixiiiiiiiiiiiiiii";
 char const Itemfmt[] = "diiixiix";
 char const ItemSparsefmt[] = "niiiiffiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiifiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiisxxxsiiiiiiiiiiiiiiiiiiiiiifiiifii";

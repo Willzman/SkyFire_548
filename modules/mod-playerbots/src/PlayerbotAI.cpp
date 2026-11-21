@@ -717,6 +717,38 @@ std::string PlayerbotAI::DescribeState() const
     }
     else
         out += "; no target";
+    if (_bot->IsInCombat())
+        out += "; held by " + DescribeThreatHolders();
+    return out;
+}
+
+std::string PlayerbotAI::DescribeThreatHolders() const
+{
+    if (!_bot)
+        return "nobody";
+
+    std::string out;
+    uint32 count = 0;
+    for (HostileReference* ref = _bot->getHostileRefManager().getFirst(); ref; ref = ref->next())
+    {
+        Unit* holder = ref->GetOwner();
+        if (!holder)
+            continue;
+        if (++count > 3)
+            continue;
+        Creature* creature = holder->ToCreature();
+        Unit* victim = holder->GetVictim();
+        char buf[200];
+        snprintf(buf, sizeof(buf), "%s%s (entry %u) %.1f yd, online %d, can reach %d, victim %s",
+            out.empty() ? "" : ", ", holder->GetName().c_str(), creature ? creature->GetEntry() : 0u,
+            _bot->GetDistance(holder), int(ref->isOnline()), int(ref->isAccessible()),
+            victim ? (victim == _bot ? "the bot" : victim->GetName().c_str()) : "none");
+        out += buf;
+    }
+    if (!count)
+        return "nobody";
+    if (count > 3)
+        out += " and " + std::to_string(count - 3) + " more";
     return out;
 }
 
@@ -1546,8 +1578,16 @@ void PlayerbotAI::UpdateAI(uint32 diff)
     // Aldrassil in Shadowglen and at Sunstrider Isle): every path and line of
     // sight from there fails, so it picks a target forever and never reaches it.
     // Send it to its hearth point, as a player would hearth out.
-    if (!_clientControlled && !_stay && !_bot->GetGroup() && !_bot->IsInCombat() && !IsQuestTesting()
-        && !_bot->IsInFlight() && !_bot->GetTransport() && !_pendingTeleport.active)
+    //
+    // The same goes for a bot in combat that nothing is fighting: a mob that
+    // cannot reach it keeps it on its threat list, so the core never ends the
+    // combat (Unit::Update only runs the combat timer down with no hostile refs)
+    // and every other step waits for the combat to end (seen by Razorfen Kraul,
+    // a level-1 priest next to level-23 Razorfen Servitors for two days).
+    bool const heldInCombat = _bot->IsInCombat() && _bot->getAttackers().empty()
+        && !_bot->GetVictim() && !HasEngageTarget() && !IsBusyCasting(_bot);
+    if (!_clientControlled && !_stay && !_bot->GetGroup() && (!_bot->IsInCombat() || heldInCombat)
+        && !IsQuestTesting() && !_bot->IsInFlight() && !_bot->GetTransport() && !_pendingTeleport.active)
     {
         if (_bot->GetMapId() != _stillMapId
             || _bot->GetExactDist2dSq(_stillX, _stillY) > BOT_STILL_RADIUS * BOT_STILL_RADIUS)
@@ -1560,10 +1600,30 @@ void PlayerbotAI::UpdateAI(uint32 diff)
         else if ((_stillMs += BOT_AI_UPDATE_INTERVAL) >= BOT_STILL_MS)
         {
             _stillMs = 0;
+            ClearTravelDestination();
+            if (_bot->IsInCombat())
+            {
+                std::string note = "in combat with nothing attacking it for 5 minutes, held by "
+                    + DescribeThreatHolders() + "; sent to its hearth point";
+                if (note.size() > 255)
+                    note.resize(255);
+                sBotFindings->RecordAt(BotFindingType::Stuck, _bot, _bot->GetPositionX(), _bot->GetPositionY(),
+                    _bot->GetPositionZ(), note);
+                // Drop the combat and leave at once: queued, the teleport would
+                // find the bot back in combat (the mob re-aggroes within a second)
+                // and ProcessPendingTeleport refuses bots in combat.
+                _bot->CombatStop();
+                _bot->getHostileRefManager().deleteReferences();
+                if (!BotTeleportMaps::TeleportToHomebind(_bot))
+                    sBotFindings->RecordAt(BotFindingType::BadPosition, _bot, _bot->m_homebindX, _bot->m_homebindY,
+                        _bot->m_homebindZ, "hearth point the bot could not be teleported to",
+                        int32(_bot->m_homebindMapId));
+                _lastStep = "unstuck";
+                return;
+            }
             sBotFindings->RecordAt(BotFindingType::Stuck, _bot, _bot->GetPositionX(), _bot->GetPositionY(),
                 _bot->GetPositionZ(), "stood still out of combat for 5 minutes (last step '" + _lastStep
                 + "'); sent to its hearth point");
-            ClearTravelDestination();
             _pendingTeleport.mapId = _bot->m_homebindMapId;
             _pendingTeleport.x = _bot->m_homebindX;
             _pendingTeleport.y = _bot->m_homebindY;
@@ -1971,7 +2031,7 @@ bool PlayerbotAI::HandleCombat()
         }
         // Strict heal: stay at cast range from the tank/fight — never formation-follow
         // the master mid-combat (that dragged healers through melee).
-        if (!_healerDps)
+        if (!HealerDealsDamage())
         {
             if (GroupInCombat() || !_bot->getAttackers().empty())
             {
@@ -2270,7 +2330,7 @@ bool PlayerbotAI::HandleCombatCastOnly()
             StopResting();
             return true;
         }
-        if (!_healerDps)
+        if (!HealerDealsDamage())
             return GroupInCombat() || !_bot->getAttackers().empty();
     }
     else if (_offHeal && CanOffHealClass() && HandleHealing(BOT_OFFHEAL_BELOW_PCT))
@@ -2715,9 +2775,18 @@ bool PlayerbotAI::IsPureCaster() const
     return IsRangedClass() || GetCombatRole() == CombatRole::Healer;
 }
 
+bool PlayerbotAI::HealerDealsDamage() const
+{
+    // AC AiFactory gives ungrouped random and self bots "dps assist", and every
+    // healer "healer dps" outside restricted maps. Without it a solo priest
+    // (healer until it picks a spec at level 10) never attacks: it stood beside
+    // a mob that held it in combat for two days.
+    return _healerDps || (_bot && !_bot->GetGroup());
+}
+
 bool PlayerbotAI::IsMeleeHealerDps() const
 {
-    if (!_bot || !_healerDps || GetCombatRole() != CombatRole::Healer)
+    if (!_bot || !HealerDealsDamage() || GetCombatRole() != CombatRole::Healer)
         return false;
     switch (_bot->getClass())
     {

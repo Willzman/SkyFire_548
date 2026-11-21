@@ -20,9 +20,10 @@ uint32 ScenarioMgr::GetScenarioIdForMap(uint32 map) const
     return 0;
 }
 
-uint32 ScenarioMgr::GetCriteriaIdForScenarioStep(uint32 map, uint32 step) const
+uint32 ScenarioMgr::GetCriteriaIdForScenarioStep(uint32 map, uint32 step, uint32 scenarioId) const
 {
-    uint32 scenarioId = GetScenarioIdForMap(map);
+    if (!scenarioId)
+        scenarioId = GetScenarioIdForMap(map);
     for (uint32 i = 0; i < sScenarioStepStore.GetNumRows(); ++i)
         if (ScenarioStepEntry const* scenarioStep = sScenarioStepStore.LookupEntry(i))
             if (scenarioStep->ScenarioID == scenarioId && scenarioStep->Step == step)
@@ -41,7 +42,7 @@ void ScenarioMgr::SendScenarioState(Player* player, uint32 map, int32 step, uint
     if (step == 0)
         SendScenarioState(player, map, -1, 0, miscCriteriaTreeId, scenarioId);
 
-    uint32 criteriaTreeId = miscCriteriaTreeId ? miscCriteriaTreeId : GetCriteriaIdForScenarioStep(map, step);
+    uint32 criteriaTreeId = miscCriteriaTreeId ? miscCriteriaTreeId : GetCriteriaIdForScenarioStep(map, step, scenarioId);
 
     ObjectGuid playerGuid = player->GetGUID();
     ObjectGuid unkGuid = 0;

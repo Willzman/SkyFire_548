@@ -696,8 +696,67 @@ void AddSC_boss_sha_of_fear();
 void AddSC_boss_tsulong();
 void AddSC_instance_terrace_of_endless_spring();
 void AddSC_terrace_of_endless_spring();
+// Throne of Thunder
+void AddSC_boss_council_of_elders();
+void AddSC_boss_dark_animus();
+void AddSC_boss_durumu();
+void AddSC_boss_horridon();
+void AddSC_boss_iron_qon();
+void AddSC_boss_jikun();
+void AddSC_boss_jinrokh();
+void AddSC_boss_lei_shen();
+void AddSC_boss_megaera();
+void AddSC_boss_primordius();
+void AddSC_boss_ra_den();
+void AddSC_boss_tortos();
+void AddSC_boss_twin_consorts();
+void AddSC_instance_throne_of_thunder();
+void AddSC_throne_of_thunder();
+// Siege of Orgrimmar
+void AddSC_fallen_protectors();
+void AddSC_galakras();
+void AddSC_garrosh_hellscream();
+void AddSC_general_nazgrim();
+void AddSC_immerseus();
+void AddSC_iron_juggernaut();
+void AddSC_korkron_dark_shamans();
+void AddSC_malkorok();
+void AddSC_norushen();
+void AddSC_paragons_of_the_klaxxi();
+void AddSC_sha_of_pride();
+void AddSC_siegecrafter_blackfuse();
+void AddSC_spoils_of_pandaria();
+void AddSC_thok_the_bloodthirsty();
+void AddSC_instance_siege_of_orgrimmar();
+void AddSC_siege_of_orgrimmar();
+// Heart of Fear
+void AddSC_boss_garalon();
+void AddSC_boss_meljarak();
+void AddSC_boss_shekzeer();
+void AddSC_boss_tayak();
+void AddSC_boss_unsok();
+void AddSC_boss_zorlok();
+void AddSC_heart_of_fear();
+void AddSC_instance_heart_of_fear();
 // Valley of the four Winds
 void AddSC_valley_of_the_four_winds();
+// Pandaria zones, world bosses and Timeless Isle (ported from LoA)
+void AddSC_dread_wastes();
+void AddSC_isle_of_giants();
+void AddSC_krasarang_wilds();
+void AddSC_kun_lai_summit();
+void AddSC_townlong_steppes();
+void AddSC_vale_of_eternal_blossoms();
+void AddSC_valley_of_the_four_winds_loa();
+void AddSC_boss_galion();
+void AddSC_boss_oondasta();
+void AddSC_boss_sha_of_anger();
+void AddSC_boss_chi_ji();
+void AddSC_boss_niuzao();
+void AddSC_boss_ordos();
+void AddSC_boss_xuen();
+void AddSC_boss_yu_lon();
+void AddSC_timeless_isle();
 // Shado-Pan Monastery
 void AddSC_boss_gu_cloudstrike();
 void AddSC_boss_master_snowdrift();
@@ -1538,8 +1597,67 @@ void AddPandariaScripts()
     AddSC_boss_tsulong();
     AddSC_instance_terrace_of_endless_spring();
     AddSC_terrace_of_endless_spring();
+    // Throne of Thunder
+    AddSC_boss_council_of_elders();
+    AddSC_boss_dark_animus();
+    AddSC_boss_durumu();
+    AddSC_boss_horridon();
+    AddSC_boss_iron_qon();
+    AddSC_boss_jikun();
+    AddSC_boss_jinrokh();
+    AddSC_boss_lei_shen();
+    AddSC_boss_megaera();
+    AddSC_boss_primordius();
+    AddSC_boss_ra_den();
+    AddSC_boss_tortos();
+    AddSC_boss_twin_consorts();
+    AddSC_instance_throne_of_thunder();
+    AddSC_throne_of_thunder();
+    // Siege of Orgrimmar
+    AddSC_fallen_protectors();
+    AddSC_galakras();
+    AddSC_garrosh_hellscream();
+    AddSC_general_nazgrim();
+    AddSC_immerseus();
+    AddSC_iron_juggernaut();
+    AddSC_korkron_dark_shamans();
+    AddSC_malkorok();
+    AddSC_norushen();
+    AddSC_paragons_of_the_klaxxi();
+    AddSC_sha_of_pride();
+    AddSC_siegecrafter_blackfuse();
+    AddSC_spoils_of_pandaria();
+    AddSC_thok_the_bloodthirsty();
+    AddSC_instance_siege_of_orgrimmar();
+    AddSC_siege_of_orgrimmar();
+    // Heart of Fear
+    AddSC_boss_garalon();
+    AddSC_boss_meljarak();
+    AddSC_boss_shekzeer();
+    AddSC_boss_tayak();
+    AddSC_boss_unsok();
+    AddSC_boss_zorlok();
+    AddSC_heart_of_fear();
+    AddSC_instance_heart_of_fear();
     // Valley of the four Winds
     AddSC_valley_of_the_four_winds();
+    // Pandaria zones, world bosses and Timeless Isle (ported from LoA)
+    AddSC_dread_wastes();
+    AddSC_isle_of_giants();
+    AddSC_krasarang_wilds();
+    AddSC_kun_lai_summit();
+    AddSC_townlong_steppes();
+    AddSC_vale_of_eternal_blossoms();
+    AddSC_valley_of_the_four_winds_loa();
+    AddSC_boss_galion();
+    AddSC_boss_oondasta();
+    AddSC_boss_sha_of_anger();
+    AddSC_boss_chi_ji();
+    AddSC_boss_niuzao();
+    AddSC_boss_ordos();
+    AddSC_boss_xuen();
+    AddSC_boss_yu_lon();
+    AddSC_timeless_isle();
     // Shado-Pan Monastery
     AddSC_boss_gu_cloudstrike();
     AddSC_boss_master_snowdrift();

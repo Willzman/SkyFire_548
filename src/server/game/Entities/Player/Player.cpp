@@ -5323,6 +5323,10 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
+            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_COMPLETED_CHALLENGES);
+            stmt->setUInt32(0, guid);
+            trans->Append(stmt);
+
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_BGDATA);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
@@ -5717,6 +5721,10 @@ void Player::DurabilityPointsLossAll(int32 points, bool inventory)
 
 void Player::DurabilityPointsLoss(Item* item, int32 points)
 {
+    // no durability loss in challenge modes (as in Legends of Azeroth Pandaria)
+    if (GetMap()->IsChallengeDungeon())
+        return;
+
     int32 pMaxDurability = item->GetUInt32Value(ITEM_FIELD_MAX_DURABILITY);
     int32 pOldDurability = item->GetUInt32Value(ITEM_FIELD_DURABILITY);
     int32 pNewDurability = pOldDurability - points;
@@ -12703,6 +12711,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder* holder)
     _LoadBoundInstances(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_BOUND_INSTANCES));
     _LoadInstanceTimeRestrictions(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_INSTANCE_LOCK_TIMES));
     _LoadBGData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_BG_DATA));
+    _LoadCompletedChallenges(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_COMPLETED_CHALLENGES));
     if (PreparedQueryResult result = holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_DEATH_GATE_RETURN))
     {
         Field* fields = result->Fetch();
@@ -24939,4 +24948,23 @@ void Player::UpdatePhasing()
     RebuildTerrainSwaps(); // to set default map swaps
 
     GetSession()->SendSetPhaseShift(GetPhases(), GetTerrainSwaps(), GetWorldMapSwaps());
+}
+
+void Player::_LoadCompletedChallenges(PreparedQueryResult result)
+{
+    m_CompletedChallenges.clear();
+    if (!result)
+        return;
+
+    do
+    {
+        Field* fields = result->Fetch();
+        CompletedChallenge challenge;
+        challenge.BestTime = fields[1].GetUInt32();
+        challenge.LastTime = fields[2].GetUInt32();
+        challenge.BestMedal = fields[3].GetUInt8();
+        challenge.BestMedalDate = fields[4].GetUInt32();
+        m_CompletedChallenges[fields[0].GetUInt32()] = challenge;
+    }
+    while (result->NextRow());
 }

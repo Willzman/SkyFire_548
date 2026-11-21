@@ -60,6 +60,48 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/instance_terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.h
+  Pandaria/ThroneOfThunder/boss_council_of_elders.cpp
+  Pandaria/ThroneOfThunder/boss_dark_animus.cpp
+  Pandaria/ThroneOfThunder/boss_durumu.cpp
+  Pandaria/ThroneOfThunder/boss_horridon.cpp
+  Pandaria/ThroneOfThunder/boss_iron_qon.cpp
+  Pandaria/ThroneOfThunder/boss_jikun.cpp
+  Pandaria/ThroneOfThunder/boss_jinrokh.cpp
+  Pandaria/ThroneOfThunder/boss_lei_shen.cpp
+  Pandaria/ThroneOfThunder/boss_megaera.cpp
+  Pandaria/ThroneOfThunder/boss_primordius.cpp
+  Pandaria/ThroneOfThunder/boss_ra_den.cpp
+  Pandaria/ThroneOfThunder/boss_tortos.cpp
+  Pandaria/ThroneOfThunder/boss_twin_consorts.cpp
+  Pandaria/ThroneOfThunder/instance_throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.h
+  Pandaria/SiegeOfOrgrimmar/boss_fallen_protectors.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_galakras.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_garrosh_hellscream.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_general_nazgrim.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_immerseus.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_iron_juggernaut.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_korkron_dark_shamans.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_malkorok.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_norushen.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_paragons_of_the_klaxxi.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_sha_of_pride.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_siegecrafter_blackfuse.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_spoils_of_pandaria.cpp
+  Pandaria/SiegeOfOrgrimmar/boss_thok_the_bloodthirsty.cpp
+  Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
+  Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp
+  Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.h
+  Pandaria/HeartOfFear/boss_garalon.cpp
+  Pandaria/HeartOfFear/boss_meljarak.cpp
+  Pandaria/HeartOfFear/boss_shekzeer.cpp
+  Pandaria/HeartOfFear/boss_tayak.cpp
+  Pandaria/HeartOfFear/boss_unsok.cpp
+  Pandaria/HeartOfFear/boss_zorlok.cpp
+  Pandaria/HeartOfFear/heart_of_fear.cpp
+  Pandaria/HeartOfFear/heart_of_fear.h
+  Pandaria/HeartOfFear/instance_heart_of_fear.cpp
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
   Pandaria/zone_wandering_island_loa.cpp
@@ -124,6 +166,23 @@ set(scripts_STAT_SRCS
   Pandaria/Scenarios/SecretIngridient/secret_ingridient.cpp
   Pandaria/zone_the_jade_forest.cpp
   Pandaria/zone_the_veiled_stair.cpp
+  Pandaria/zone_dread_wastes.cpp
+  Pandaria/zone_isle_of_giants.cpp
+  Pandaria/zone_krasarang_wilds.cpp
+  Pandaria/zone_kun_lai_summit.cpp
+  Pandaria/zone_townlong_steppes.cpp
+  Pandaria/zone_vale_of_eternal_blossoms.cpp
+  Pandaria/zone_valley_of_the_four_winds_loa.cpp
+  Pandaria/boss_galion.cpp
+  Pandaria/boss_oondasta.cpp
+  Pandaria/boss_sha_of_anger.cpp
+  Pandaria/TimelessIsle/timeless_isle.h
+  Pandaria/TimelessIsle/boss_chi_ji.cpp
+  Pandaria/TimelessIsle/boss_niuzao.cpp
+  Pandaria/TimelessIsle/boss_ordos.cpp
+  Pandaria/TimelessIsle/boss_xuen.cpp
+  Pandaria/TimelessIsle/boss_yu_lon.cpp
+  Pandaria/TimelessIsle/zone_timeless_isle.cpp
 )
 
 message("  -> Prepared: Pandaria")

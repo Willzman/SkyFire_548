@@ -203,6 +203,9 @@ bool InstanceScript::SetBossState(uint32 id, EncounterState state)
 
             bossInfo->state = state;
             SaveToDB();
+
+            if (state == DONE)
+                OnChallengeBossDone(id);
         }
 
         for (uint32 type = 0; type < MAX_DOOR_TYPES; ++type)

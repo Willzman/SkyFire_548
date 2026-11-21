@@ -447,6 +447,21 @@ struct ItemUpgradeEntry
 #define MAX_ITEM_EXT_COST_ITEMS         5
 #define MAX_ITEM_EXT_COST_CURRENCIES    5
 
+// MapChallengeMode.db2: medal times of a challenge dungeon (as in Legends of Azeroth Pandaria 5.4.8)
+struct MapChallengeModeEntry
+{
+    uint32 ID;                  // 0
+    uint32 MapID;               // 1
+    //uint32 Unk2;              // 2
+    //uint32 Unk3;              // 3
+    //uint32 Unk4;              // 4
+    uint32 BronzeTime;          // 5 seconds
+    uint32 SilverTime;          // 6
+    uint32 GoldTime;            // 7
+    //uint32 Unk8;              // 8
+    //uint32 Unk9;              // 9
+};
+
 struct ItemExtendedCostEntry
 {
     uint32      ID;                                         // 0 extended-cost entry id
