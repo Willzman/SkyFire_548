@@ -729,6 +729,15 @@ void AddSC_spoils_of_pandaria();
 void AddSC_thok_the_bloodthirsty();
 void AddSC_instance_siege_of_orgrimmar();
 void AddSC_siege_of_orgrimmar();
+// Heart of Fear
+void AddSC_boss_garalon();
+void AddSC_boss_meljarak();
+void AddSC_boss_shekzeer();
+void AddSC_boss_tayak();
+void AddSC_boss_unsok();
+void AddSC_boss_zorlok();
+void AddSC_heart_of_fear();
+void AddSC_instance_heart_of_fear();
 // Valley of the four Winds
 void AddSC_valley_of_the_four_winds();
 // Pandaria zones, world bosses and Timeless Isle (ported from LoA)
@@ -1621,6 +1630,15 @@ void AddPandariaScripts()
     AddSC_thok_the_bloodthirsty();
     AddSC_instance_siege_of_orgrimmar();
     AddSC_siege_of_orgrimmar();
+    // Heart of Fear
+    AddSC_boss_garalon();
+    AddSC_boss_meljarak();
+    AddSC_boss_shekzeer();
+    AddSC_boss_tayak();
+    AddSC_boss_unsok();
+    AddSC_boss_zorlok();
+    AddSC_heart_of_fear();
+    AddSC_instance_heart_of_fear();
     // Valley of the four Winds
     AddSC_valley_of_the_four_winds();
     // Pandaria zones, world bosses and Timeless Isle (ported from LoA)

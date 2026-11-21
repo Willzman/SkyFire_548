@@ -93,6 +93,15 @@ set(scripts_STAT_SRCS
   Pandaria/SiegeOfOrgrimmar/instance_siege_of_orgrimmar.cpp
   Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.cpp
   Pandaria/SiegeOfOrgrimmar/siege_of_orgrimmar.h
+  Pandaria/HeartOfFear/boss_garalon.cpp
+  Pandaria/HeartOfFear/boss_meljarak.cpp
+  Pandaria/HeartOfFear/boss_shekzeer.cpp
+  Pandaria/HeartOfFear/boss_tayak.cpp
+  Pandaria/HeartOfFear/boss_unsok.cpp
+  Pandaria/HeartOfFear/boss_zorlok.cpp
+  Pandaria/HeartOfFear/heart_of_fear.cpp
+  Pandaria/HeartOfFear/heart_of_fear.h
+  Pandaria/HeartOfFear/instance_heart_of_fear.cpp
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
   Pandaria/zone_wandering_island_loa.cpp

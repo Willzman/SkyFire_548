@@ -4397,6 +4397,144 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_CASTER;
                 break;
             // ENDOF SIEGE OF ORGRIMMAR
+            // Heart of Fear (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // HEART OF FEAR
+            //
+            case 122336: // Sonic Ring
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 124673: // Sonic Pulse
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_0_5_YARDS);
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_IGNORE_ARMOR;
+                break;
+            case 123100: // Pheromones Switch
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
+                break;
+            case 122761: // exhale
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 121898: // Whirling blade
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_8_YARDS);
+                break;
+            case 123735: // Dread Scretch
+            case 125464: // Sha Energy
+                spellInfo->MaxAffectedTargets = 2;
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 123471: // intensify
+            case 123470:
+            case 132254:
+                spellInfo->AttributesEx |= SPELL_ATTR1_DISPEL_AURAS_ON_IMMUNITY;
+                break;
+            case 124033: // Storm Unleashed Jump
+                spellInfo->Speed = SPEED_CHARGE;
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                break;
+            case 123597: // Storm Unleashed stalker east/west
+            case 123639:
+            case 123640:
+            case 123643:
+            case 123644:
+            case 123645:
+                spellInfo->Effects[EFFECT_0].MiscValue = 63278;
+                break;
+            case 121949: // Parasitic Growth
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                break;
+            case 122224: // Impaling Spear
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
+                break;
+            case 122064: // Corrosive Resin
+                spellInfo->StackAmount = 5; // max
+                break;
+            case 123792: // Cry of Fear
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 123596: // Dissonance Field
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_4_YARDS);
+                break;
+            case 124845: // Calamity
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 124258: // Storm Unleashed Ride
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(EFFECT_RADIUS_3_5_YARDS);
+                break;
+            case 123430: // Ride vehicle legs
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->Effects[EFFECT_0].BasePoints = 1;
+                break;
+            case 123431:
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->Effects[EFFECT_0].BasePoints = 2;
+                break;
+            case 123432:
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->Effects[EFFECT_0].BasePoints = 3;
+                break;
+            case 123433:
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->Effects[EFFECT_0].BasePoints = 4;
+                break;
+            case 125098: // Retreat
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(427); // ~10min, doesn`t matter, just need more 2m 45s
+                break;
+            case 123707: // Eyes of the Empress
+                spellInfo->Attributes |= SPELL_ATTR0_CANT_CANCEL;
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 124844: // Amassing Darkness dmg
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                break;
+            case 124843: // Amazing Darkness eff
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                break;
+            case 123459: // Wind Step Effect
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 122370: // Reshape Life
+                spellInfo->Effects[EFFECT_9].MiscValue = 16;
+                break;
+            case 123175: // Windstep
+                spellInfo->Effects[EFFECT_1].TriggerSpell = 0;
+                break;
+            case 123963: // Korthik Strike
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 122185: // Mending Ex aura
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(27);
+                break;
+            case 122147: // Mending
+                spellInfo->MaxAffectedTargets = 3;
+                break;
+            case 123504:
+                spellInfo->AttributesEx |= SPELL_ATTR1_CANT_BE_REFLECTED;
+                break;
+            case 122551: // Draw Power Visual
+                spellInfo->AttributesEx2 |= SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS;
+                break;
+            case 142189: // Summon amber globule (12s duration, blizzard, u srsly?)
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(427);
+                break;
+            case 122839: // Tempest Slash [only dbm trigger]
+                spellInfo->Effects[EFFECT_0].TriggerSpell = 0;
+                break;
+            case 124777: // Poison Bomb
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 133042: // Fixate
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_DUMMY;
+                break;
+            case 126841: // Klaxxi Resonance
+                spellInfo->Effects[EFFECT_0].BasePoints = -10;
+                spellInfo->Effects[EFFECT_1].BasePoints = -10;
+                break;
+            // ENDOF HEART OF FEAR
             // Scholomance (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 114062: // Wondrous Rapidity
                 spellInfo->Effects[EFFECT_0].TriggerSpell = 114061;
