@@ -15,7 +15,25 @@ if [ "$#" -eq 0 ]; then
     exit 2
 fi
 
-APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o DPkg::Lock::Timeout=120)
+
+# apt can also hang with no error at all: on 2026-11-19 a pch-smoke run sat in apt-get update for 3 hours
+# (after fetching every InRelease) until the job limit cancelled it. The Acquire timeouts above did not
+# catch it, so each call also gets a hard limit; a call that runs out counts as failed and the next
+# mirror is tried.
+UPDATE_LIMIT=300    # seconds; a normal apt-get update takes under 30
+INSTALL_LIMIT=900   # seconds; a normal install of the build packages takes 1-2 minutes
+
+# Usage: run_limited <seconds> <command...>
+run_limited() {
+    local limit="$1"; shift
+    sudo timeout --kill-after=30 "${limit}" "$@"
+    local rc=$?
+    if [ "${rc}" -eq 124 ] || [ "${rc}" -eq 137 ]; then
+        echo "::warning::timed out after ${limit}s: $*"
+    fi
+    return "${rc}"
+}
 
 # The runner's own mirror first, then the main archive, then mirrors outside ubuntu.com
 # (in case it is name resolution for *.ubuntu.com that is failing).
@@ -26,8 +44,8 @@ FALLBACK_MIRRORS=(
 )
 
 try_install() {
-    sudo apt-get update "${APT_OPTS[@]}" || return 1
-    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y "${APT_OPTS[@]}" "$@"
+    run_limited "${UPDATE_LIMIT}" apt-get update "${APT_OPTS[@]}" || return 1
+    run_limited "${INSTALL_LIMIT}" env DEBIAN_FRONTEND=noninteractive apt-get install -y "${APT_OPTS[@]}" "$@"
 }
 
 use_mirror() {
