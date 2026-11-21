@@ -418,6 +418,29 @@ void AddSC_boss_earthrager_ptah();
 void AddSC_boss_anraphet();
 void AddSC_instance_firelands();               //Firelands
 void AddSC_boss_alysrazor();
+// Halls of Origination, Firelands and Dragon Soul (from Legends of Azeroth Pandaria)
+void AddSC_boss_ammunae();
+void AddSC_boss_isiset();
+void AddSC_boss_rajh();
+void AddSC_boss_setesh();
+void AddSC_halls_of_origination();
+void AddSC_boss_baleroc();
+void AddSC_boss_bethtilac();
+void AddSC_boss_lord_rhyolith();
+void AddSC_boss_majordomo_staghelm();
+void AddSC_boss_ragnaros_firelands();
+void AddSC_boss_shannox();
+void AddSC_firelands();
+void AddSC_boss_hagara_the_stormbinder();
+void AddSC_madness_of_deathwing();
+void AddSC_boss_morchok();
+void AddSC_spine_of_deathwing();
+void AddSC_boss_ultraxion();
+void AddSC_boss_warlord_zonozz();
+void AddSC_boss_warmaster_blackhorn();
+void AddSC_boss_yorsahj_the_unsleeping();
+void AddSC_dragon_soul();
+void AddSC_instance_dragon_soul();
 void AddSC_mount_hyjal();
 void AddSC_feralas();
 void AddSC_felwood();
@@ -1391,6 +1414,28 @@ void AddKalimdorScripts()
 
     AddSC_instance_firelands();               //Firelands
     AddSC_boss_alysrazor();
+    AddSC_boss_ammunae();
+    AddSC_boss_isiset();
+    AddSC_boss_rajh();
+    AddSC_boss_setesh();
+    AddSC_halls_of_origination();
+    AddSC_boss_baleroc();
+    AddSC_boss_bethtilac();
+    AddSC_boss_lord_rhyolith();
+    AddSC_boss_majordomo_staghelm();
+    AddSC_boss_ragnaros_firelands();
+    AddSC_boss_shannox();
+    AddSC_firelands();
+    AddSC_boss_hagara_the_stormbinder();
+    AddSC_madness_of_deathwing();
+    AddSC_boss_morchok();
+    AddSC_spine_of_deathwing();
+    AddSC_boss_ultraxion();
+    AddSC_boss_warlord_zonozz();
+    AddSC_boss_warmaster_blackhorn();
+    AddSC_boss_yorsahj_the_unsleeping();
+    AddSC_dragon_soul();
+    AddSC_instance_dragon_soul();
     AddSC_mount_hyjal();
     AddSC_feralas();
     AddSC_felwood();
