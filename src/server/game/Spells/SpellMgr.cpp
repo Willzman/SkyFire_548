@@ -5342,7 +5342,7 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->Effects[EFFECT_1].Effect = 0;
                 break;
             case 106043: // Spellweave
-                spellInfo->AttributesEx8 |= SPELL_ATTR8_CANT_MISS;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_IGNORE_HIT_RESULT; // LoA: SPELL_ATTR8_CANT_MISS
                 break;
             case 106791: // Shrapnel
                 spellInfo->AttributesEx4 |= SPELL_ATTR4_IGNORE_RESISTANCES;
