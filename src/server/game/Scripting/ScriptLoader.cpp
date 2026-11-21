@@ -93,6 +93,25 @@ void AddSC_boss_alizabal();                  //Baradin Hold
 void AddSC_boss_occuthar();
 void AddSC_boss_pit_lord_argaloth();
 void AddSC_instance_baradin_hold();
+void AddSC_blackrock_caverns();
+void AddSC_boss_ascendant_lord_obsidius();
+void AddSC_boss_beauty();
+void AddSC_boss_corla_herald_of_twilight();
+void AddSC_boss_karsh_steelbender();
+void AddSC_boss_romogg_bonecrusher();
+void AddSC_instance_blackrock_caverns();
+void AddSC_boss_commander_ulthok();
+void AddSC_boss_lady_nazjar();
+void AddSC_boss_erunak_stonespeaker();
+void AddSC_boss_ozumat();
+void AddSC_instance_throne_of_the_tides();
+void AddSC_throne_of_the_tides();
+void AddSC_boss_drahga_shadowburner();
+void AddSC_boss_erudax();
+void AddSC_boss_forgemaster_throngus();
+void AddSC_boss_general_umbriss();
+void AddSC_grim_batol();
+void AddSC_instance_grim_batol();
 void AddSC_blackrock_depths();               //Blackrock Depths
 void AddSC_boss_ambassador_flamelash();
 void AddSC_boss_anubshiah();
@@ -344,6 +363,17 @@ void AddSC_instance_temple_of_ahnqiraj();
 //void AddSC_zulfarrak();
 //void AddSC_instance_zulfarrak();
 void AddSC_instance_halls_of_origination();    //Halls of Origination
+void AddSC_boss_altairus();
+void AddSC_boss_asaad();
+void AddSC_boss_grand_vizier_ertan();
+void AddSC_instance_the_vortex_pinnacle();
+void AddSC_the_vortex_pinnacle();
+void AddSC_boss_general_husam();
+void AddSC_boss_high_prophet_barim();
+void AddSC_boss_lockmaw_augh();
+void AddSC_boss_siamat();
+void AddSC_instance_lost_city_of_the_tolvir();
+void AddSC_lost_city_of_the_tolvir();
 void AddSC_boss_temple_guardian_anhuur();
 void AddSC_boss_earthrager_ptah();
 void AddSC_boss_anraphet();
@@ -648,6 +678,12 @@ void AddSC_zangarmarsh();
 
 // Maelstrom
 void AddSC_kezan();
+void AddSC_boss_corborus();
+void AddSC_boss_high_priestess_azil();
+void AddSC_boss_ozruk();
+void AddSC_boss_slabhide();
+void AddSC_instance_the_stonecore();
+void AddSC_the_stonecore();
 
 // Events
 void AddSC_event_childrens_week();
@@ -968,6 +1004,25 @@ void AddEasternKingdomsScripts()
     AddSC_boss_occuthar();
     AddSC_boss_pit_lord_argaloth();
     AddSC_instance_baradin_hold();
+    AddSC_blackrock_caverns();
+    AddSC_boss_ascendant_lord_obsidius();
+    AddSC_boss_beauty();
+    AddSC_boss_corla_herald_of_twilight();
+    AddSC_boss_karsh_steelbender();
+    AddSC_boss_romogg_bonecrusher();
+    AddSC_instance_blackrock_caverns();
+    AddSC_boss_commander_ulthok();
+    AddSC_boss_lady_nazjar();
+    AddSC_boss_erunak_stonespeaker();
+    AddSC_boss_ozumat();
+    AddSC_instance_throne_of_the_tides();
+    AddSC_throne_of_the_tides();
+    AddSC_boss_drahga_shadowburner();
+    AddSC_boss_erudax();
+    AddSC_boss_forgemaster_throngus();
+    AddSC_boss_general_umbriss();
+    AddSC_grim_batol();
+    AddSC_instance_grim_batol();
     AddSC_blackrock_depths();               //Blackrock Depths
     AddSC_boss_ambassador_flamelash();
     AddSC_boss_anubshiah();
@@ -1241,6 +1296,17 @@ void AddKalimdorScripts()
     AddSC_winterspring();
 
     AddSC_instance_halls_of_origination();    //Halls of Origination
+    AddSC_boss_altairus();
+    AddSC_boss_asaad();
+    AddSC_boss_grand_vizier_ertan();
+    AddSC_instance_the_vortex_pinnacle();
+    AddSC_the_vortex_pinnacle();
+    AddSC_boss_general_husam();
+    AddSC_boss_high_prophet_barim();
+    AddSC_boss_lockmaw_augh();
+    AddSC_boss_siamat();
+    AddSC_instance_lost_city_of_the_tolvir();
+    AddSC_lost_city_of_the_tolvir();
     AddSC_boss_temple_guardian_anhuur();
     AddSC_boss_earthrager_ptah();
     AddSC_boss_anraphet();
@@ -1541,6 +1607,12 @@ void AddMaelstromScripts()
 {
 #ifdef SCRIPTS
     AddSC_kezan();
+    AddSC_boss_corborus();
+    AddSC_boss_high_priestess_azil();
+    AddSC_boss_ozruk();
+    AddSC_boss_slabhide();
+    AddSC_instance_the_stonecore();
+    AddSC_the_stonecore();
 #endif
 }
 

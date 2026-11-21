@@ -4936,6 +4936,441 @@ void SpellMgr::LoadSpellInfoCorrections()
             case 111894: // Dog food
                 spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_INITIAL_AGGRO;
                 break;
+            // Blackrock Caverns (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // BLACKROCK CAVERNS SPELLS
+            //
+            // Rom'ogg Bonecrusher
+            case 75272: // Quake
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                break;
+            case 82189: // Chains of Woe
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82192: // Chains of Woe Root Aura
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(9);
+                break;
+            // Corla
+            case 75677: // Nether Beam
+                spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            // Ascendant Lord Obsidius
+            case 76186: // Thinderclap
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 76164: // Shadow of Obsidius
+                spellInfo->Effects[0].BasePoints = 10000000;
+                break;
+            // ENDOF BLACKROCK CAVERNS SPELLS
+            // Throne of the Tides (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // THRONE OF THE TIDES SPELLS
+            //
+            // Lady Nazjar
+            case 90479: // Waterspout dmg
+                spellInfo->Effects[0].Effect = 0;
+                break;
+            case 75690: // Waterspout knock
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                break;
+            case 75700: // Geyser Errupt
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 94046: // Geyser Errupt knock
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 75813: // Chain Lightning
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 75993: // Lightning Surge dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 80564: // Fungal Spores dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Commander Ulthok
+            case 76085: // Dark Fissure dmg
+            case 91375:
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
+                break;
+            case 76047:
+                spellInfo->Effects[0].TargetB = 0;
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
+                break;
+            // Erunak Stonespeaker
+            case 84945: // Earth Shards dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Mindbender Ghursha
+            case 76341: // Unrelenting Agony dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            // Ozumat
+            case 83463: // Entangling Grasp
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 83915: // Brain Spike
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                break;
+            case 83561: // Blight of Ozumat
+            case 83608:
+                spellInfo->AttributesEx8 |= SPELL_ATTR8_DONT_RESET_PERIODIC_TIMER;
+                break;
+            // ENDOF THRONE OF THE TIDES SPELLS
+            // The Stonecore (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // THE STONECORE SPELLS
+            //
+            // Corborus
+            case 82415: // Dumpening Wave
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 92122: // Crystal Shard dmg
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Slabhide
+            case 80800: // Eruption
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 80801: // Eruption aura
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Ozruk
+            case 78807: // Shatter
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 92426: // Paralyze
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            // High Priestess Azil
+            case 79251: // Gratity Well aura
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 79249: // Gravity Well aura dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_0].BasePoints = 3000;
+                break;
+            case 79050: // Arcane Shield dmg
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // ENDOF STONECORE SPELLS
+            // The Vortex Pinnacle (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // THE VORTEX PINNACLE SPELLS
+            //
+            // Grand Vizier Ertan
+            case 86292: // Cyclone Shield dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                break;
+            // Asaad
+            case 87551: // Supremacy of the Storm dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 87622: // Chain Lightning
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 87618: // Static Cling
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 86911: // Unstable Grounding Field
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->InterruptFlags = 0;
+                break;
+            case 87517: // Grounding Field Visual Beams
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            // Altairus
+            case 88276: // Call of Wind Dummy
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 88282: // Upwind of Altairus
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                break;
+            // Trash
+            case 87854: // Arcane Barrage
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 88073: // Starfall
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 87761: // Rally
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                break;
+            case 87933: // Air Nova
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 85159: // Howling Gale dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 85084: // Howling Gale
+                spellInfo->Effects[0].TriggerSpell = 85159;
+                break;
+            case 87765: // Lightning Lash Dummy
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 87768: // Lightning Nova
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 88170: // Cloudburst
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 89522: // Catch Fall
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_CASTER;
+                break;
+            case 89526: // Catch Fall
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_DEST_DEST;
+                break;
+            // ENDOF THE VORTEX PINNACLE SPELLS
+            // Grim Batol (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // GRIM BATOL SPELLS
+            //
+            // Trash
+            case 76517: // Eruption Fire
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 76782: // Rock Smash dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76786: // Fissure dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76101: // Lightning Strike dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 76392: // Arcane Slash
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 76370: // Warped Twilight
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 76620: // Azure Blast
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 76404: // Crimson Charge
+                spellInfo->EquippedItemClass = -1;
+                spellInfo->EquippedItemSubClassMask = -1;
+                break;
+            case 76409: // Crimson Shockwave
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76327: // Blaze
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76693: // Empowering Twilight dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76627: // Mortal Strike
+                spellInfo->EquippedItemClass = -1;
+                spellInfo->EquippedItemSubClassMask = -1;
+                break;
+            case 76603: // Earth Spike
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 76411: // Meat Grinder
+                spellInfo->EquippedItemClass = -1;
+                spellInfo->EquippedItemSubClassMask = -1;
+                break;
+            case 76413: // Meat Grinder dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 76578: // Chain Lightning
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // General Umbriss
+            case 74675: // Blitz dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 74837: // Modgud Malady
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 90170: // Modgud Malice aura
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[2].Effect = 0;
+                break;
+            // Forgemaster Throngus
+            case 74976: // Disorenting Roar
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 90754: // Lava Patch dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 74986: // Cave In dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 74984: // Mighty Stomp
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            // Drahga Shadowburner
+            case 75238: // Supernova
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 75245: // Burning Shadowbolt
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 75317: // Seeping Twilight dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            // ENDOF GRIM BATOL SPELLS
+            // Lost City of the Tolvir (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // LOST CITY OF THE TOL'VIR
+            //
+            case 83644: // Mystic Trap N
+                spellInfo->MaxAffectedTargets = 3;
+                break;
+            case 83112: // Land Mine Player Search Effect
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                spellInfo->AttributesEx3 = SPELL_ATTR3_ONLY_TARGET_PLAYERS;
+                break;
+            case 91263: // Detonate Traps
+                spellInfo->Attributes |= SPELL_ATTR0_UNAFFECTED_BY_INVULNERABILITY;
+                break;
+            case 84799: // Paralytic Blow Dart N
+                spellInfo->Attributes = 0;
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Effects[EFFECT_2].TargetB = 0;
+                spellInfo->Targets = TARGET_FLAG_UNIT;
+                break;
+            case 83131: // Summon Shockwave Target N
+            case 83132: // Summon Shockwave Target S
+            case 83133: // Summon Shockwave Target W
+            case 83134: // Summon Shockwave Target E
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
+                break;
+            case 83454: // Shockwave N
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 81690: // Scent of Blood N
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 82263: // Merged Souls
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_TARGET_ANY;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Effects[EFFECT_2].TargetB = 0;
+                spellInfo->Targets = TARGET_FLAG_UNIT;
+                break;
+            case 82430: // Repentance
+                spellInfo->Effects[EFFECT_0].MiscValue = 250;
+                break;
+            case 91196: // Blaze of the Heavens
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                break;
+            case 88814: // Hallowed Ground N
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
+                break;
+            case 81942: // Heaven's Fury N
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 82622: // Plague of Ages N
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->AttributesEx = SPELL_ATTR1_CANT_TARGET_SELF;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS | SPELL_ATTR3_IGNORE_HIT_RESULT;
+                break;
+            case 82637: // Plague of Ages N
+                spellInfo->ExcludeTargetAuraSpell = 82622;
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->Attributes &= ~SPELL_ATTR0_NEGATIVE_1;
+                spellInfo->AttributesEx = SPELL_ATTR1_CANT_TARGET_SELF;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS | SPELL_ATTR3_IGNORE_HIT_RESULT;
+                break;
+            case 82640: // Plague of Ages N
+                spellInfo->ExcludeTargetAuraSpell = 82622;
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->Attributes &= ~SPELL_ATTR0_NEGATIVE_1;
+                spellInfo->AttributesEx = SPELL_ATTR1_CANT_TARGET_SELF;
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_ONLY_TARGET_PLAYERS | SPELL_ATTR3_IGNORE_HIT_RESULT;
+                break;
+            case 82139: // Repentance
+                spellInfo->AttributesEx3 &= ~SPELL_ATTR3_DEATH_PERSISTENT;
+                break;
+            case 82425: // Wail of Darkness N
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_SRC_CASTER;
+                spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 84546: // Static Shock
+            case 84555: // Static Shock
+            case 84556: // Static Shock
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
+                break;
+            case 84956: // Call of Sky
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
+                break;
+            case 83455: // Chain Lightning N
+                spellInfo->InterruptFlags |= SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 83790: // Cloud Burst
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_DEST;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_DEST_DEST_RANDOM;
+                spellInfo->Targets = TARGET_FLAG_DEST_LOCATION;
+                break;
+            case 83051: // Cloud Burst
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(7);
+                break;
+            case 83566: // Wailing Winds
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = 0;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Effects[EFFECT_2].TargetB = 0;
+                break;
+            case 83094: // Wailing Winds N
+                spellInfo->AttributesEx4 |= SPELL_ATTR4_TRIGGERED;
+                break;
+            case 83151: // Absorb Storms
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_NEARBY_ENTRY;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_CASTER;
+                break;
+            case 84126: // Call Scorpid
+            case 82791: // Call Crocolisk
+                spellInfo->Attributes = 0;
+                break;
+            case 82224: // Soul Fragment
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 84589: // Deflecting Winds
+                spellInfo->Effects[EFFECT_0].Effect = 0;
+                break;
+            // ENDOF LOST CITY OF THE TOL'VIR
             // Shadowfang Keep (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 93720: // Wracking Pain
                 spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);

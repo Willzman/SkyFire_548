@@ -14,6 +14,28 @@ set(scripts_STAT_SRCS
   EasternKingdoms/BaradinHold/boss_occuthar.cpp
   EasternKingdoms/BaradinHold/boss_pit_lord_argaloth.cpp
   EasternKingdoms/BaradinHold/instance_baradin_hold.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/blackrock_caverns.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/blackrock_caverns.h
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/boss_ascendant_lord_obsidius.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/boss_beauty.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/boss_corla_hearld_of_twilight.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/boss_karsh_steelbender.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/boss_romogg_bonecrusher.cpp
+  EasternKingdoms/BlackrockMountain/BlackrockCaverns/instance_blackrock_caverns.cpp
+  EasternKingdoms/ThroneOfTheTides/boss_commander_ulthok.cpp
+  EasternKingdoms/ThroneOfTheTides/boss_lady_nazjar.cpp
+  EasternKingdoms/ThroneOfTheTides/boss_mindebender_ghursha.cpp
+  EasternKingdoms/ThroneOfTheTides/boss_ozumat.cpp
+  EasternKingdoms/ThroneOfTheTides/instance_throne_of_the_tides.cpp
+  EasternKingdoms/ThroneOfTheTides/throne_of_the_tides.cpp
+  EasternKingdoms/ThroneOfTheTides/throne_of_the_tides.h
+  EasternKingdoms/GrimBatol/boss_drahga_shadowburner.cpp
+  EasternKingdoms/GrimBatol/boss_erudax.cpp
+  EasternKingdoms/GrimBatol/boss_forgemaster_throngus.cpp
+  EasternKingdoms/GrimBatol/boss_general_umbriss.cpp
+  EasternKingdoms/GrimBatol/grim_batol.cpp
+  EasternKingdoms/GrimBatol/grim_batol.h
+  EasternKingdoms/GrimBatol/instance_grim_batol.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/boss_high_interrogator_gerstahn.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/boss_gorosh_the_dervish.cpp
   EasternKingdoms/BlackrockMountain/BlackrockDepths/blackrock_depths.cpp
