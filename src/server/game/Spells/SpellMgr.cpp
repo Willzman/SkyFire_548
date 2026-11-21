@@ -4886,6 +4886,563 @@ void SpellMgr::LoadSpellInfoCorrections()
                 if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(113379))
                     spellInfo->DurationEntry = spell->DurationEntry;
                 break;
+            // Throne of the Four Winds (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // THRONE OF THE FOUR WINDS SPELLS
+            //
+            case 85269: // Catch Fall
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_DEST_CASTER;
+                break;
+            // Anshal
+            case 85425: // Nurture summon trigger
+            case 85428: // Nurture dummy
+            case 85429: // Nurture summon
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CHANNELED_2;
+                break;
+            case 86282: // Toxic Spores dmg
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS;
+                break;
+            // Nezir
+            case 86367: // Sleet Storm dmg
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_SHARE_DAMAGE;
+                break;
+            case 84644: // Sleet Storm
+                spellInfo->AttributesEx &= ~SPELL_ATTR1_CANT_TARGET_SELF;
+                break;
+            case 85483: // Wind Blast
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CONE_ENEMY_104;
+                break;
+            // Al'Akir
+            case 88214: // Lightning Strike
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                break;
+            case 89668: // Lightning Rod
+            case 89628: // Lightning Clouds
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 88427: // Electrocute
+                spellInfo->RangeEntry = sSpellRangeStore.LookupEntry(13);
+                break;
+            // ENDOF THRONE OF THE FOUR WINDS SPELLS
+            // Blackwing Descent (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // BLACKWING DESCENT SPELLS
+            //
+            // Trash
+            case 79604: // Thunderclap
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 80035: // Vengeful Rage
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 79589: // Constricting Chains
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(27);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(27);
+                break;
+            case 80336: // Frost Burn
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                break;
+            case 80878: // Bestowal of Angerforge
+            case 80871: // Bestowal of Thaurissan
+            case 80875: // Bestowal of Ironstar
+            case 80872: // Bestowal of Burningeye
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 80638: // Stormbolt
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 80646: // Chain Lightning
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 91849: // Grip of Death
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 92048: // Shadow Infusion
+                spellInfo->TargetAuraSpell = 0;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 92051: // Shadow Conductor
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 92023: // Encasing Shadows
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->TargetAuraSpell = 0;
+                break;
+            case 92153: // Blazing Inferno missile
+                spellInfo->Speed = 6;
+                break;
+            case 92154: // Blazing Inferno dmg
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 92173: // Shadow Breath
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Magmaw
+            case 89773: // Mangle
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 78359: // Magma Split 1
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            case 78068: // Magma Split 2
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                break;
+            // Omnotron Defence System
+            case 78697: // Recharging blue
+            case 78698: // Recharging orange
+            case 78699: // Recharging purple
+            case 78700: // Recharging green
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            case 79629: // Power Generator aoe
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_SRC_CASTER;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENTRY;
+                break;
+            case 91858: // Overcharged Power Generator aoe
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 91879: // Arcane Blowback
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 79912: // Static Shock dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 79035: // Inseneration Security Missure
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 79501: // Acquiring Target
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_STUNNED;
+                break;
+            case 79504: // Flamethrower
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_CONE_ENEMY_24;
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_STUNNED;
+                break;
+            case 79617: // Backdraft
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 80092: // Poison Bomb
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 80164: // Chemical Cloud aoe a
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 80161: // Chemocal Cloud aoe b
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(18);
+                break;
+            case 80097: // Poison Pubble aoe
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            // Maloriak
+            case 89798: // Master Adventurer Award
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_UNIT_SRC_AREA_ENEMY;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 78194: // Magma Jets summon
+                spellInfo->AttributesEx5 |= SPELL_ATTR5_USABLE_WHILE_STUNNED;
+                break;
+            case 77569: // Release Aberrations
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_GAMEOBJECT_SRC_AREA;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77991: // Release All
+                spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                spellInfo->Effects[EFFECT_0].TargetB = TARGET_GAMEOBJECT_SRC_AREA;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].Effect = 0;
+                break;
+            case 77699: // Flash Freeze dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 77763: // Biting Chill dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 77615: // Debilitating Slime
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77948: // Debilitating Slime knock back
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                spellInfo->Effects[EFFECT_1].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->Effects[EFFECT_1].TargetB = 0;
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                break;
+            case 77908: // Arcane Storm dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(31);
+                break;
+            case 78095: // Magma Jets dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(15);
+                break;
+            case 78225: // Acid Nova
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77987: // Grown Catalyst
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 78208: // Absolute Zero
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 77715: // Shatter
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 77925: // Throw Red Bottle
+            case 77928: // Throw Red Bottle
+            case 77932: // Throw Blue Bottle
+            case 77934: // Throw Blue Bottle
+            case 77937: // Throw Green Bottle
+            case 77938: // Throw Green Bottle
+            case 92831: // Throw Black Bottle
+            case 92837: // Throw Black Bottle
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_GAMEOBJECT_TARGET;
+                break;
+            // Chimaeron
+            case 82848: // Massacre
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 88872: // Feud
+                spellInfo->InterruptFlags &= ~SPELL_INTERRUPT_FLAG_INTERRUPT;
+                break;
+            case 82881: // Break
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_NEGATIVE;
+                break;
+            case 91304: // Shadow Whip
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            // Atramedes
+            case 77611: // Resonating Clash interrupt
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77709: // Resonating Clash energize
+                spellInfo->Effects[EFFECT_1].TargetB = TARGET_UNIT_SRC_AREA_ALLY;
+                spellInfo->Effects[EFFECT_2].TargetB = TARGET_UNIT_SRC_AREA_ALLY;
+                break;
+            case 77782: // Sonic Flames dmg
+                spellInfo->Effects[EFFECT_0].TargetA = TARGET_UNIT_TARGET_ANY;
+                break;
+            case 77672: // Sinar Pulse target
+                spellInfo->MaxAffectedTargets = 3;
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77612: // Modulation
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 77675: // Sonar Pulse dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 77982: // Searing Flame dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 78115: // Sonar Fireball
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 92553: // Sonar Bomb dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 77966: // Searing Flame Missile
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(23);
+                break;
+            case 78353: // Roaring Flame dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 78023: // Roaring Flame aura dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[EFFECT_2].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 78875: // Devastation
+                spellInfo->TargetAuraSpell = 0;
+                break;
+            case 78868: // Devastation dmg
+                spellInfo->Effects[EFFECT_0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            // Nefarian
+            case 78684: //  Hail of Bones
+                spellInfo->DurationEntry = sSpellDurationStore.LookupEntry(21);
+                break;
+            case 77826: // Shadowflame Breath
+                spellInfo->Effects[EFFECT_2].TargetA = TARGET_UNIT_CONE_ENTRY;
+                break;
+            // ENDOF BLACKWING DESCENT SPELLS
+            // The Bastion of Twilight (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
+            // BASTION OF TWILIGHT SPELLS
+            //
+            // Trash
+            case 85647: // Mind Sear dmg
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 85697:
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
+                break;
+            // Halfus Wyrmbreaker
+            case 87683: // Dragon Vengeance
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS;
+                break;
+            case 87609: // Atrophic Poison
+                spellInfo->AttributesCu |= SPELL_ATTR0_CU_CAN_STACK_FROM_DIFF_CASTERS;
+                break;
+            case 83710: // Furious Roar
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 83719: // Fireball Barrage aoe
+                spellInfo->Effects[0].TargetA = TARGET_UNIT_CASTER;
+                spellInfo->MaxAffectedTargets = 1;
+                break;
+            case 83855: // Scorching Breath dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 83734: // Fireball Barrage dmg0
+            case 83721: // Fireball Barrage dmg1
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(26);
+                break;
+            // Theralion & Valiona
+            case 86380: // Dazzling Destruction Summon Missile
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 86369: // Twilight Blast
+                spellInfo->Speed = 15;
+                break;
+            case 86371: // Twilight Blast dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 86505: // Fabolous Flames dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(32);
+                break;
+            case 86607: // Engulfing Magic
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 86825: // Blackout dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 86013: // Twilight Meteorite
+                spellInfo->Speed = 15;
+                break;
+            case 86014: // Twilight Meteorite dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 88518: // Twilight Meteorite Mark
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 86199: // Twilight Flame dmg1
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[1].Effect = 0;
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 86228: // Twilight Flame dmg2
+                spellInfo->TargetAuraSpell = 0;
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 86305: // Unstable Twilight dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 86202: // Twilight Shift Aura 1
+            case 88436: // Twilight Shift Aura 2
+                spellInfo->Effects[0].MiscValue = 16;
+                break;
+            case 86210: // Twilight Zone
+                spellInfo->Effects[0].Effect = 0;
+                break;
+            case 86214: // Twilight Zone dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93019: // Rift Blast
+                spellInfo->MaxAffectedTargets = 1;
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 93055: // Shifting Reality
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            // Cho'gall
+            case 91303: // Conversion
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 81571: // Unleashed Shadows dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 81538: // Blaze dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 81713: // Depravity
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                break;
+            case 81761: // Spilled Blood of the Old God dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 82919: // Sprayed Corruption
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(9);
+                break;
+            case 82299: // Fester Blood
+                spellInfo->Effects[0].TargetA = 1;
+                spellInfo->Effects[0].TargetB = 0;
+                spellInfo->Effects[0].Effect = 3;
+                spellInfo->Effects[1].Effect = 0;
+                break;
+            case 82630: // Comsume Blood of the Old God
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82414: // Darkened Creations
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82433: // Darkened Creations sum
+                spellInfo->Effects[0].TargetA = 1;
+                break;
+            case 82361: // Corruption of the Old God
+                spellInfo->Effects[1].Effect = 0;
+                break;
+            case 82363: // Corruption of the Old God dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82151: // Shadow Bolt
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 91317: // Worshipping
+                spellInfo->Effects[2].Effect = 0;
+            case 91331: // Twisted Devotion
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 93103: // Corrupted Blood aura
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->ExcludeTargetAuraSpell = 93103;
+                break;
+            // Sinestra
+            case 95822: // Twilight Flame dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 95855: // Call of Flames
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 89435: // Wrack aoe
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 89421: // Wrack dmg
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                spellInfo->AttributesEx6 |= SPELL_ATTR6_NO_DONE_PCT_DAMAGE_MODS;
+                break;
+            case 90028: // Unleash Essence
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 90045: // Indomitable dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(14);
+                break;
+            case 87655: // Twilight Infusion dummy
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 87231: // Fiery Barrier aura
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(10);
+                break;
+            case 88146: // Twilight Essence dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(22);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(22);
+                break;
+            case 92852: // Twilight Slicer dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 95564: // Twilight Infusion missile
+                spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 89299: // Twilight Spit dmg
+                spellInfo->AttributesEx3  |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
+                break;
+            case 92958: // Twilight Pulse dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            // Council of Ascendents
+            case 82746: // Glaciate
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 92548: // Glaciate 2
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82699: // Water Bomb
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82762: // Waterlogged
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(29);
+                break;
+            case 77347: // Water Bomb Summon
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(12);
+                break;
+            case 82666: // Frost Imbued
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 82859: // Inferno Rush
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 82856: // Inferno Jump
+                spellInfo->Effects[1].Effect = 0;
+                break;
+            case 82663: // Flame Imbued
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);
+                break;
+            case 83067: // Thundershock
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 83099: // Lightning Rod
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 83300: // Chain Lightning dummy
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 83282: // Chain Lightning
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 83070: // Lightning Blast
+                spellInfo->Effects[0].TargetA = TARGET_UNIT_TARGET_ENEMY;
+                spellInfo->Effects[0].TargetB = 0;
+                spellInfo->Effects[1].Effect = 0;
+                break;
+            case 83078: // Disperse 1
+                spellInfo->Effects[0].Effect = 0;
+                break;
+            case 83565: // Quake
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 84915: // Liquid Ice dmg
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(8);
+                break;
+            case 84948: // Gravity Crush
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[1].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                spellInfo->Effects[2].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            case 84913: // Lava Seed
+                spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(28);
+                break;
+            // ENDOF BASTION OF TWILIGHT SPELLS
             // Gate of the Setting Sun (from Legends of Azeroth Pandaria's LoadSpellInfoCorrections)
             case 118787: // Resin Burst
                 spellInfo->Effects[0].RadiusEntry = sSpellRadiusStore.LookupEntry(13);

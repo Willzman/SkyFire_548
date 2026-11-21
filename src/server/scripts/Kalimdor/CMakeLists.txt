@@ -126,6 +126,11 @@ set(scripts_STAT_SRCS
   Kalimdor/OnyxiasLair/boss_onyxia.cpp
   Kalimdor/OnyxiasLair/onyxias_lair.h
   Kalimdor/OnyxiasLair/instance_onyxias_lair.cpp
+  Kalimdor/ThroneoftheFourWinds/boss_alakir.cpp
+  Kalimdor/ThroneoftheFourWinds/boss_conclave_of_wind.cpp
+  Kalimdor/ThroneoftheFourWinds/instance_throne_of_the_four_winds.cpp
+  Kalimdor/ThroneoftheFourWinds/throne_of_the_four_winds.cpp
+  Kalimdor/ThroneoftheFourWinds/throne_of_the_four_winds.h
   Kalimdor/RagefireChasm/ragefire_chasm.h
   Kalimdor/RagefireChasm/instance_ragefire_chasm.cpp
   Kalimdor/RagefireChasm/boss_adarogg.cpp

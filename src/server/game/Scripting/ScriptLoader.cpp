@@ -149,6 +149,21 @@ void AddSC_boss_flamegor();
 void AddSC_boss_chromaggus();
 void AddSC_boss_nefarian();
 void AddSC_instance_blackwing_lair();
+void AddSC_blackwing_descent();
+void AddSC_boss_atramedes();
+void AddSC_boss_bwd_nefarian();
+void AddSC_boss_chimaeron();
+void AddSC_boss_magmaw();
+void AddSC_boss_maloriak();
+void AddSC_boss_omnotron_defence_system();
+void AddSC_instance_blackwing_descent();
+void AddSC_bastion_of_twilight();
+void AddSC_boss_chogall();
+void AddSC_boss_ascendant_council();
+void AddSC_boss_halfus_wyrmbreaker();
+void AddSC_boss_sinestra();
+void AddSC_boss_theralion_and_valiona();
+void AddSC_instance_bastion_of_twilight();
 void AddSC_deadmines();                      //Deadmines
 void AddSC_instance_deadmines();
 void AddSC_boss_glubtok();
@@ -354,6 +369,10 @@ void AddSC_boss_ptheradras();
 void AddSC_instance_maraudon();
 void AddSC_boss_onyxia();                    //Onyxia's Lair
 void AddSC_instance_onyxias_lair();
+void AddSC_boss_alakir();
+void AddSC_boss_conclave_of_wind();
+void AddSC_instance_throne_of_the_four_winds();
+void AddSC_throne_of_the_four_winds();
 void AddSC_boss_amnennar_the_coldbringer();  //Razorfen Downs
 void AddSC_razorfen_downs();
 void AddSC_instance_razorfen_downs();
@@ -1080,6 +1099,21 @@ void AddEasternKingdomsScripts()
     AddSC_boss_chromaggus();
     AddSC_boss_nefarian();
     AddSC_instance_blackwing_lair();
+    AddSC_blackwing_descent();
+    AddSC_boss_atramedes();
+    AddSC_boss_bwd_nefarian();
+    AddSC_boss_chimaeron();
+    AddSC_boss_magmaw();
+    AddSC_boss_maloriak();
+    AddSC_boss_omnotron_defence_system();
+    AddSC_instance_blackwing_descent();
+    AddSC_bastion_of_twilight();
+    AddSC_boss_chogall();
+    AddSC_boss_ascendant_council();
+    AddSC_boss_halfus_wyrmbreaker();
+    AddSC_boss_sinestra();
+    AddSC_boss_theralion_and_valiona();
+    AddSC_instance_bastion_of_twilight();
     AddSC_deadmines();                      //Deadmines
     AddSC_instance_deadmines();
     AddSC_boss_glubtok();
@@ -1290,6 +1324,10 @@ void AddKalimdorScripts()
     AddSC_instance_maraudon();
     AddSC_boss_onyxia();                    //Onyxia's Lair
     AddSC_instance_onyxias_lair();
+    AddSC_boss_alakir();
+    AddSC_boss_conclave_of_wind();
+    AddSC_instance_throne_of_the_four_winds();
+    AddSC_throne_of_the_four_winds();
     AddSC_boss_amnennar_the_coldbringer();  //Razorfen Downs
     AddSC_razorfen_downs();
     AddSC_instance_razorfen_downs();
