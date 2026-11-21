@@ -5,6 +5,7 @@
 
 #include "ArenaTeam.h"
 #include "ArenaTeamMgr.h"
+#include "RatedPvp.h"
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
 #include "BattlePetMgr.h"
@@ -717,8 +718,8 @@ void Battleground::EndBattleground(uint32 winner)
 {
     RemoveFromBGFreeSlotQueue();
 
-    ArenaTeam* winnerArenaTeam = NULL;
-    ArenaTeam* loserArenaTeam = NULL;
+    RatedPvpTeam* winnerArenaTeam = NULL;
+    RatedPvpTeam* loserArenaTeam = NULL;
 
     uint32 loserTeamRating = 0;
     uint32 loserMatchmakerRating = 0;
@@ -759,8 +760,8 @@ void Battleground::EndBattleground(uint32 winner)
     // arena rating calculation
     if (isArena() && isRated())
     {
-        winnerArenaTeam = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(winner));
-        loserArenaTeam = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(GetOtherTeam(winner)));
+        winnerArenaTeam = GetRatedTeam(winner);
+        loserArenaTeam = GetRatedTeam(GetOtherTeam(winner));
 
         if (winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
         {
@@ -778,7 +779,9 @@ void Battleground::EndBattleground(uint32 winner)
                 SetArenaMatchmakerRating(GetOtherTeam(winner), loserMatchmakerRating + loserMatchmakerChange);
                 SetArenaTeamRatingChangeForTeam(winner, winnerChange);
                 SetArenaTeamRatingChangeForTeam(GetOtherTeam(winner), loserChange);
-                SF_LOG_DEBUG("bg.arena", "Arena match Type: %u for Team1Id: %u - Team2Id: %u ended. WinnerTeamId: %u. Winner rating: +%d, Loser rating: %d", m_ArenaType, m_ArenaTeamIds[TEAM_ALLIANCE], m_ArenaTeamIds[TEAM_HORDE], winnerArenaTeam->GetId(), winnerChange, loserChange);
+                SetRatedResult(winner, winnerTeamRating, winnerChange, winnerMatchmakerRating);
+                SetRatedResult(GetOtherTeam(winner), loserTeamRating, loserChange, loserMatchmakerRating);
+                SF_LOG_DEBUG("bg.arena", "Arena match Type: %u for Team1Id: %u - Team2Id: %u ended. WinnerTeamId: %u. Winner rating: +%d, Loser rating: %d", m_ArenaType, m_ArenaTeamIds[TEAM_ALLIANCE], m_ArenaTeamIds[TEAM_HORDE], winner, winnerChange, loserChange);
                 if (sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_ARENA_LOG_EXTENDED_INFO))
                     for (Battleground::BattlegroundScoreMap::const_iterator itr = GetPlayerScoresBegin(); itr != GetPlayerScoresEnd(); ++itr)
                         if (Player* player = ObjectAccessor::FindPlayer(itr->first))
@@ -941,6 +944,7 @@ void Battleground::EndBattleground(uint32 winner)
         // this way all arena team members will get notified, not only the ones who participated in this match
         winnerArenaTeam->NotifyStatsChanged();
         loserArenaTeam->NotifyStatsChanged();
+        sRatedPvpMgr->RecalculateRank(RatedPvpSlot(winnerArenaTeam->GetSlot()));
     }
 
     if (winmsg_id)
@@ -1022,8 +1026,8 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
                 if (isRated() && GetStatus() == STATUS_IN_PROGRESS)
                 {
                     //left a rated match while the encounter was in progress, consider as loser
-                    ArenaTeam* winnerArenaTeam = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(GetOtherTeam(team)));
-                    ArenaTeam* loserArenaTeam = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(team));
+                    RatedPvpTeam* winnerArenaTeam = GetRatedTeam(GetOtherTeam(team));
+                    RatedPvpTeam* loserArenaTeam = GetRatedTeam(team);
                     if (winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam)
                         loserArenaTeam->MemberLost(player, GetArenaMatchmakerRating(GetOtherTeam(team)));
                 }
@@ -1044,8 +1048,8 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
             if (isRated() && GetStatus() == STATUS_IN_PROGRESS)
             {
                 //left a rated match while the encounter was in progress, consider as loser
-                ArenaTeam* others_arena_team = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(GetOtherTeam(team)));
-                ArenaTeam* players_arena_team = sArenaTeamMgr->GetArenaTeamById(GetArenaTeamIdForTeam(team));
+                RatedPvpTeam* others_arena_team = GetRatedTeam(GetOtherTeam(team));
+                RatedPvpTeam* players_arena_team = GetRatedTeam(team);
                 if (others_arena_team && players_arena_team)
                     players_arena_team->OfflineMemberLost(guid, GetArenaMatchmakerRating(GetOtherTeam(team)));
             }

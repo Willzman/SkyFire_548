@@ -10,6 +10,7 @@
 #include "WorldPacket.h"
 
 #include "ArenaTeam.h"
+#include "RatedPvp.h"
 #include "BattlegroundAB.h"
 #include "BattlegroundAV.h"
 #include "BattlegroundBE.h"
@@ -355,7 +356,8 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
 
     data->WriteBit(bg->GetStatus() == STATUS_WAIT_LEAVE);    // If Ended
     data->WriteBit(0);                                       // Unk Some player stuff
-    data->WriteBit(0);                                       // isRated
+    bool const ratedArena = bg->isArena() && bg->isRated();
+    data->WriteBit(ratedArena);                              // isRated
 
     data->WriteBits(bg->GetPlayerScoresSize(), 19);
 
@@ -373,9 +375,14 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         ObjectGuid playerGUID = itr->first;
         BattlegroundScore* score = itr->second;
 
+        int32 ratingChange = 0;
+        if (ratedArena)
+            if (RatedPvpTeam* team = bg->GetRatedTeam(player->GetBGTeam()))
+                ratingChange = team->GetRatingChange(itr->first);
+
         data->WriteBit(playerGUID[6]);
         data->WriteBit(player->GetBGTeam() == HORDE ? 0 : 1);
-        data->WriteBit(0);              // Rating Change
+        data->WriteBit(ratingChange != 0);  // Rating Change
         data->WriteBit(playerGUID[0]);
         data->WriteBit(0);              // MMR Change
         data->WriteBit(playerGUID[7]);
@@ -400,6 +407,8 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
         buff.WriteByteSeq(playerGUID[3]);
         buff << uint32(score->DamageDone);              // damage done
         buff << uint32(score->KillingBlows);
+        if (ratingChange)
+            buff << int32(ratingChange);
         buff.WriteByteSeq(playerGUID[1]);
         buff.WriteByteSeq(playerGUID[6]);
         buff.WriteByteSeq(playerGUID[7]);
@@ -575,6 +584,18 @@ void BattlegroundMgr::BuildPvpLogDataPacket(WorldPacket* data, Battleground* bg)
 
     data->FlushBits();
     data->append(buff);
+
+    if (ratedArena)                                          // team ratings, as in Legends of Azeroth Pandaria
+    {
+        Battleground::RatedResult const& horde = bg->GetRatedResult(TEAM_HORDE);
+        Battleground::RatedResult const& alliance = bg->GetRatedResult(TEAM_ALLIANCE);
+        *data << uint32(alliance.NewRating);
+        *data << uint32(horde.NewRating);
+        *data << uint32(alliance.MatchmakerRating);
+        *data << uint32(horde.OldRating);
+        *data << uint32(alliance.OldRating);
+        *data << uint32(horde.MatchmakerRating);
+    }
 
     if (bg->GetStatus() == STATUS_WAIT_LEAVE)
         *data << uint8(bg->GetWinner());

@@ -13,6 +13,7 @@
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Opcodes.h"
+#include "RatedPvp.h"
 #include "Player.h"
 
 //This send to player windows for invite player to join the war
@@ -234,20 +235,26 @@ void WorldSession::HandleBfExitRequest(WorldPacket& recvData)
         bf->AskToLeaveQueue(_player);
 }
 
-void WorldSession::HandleBattlefieldRatedInfoRequest(WorldPacket& recvData)
+void WorldSession::HandleBattlefieldRatedInfoRequest(WorldPacket& /*recvData*/)
 {
-    WorldPacket data(SMSG_BATTLEFIELD_RATED_INFO, 4 * (8 * 4));
-    for (uint8 i = 0; i < 4; i++)
+    SendRatedPvpInfo();
+}
+
+// Per bracket (2v2, 3v3, 5v5, rated battleground), as in Legends of Azeroth Pandaria 5.4.8
+void WorldSession::SendRatedPvpInfo()
+{
+    WorldPacket data(SMSG_BATTLEFIELD_RATED_INFO, PVP_SLOT_MAX * 8 * 4);
+    for (uint8 slot = PVP_SLOT_ARENA_2v2; slot < PVP_SLOT_MAX; ++slot)
     {
-        //TODO: PLAYER_FIELD_PVP_INFO, Updatefield Data 8*3 = size 24
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
-        data << uint32(0);
+        RatedPvpInfo const* info = _player ? sRatedPvpMgr->GetInfo(RatedPvpSlot(slot), _player->GetGUID()) : NULL;
+        data << uint32(0);                                  // unknown, always 0
+        data << uint32(info ? info->SeasonWins : 0);
+        data << uint32(info ? info->SeasonGames : 0);
+        data << uint32(info ? info->Rating : 0);
+        data << uint32(info ? info->WeekWins : 0);
+        data << uint32(info ? info->WeekBest : 0);
+        data << uint32(info ? info->WeekGames : 0);
+        data << uint32(info ? info->SeasonBest : 0);
     }
     SendPacket(&data);
 }
