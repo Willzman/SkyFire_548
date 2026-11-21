@@ -175,6 +175,9 @@ public:
 
     // .playerbots state: what the bot did on its last AI tick and why it may be idle.
     std::string DescribeState() const;
+    // Units holding the bot on their threat list (who keeps it in combat): name,
+    // entry, distance, whether they can reach it, their victim. "nobody" if none.
+    std::string DescribeThreatHolders() const;
     // A mob the bot stood next to without line of sight; target pickers pass it over.
     bool IsUnreachableTarget(Unit const* target) const;
 
@@ -337,6 +340,9 @@ private:
     bool IsPureCaster() const;
     // Healer dps that fights in melee: mistweaver, holy paladin, resto catweave.
     bool IsMeleeHealerDps() const;
+    // A healer deals damage when nobody needs heals: with +healer dps, or always
+    // when it has no group (nobody else will kill what attacks it).
+    bool HealerDealsDamage() const;
     // Hunter ranged Auto Shot (spell 75), not melee Attack().
     bool IsHunterRanged() const;
     bool GroupInCombat() const;
