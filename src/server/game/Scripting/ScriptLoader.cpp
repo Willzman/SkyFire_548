@@ -696,6 +696,22 @@ void AddSC_boss_sha_of_fear();
 void AddSC_boss_tsulong();
 void AddSC_instance_terrace_of_endless_spring();
 void AddSC_terrace_of_endless_spring();
+// Throne of Thunder
+void AddSC_boss_council_of_elders();
+void AddSC_boss_dark_animus();
+void AddSC_boss_durumu();
+void AddSC_boss_horridon();
+void AddSC_boss_iron_qon();
+void AddSC_boss_jikun();
+void AddSC_boss_jinrokh();
+void AddSC_boss_lei_shen();
+void AddSC_boss_megaera();
+void AddSC_boss_primordius();
+void AddSC_boss_ra_den();
+void AddSC_boss_tortos();
+void AddSC_boss_twin_consorts();
+void AddSC_instance_throne_of_thunder();
+void AddSC_throne_of_thunder();
 // Valley of the four Winds
 void AddSC_valley_of_the_four_winds();
 // Pandaria zones, world bosses and Timeless Isle (ported from LoA)
@@ -1555,6 +1571,22 @@ void AddPandariaScripts()
     AddSC_boss_tsulong();
     AddSC_instance_terrace_of_endless_spring();
     AddSC_terrace_of_endless_spring();
+    // Throne of Thunder
+    AddSC_boss_council_of_elders();
+    AddSC_boss_dark_animus();
+    AddSC_boss_durumu();
+    AddSC_boss_horridon();
+    AddSC_boss_iron_qon();
+    AddSC_boss_jikun();
+    AddSC_boss_jinrokh();
+    AddSC_boss_lei_shen();
+    AddSC_boss_megaera();
+    AddSC_boss_primordius();
+    AddSC_boss_ra_den();
+    AddSC_boss_tortos();
+    AddSC_boss_twin_consorts();
+    AddSC_instance_throne_of_thunder();
+    AddSC_throne_of_thunder();
     // Valley of the four Winds
     AddSC_valley_of_the_four_winds();
     // Pandaria zones, world bosses and Timeless Isle (ported from LoA)

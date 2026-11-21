@@ -60,6 +60,22 @@ set(scripts_STAT_SRCS
   Pandaria/TerraceOfEndlessSpring/instance_terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.cpp
   Pandaria/TerraceOfEndlessSpring/terrace_of_endless_spring.h
+  Pandaria/ThroneOfThunder/boss_council_of_elders.cpp
+  Pandaria/ThroneOfThunder/boss_dark_animus.cpp
+  Pandaria/ThroneOfThunder/boss_durumu.cpp
+  Pandaria/ThroneOfThunder/boss_horridon.cpp
+  Pandaria/ThroneOfThunder/boss_iron_qon.cpp
+  Pandaria/ThroneOfThunder/boss_jikun.cpp
+  Pandaria/ThroneOfThunder/boss_jinrokh.cpp
+  Pandaria/ThroneOfThunder/boss_lei_shen.cpp
+  Pandaria/ThroneOfThunder/boss_megaera.cpp
+  Pandaria/ThroneOfThunder/boss_primordius.cpp
+  Pandaria/ThroneOfThunder/boss_ra_den.cpp
+  Pandaria/ThroneOfThunder/boss_tortos.cpp
+  Pandaria/ThroneOfThunder/boss_twin_consorts.cpp
+  Pandaria/ThroneOfThunder/instance_throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.cpp
+  Pandaria/ThroneOfThunder/throne_of_thunder.h
   Pandaria/zone_valley_of_the_four_winds.cpp
   Pandaria/zone_wandering_island.cpp
   Pandaria/zone_wandering_island_loa.cpp
