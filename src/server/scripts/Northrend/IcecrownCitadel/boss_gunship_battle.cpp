@@ -2678,7 +2678,7 @@ class spell_gb_heat_drain : public SpellScriptLoader
                     if (caster->GetPower(POWER_ENERGY) >= 100 && caster->GetTypeId() == TypeID::TYPEID_UNIT)
                     {
                         caster->CastSpell(caster, SPELL_OVERHEAT, true);
-                        if (caster->GetCharmerOrOwnerPlayerOrPlayerItself())
+                        if (Player* owner = caster->GetCharmerOrOwnerPlayerOrPlayerItself())
                         {
                             // LoA: owner->GetSpellHistory()->SendCooldown(caster->ToCreature()->m_spells[0], 3000); (client cooldown display; SkyFire has no SpellHistory)
                             // LoA: owner->GetSpellHistory()->SendCooldown(caster->ToCreature()->m_spells[1], 3000); (client cooldown display; SkyFire has no SpellHistory)
