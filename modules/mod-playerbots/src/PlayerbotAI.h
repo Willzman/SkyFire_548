@@ -272,6 +272,7 @@ private:
     void ExpireEmptyVendorHubs();
     bool TravelToQuestObjective();
     bool TravelToNearbyQuestgiver();
+    bool TravelToQuestStarter();
     uint32 CountFreeBagSlots() const;
     bool ShouldVendorDumpItem(Item* item) const;
     bool HasVendorJunk() const;
@@ -634,6 +635,10 @@ private:
     uint32 _emptyVendorHubsSince = 0;
     // Spawn guid of the vendor hub the current travel goes to (0: other travel).
     uint32 _vendorHubTravelGuid = 0;
+    // Quest-starter search: getMSTime() of the next search, and starter entries
+    // already walked to -> getMSTime() before which they are not tried again.
+    uint32 _starterSearchMs = 0;
+    std::unordered_map<uint32, uint32> _starterRetry;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.
