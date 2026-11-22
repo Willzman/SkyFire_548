@@ -88,7 +88,8 @@ UPDATE `creature_template` SET `mechanic_immune_mask` = 1 WHERE `entry` = 36564;
 UPDATE `creature_template` SET `mechanic_immune_mask` = 0 WHERE `entry` = 36666; -- Spectral Warden
 UPDATE `creature_template` SET `flags_extra` = 130 WHERE `entry` = 36967; -- Spiteful Apparition (Ambient)
 UPDATE `creature_template` SET `InhabitType` = 4 WHERE `entry` = 37094; -- Crucible of Souls
-UPDATE `creature_template` SET `npcflag` = 0, `flags_extra` = 0 WHERE `entry` = 37582; -- Archmage Koreln
+UPDATE `creature_template` SET `flags_extra` = 0 WHERE `entry` = 37582; -- Archmage Koreln (keeps the questgiver flag: SkyFire has a quest on her)
+UPDATE `creature_template` SET `npcflag` = 2 WHERE `entry` = 37582 AND `npcflag` = 0;
 UPDATE `creature_template` SET `unit_flags` = 0, `flags_extra` = 0 WHERE `entry` = 37596; -- Lady Sylvanas Windrunner
 UPDATE `creature_template` SET `unit_flags` = 0, `flags_extra` = 0 WHERE `entry` = 37597; -- Lady Jaina Proudmoore
 UPDATE `creature_template` SET `flags_extra` = 0 WHERE `entry` = 37774; -- Archmage Elandra
