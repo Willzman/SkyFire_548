@@ -392,10 +392,11 @@ namespace
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
-            // Class/profession trainers often also carry QUESTGIVER. Spells come from
-            // init — never walk up and open trainer gossip (spams DB/gossip errors).
-            if (creature->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_TRAINER))
-                return false;
+            // Class/profession trainers often also carry QUESTGIVER, and many class
+            // quests start or end at one (Ammen Vale: Urgent Delivery! ends at the
+            // trainer Zalduun). They count like any questgiver below: only with a
+            // quest the bot can take or hand in (QuestgiverHasUsefulWork), and the
+            // trainer menu itself is never opened (TryGossipForVendorOrQuest).
             if (!creature->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_QUESTGIVER))
                 return false;
             if (_ai && (_ai->IsQuestNpcIgnored(creature->GetEntry())
