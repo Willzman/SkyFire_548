@@ -623,6 +623,10 @@ private:
     std::unordered_map<uint32, uint32> _enderWaits;
     // Complete quest -> closest 2D distance to its ender at the start of a trip.
     std::unordered_map<uint32, float> _enderBestDist;
+    // Complete quest -> trips to its ender that a fight cut short (capped separately).
+    std::unordered_map<uint32, uint32> _enderFoughtTrips;
+    // The bot was in combat since the last trip to a quest ender started.
+    bool _enderTripFought = false;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.

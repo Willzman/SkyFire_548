@@ -61,6 +61,8 @@ namespace
     uint32 const ENDER_WAIT_TICKS = 20;
     uint32 const ENDER_MAX_TRIPS = 3;
     float const ENDER_TRIP_PROGRESS = 10.0f;
+    // Trips a fight cut short before giving up all the same.
+    uint32 const ENDER_MAX_FOUGHT_TRIPS = 10;
     // Failed casts further apart than this are not "in a row".
     uint32 const SPELL_FAIL_WINDOW_MS = 30 * IN_MILLISECONDS;
     // A bot this close to an objective spawn was on site when its quest stalled.
@@ -224,6 +226,7 @@ bool PlayerbotAI::TurnInQuest(Quest const* quest, Object* giver)
         _enderTrips.erase(questId);
         _enderWaits.erase(questId);
         _enderBestDist.erase(questId);
+        _enderFoughtTrips.erase(questId);
         return true;
     }
 
@@ -622,7 +625,7 @@ bool PlayerbotAI::TravelToQuestEnder()
             sBotFindings->Record(BotFindingType::QuestEnderMissing, questId, entry, _bot);
             giveUp = true;
         }
-        else if (_enderTrips[questId] >= ENDER_MAX_TRIPS)
+        else if (_enderTrips[questId] >= ENDER_MAX_TRIPS || _enderFoughtTrips[questId] >= ENDER_MAX_FOUGHT_TRIPS)
         {
             sBotFindings->RecordAt(BotFindingType::PathFailed, _bot, spawn.x, spawn.y, spawn.z,
                 "quest ender " + EntryLabel(entry, false), int32(spawn.mapId));
@@ -635,6 +638,7 @@ bool PlayerbotAI::TravelToQuestEnder()
             _enderTrips.erase(questId);
             _enderWaits.erase(questId);
             _enderBestDist.erase(questId);
+            _enderFoughtTrips.erase(questId);
             _abandonedQuests.insert(questId);
             if (sPlayerbotMgr->ShouldAbandonStalledQuests())
                 AbandonQuest(questId);
@@ -643,6 +647,17 @@ bool PlayerbotAI::TravelToQuestEnder()
 
         if (TravelToSpawn(spawn))
         {
+            // The last trip ended in a fight (hostiles on the street next to the
+            // ender, e.g. Rampaging Worgens in Gilneas): not a blocked path, so it
+            // counts only toward the looser ENDER_MAX_FOUGHT_TRIPS.
+            bool const fought = _enderTripFought;
+            _enderTripFought = false;
+            if (fought && _enderTrips.count(questId))
+            {
+                ++_enderFoughtTrips[questId];
+                return true;
+            }
+
             // Closer than at the start of every earlier trip: the last one was cut
             // short (a fight, a rest), not blocked, so it is not held against the bot.
             if (spawn.mapId == _bot->GetMapId())

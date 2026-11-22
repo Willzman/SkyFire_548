@@ -1649,6 +1649,11 @@ void PlayerbotAI::UpdateAI(uint32 diff)
         _stillMs = 0;
     _lastStep = "start";
 
+    // A fight on the way to a quest ender ends the trip; TravelToQuestEnder does
+    // not hold such a trip against the bot.
+    if (_bot->IsInCombat())
+        _enderTripFought = true;
+
     // Play-tester: passive findings, then a directed quest test if one is running.
     UpdateTester(BOT_AI_UPDATE_INTERVAL);
 
