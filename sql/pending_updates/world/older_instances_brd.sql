@@ -173,3 +173,8 @@ INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `bytes1`, `bytes2`, `e
 (9689046, 0, 0, 0, 1, 0, '99201');
 
 -- smart_scripts from the LoA world DB for creatures that had no script and no SmartAI rows
+
+-- gossip menus (from LoA) for creatures that now have the gossip flag
+UPDATE `creature_template` SET `gossip_menu_id` = 1822 WHERE `entry` = 9021 AND `gossip_menu_id` = 0; -- Kharan Mighthammer
+UPDATE `creature_template` SET `gossip_menu_id` = 12128 WHERE `entry` = 9503 AND `gossip_menu_id` = 0; -- Private Rocknot
+UPDATE `creature_template` SET `gossip_menu_id` = 11387 WHERE `entry` = 23872 AND `gossip_menu_id` = 0; -- Coren Direbrew
