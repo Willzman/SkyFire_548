@@ -21,7 +21,7 @@
  * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
  */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
 #include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
@@ -324,13 +324,13 @@ Position const LichKingIntro[3]   =
 };
 Position const OutroPosition1     = { 493.5723f, -2124.649f, 840.8569f, 0.0f      };
 Position const OutroFlying        = { 508.9897f, -2124.561f, 845.3565f, 0.0f      };
-Position const TerenasSpawn       = { 495.5542f, -2517.012f, 1050.000f, 4.6993f   };
+} extern Position const TerenasSpawn       = { 495.5542f, -2517.012f, 1050.000f, 4.6993f   }; namespace { // shared through icecrown_citadel.h: external linkage
 Position const TerenasSpawnHeroic = { 495.7080f, -2523.760f, 1050.000f, 0.0f      };
-Position const SpiritWardenSpawn  = { 495.3406f, -2529.983f, 1050.000f, 1.5592f   };
-Position const JainaSpawnPos      = { -48.65278f, 2211.026f, 27.98586f, 3.124139f };
-Position const MuradinSpawnPos    = { -47.34549f, 2208.087f, 27.98586f, 3.106686f };
-Position const UtherSpawnPos      = { -26.58507f, 2211.524f, 30.19898f, 3.124139f };
-Position const SylvanasSpawnPos   = { -41.45833f, 2222.891f, 27.98586f, 3.647738f };
+} extern Position const SpiritWardenSpawn  = { 495.3406f, -2529.983f, 1050.000f, 1.5592f   }; namespace { // shared through icecrown_citadel.h: external linkage
+} extern Position const JainaSpawnPos      = { -48.65278f, 2211.026f, 27.98586f, 3.124139f }; namespace { // shared through icecrown_citadel.h: external linkage
+} extern Position const MuradinSpawnPos    = { -47.34549f, 2208.087f, 27.98586f, 3.106686f }; namespace { // shared through icecrown_citadel.h: external linkage
+} extern Position const UtherSpawnPos      = { -26.58507f, 2211.524f, 30.19898f, 3.124139f }; namespace { // shared through icecrown_citadel.h: external linkage
+} extern Position const SylvanasSpawnPos   = { -41.45833f, 2222.891f, 27.98586f, 3.647738f }; namespace { // shared through icecrown_citadel.h: external linkage
 Position const AlexandrosSpawnPos = { -66.92297f, 2158.286f, 30.65429f, 3.883230f };
 
 enum MovePoints

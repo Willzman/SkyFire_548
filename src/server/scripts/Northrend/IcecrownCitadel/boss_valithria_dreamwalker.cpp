@@ -21,7 +21,7 @@
  * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
  */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
 #include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
 #include "ScriptedGossip.h"
@@ -180,7 +180,7 @@ enum Actions
     ACTION_EVADE        = 5,
 };
 
-Position const ValithriaSpawnPos = {4210.813f, 2484.443f, 364.9558f, 0.01745329f};
+} extern Position const ValithriaSpawnPos = {4210.813f, 2484.443f, 364.9558f, 0.01745329f}; namespace { // shared through icecrown_citadel.h: external linkage
 
 class RisenArchmageCheck
 {
