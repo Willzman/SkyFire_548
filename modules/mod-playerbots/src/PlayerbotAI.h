@@ -269,6 +269,7 @@ private:
     // The reward choice to take, as its item id (what RewardQuest expects), 0 when none.
     uint32 BestRewardItem(Quest const* quest) const;
     bool TravelToVendorHub(bool preferRepair);
+    void ExpireEmptyVendorHubs();
     bool TravelToQuestObjective();
     bool TravelToNearbyQuestgiver();
     uint32 CountFreeBagSlots() const;
@@ -627,6 +628,10 @@ private:
     std::unordered_map<uint32, uint32> _enderFoughtTrips;
     // The bot was in combat since the last trip to a quest ender started.
     bool _enderTripFought = false;
+    // Vendor hub spawn guids the bot reached and found no vendor at (another
+    // phase), and since when the set has been filling.
+    std::unordered_set<uint32> _emptyVendorHubs;
+    uint32 _emptyVendorHubsSince = 0;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.

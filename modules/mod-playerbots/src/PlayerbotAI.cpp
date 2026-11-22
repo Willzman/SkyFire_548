@@ -220,6 +220,10 @@ namespace
     // How far a bot will walk to loot a corpse or reach a repairer.
     // Keep loot near the group — long seeks cause follow↔loot thrash.
     constexpr float BOT_LOOT_SEEK_DIST = 25.0f;
+    // A bot this close to a vendor hub with no vendor in sight finds the hub empty,
+    // and passes over such hubs for this long.
+    constexpr float BOT_VENDOR_HUB_ARRIVED = 10.0f;
+    constexpr uint32 BOT_EMPTY_VENDOR_HUB_MS = 30 * MINUTE * IN_MILLISECONDS;
     // Long enough to fall through to the next ability, short enough to retry once the cause clears.
     constexpr uint32 BOT_SPELL_BACKOFF_MS = 3000;
     constexpr float BOT_LOOT_LEADER_RADIUS = 40.0f;
@@ -329,7 +333,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
@@ -346,7 +352,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
@@ -364,7 +372,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
@@ -5720,6 +5730,15 @@ void PlayerbotAI::HandleVendor()
 
     if (!npc)
     {
+        // At a hub with no usable vendor in sight: it is in a phase the bot is not
+        // in yet (Gilneas: Marie Allen, phase 170 after quest 14094) or despawned.
+        // Without this the bot "travels" to the spot it stands on, for good.
+        ExpireEmptyVendorHubs();
+        if (BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, needRepair && !needSell, &_emptyVendorHubs))
+            if (hub->mapId == _bot->GetMapId()
+                && _bot->GetExactDist2dSq(hub->x, hub->y) <= BOT_VENDOR_HUB_ARRIVED * BOT_VENDOR_HUB_ARRIVED)
+                _emptyVendorHubs.insert(hub->spawnGuid);
+
         if (TravelToVendorHub(needRepair && !needSell))
             return;
         _forceVendor = false;
@@ -5749,12 +5768,25 @@ void PlayerbotAI::HandleVendor()
     _forceSellAll = false;
 }
 
+void PlayerbotAI::ExpireEmptyVendorHubs()
+{
+    // Phases open up as quests are done, so a hub that was empty is tried again later.
+    uint32 const now = getMSTime();
+    if (_emptyVendorHubs.empty())
+        _emptyVendorHubsSince = now;
+    else if (getMSTimeDiff(_emptyVendorHubsSince, now) >= BOT_EMPTY_VENDOR_HUB_MS)
+    {
+        _emptyVendorHubs.clear();
+        _emptyVendorHubsSince = now;
+    }
+}
+
 bool PlayerbotAI::TravelToVendorHub(bool preferRepair)
 {
     if (!_bot || HasTravelDestination())
         return false;
 
-    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, preferRepair);
+    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, preferRepair, &_emptyVendorHubs);
     if (!hub)
         return false;
 
@@ -5783,7 +5815,7 @@ bool PlayerbotAI::NeedsVendorWorkPublic() const
     PlayerbotAI* self = const_cast<PlayerbotAI*>(this);
     if (self->FindNearbyVendor() || self->FindNearbyRepairer())
         return true;
-    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, NeedsRepair() && !HasVendorJunk());
+    BotVendorHub const* hub = sBotVendorHubs->FindNearest(_bot, NeedsRepair() && !HasVendorJunk(), &_emptyVendorHubs);
     if (!hub || hub->mapId != _bot->GetMapId())
         return false;
     float const maxDist = sPlayerbotMgr->GetVendorHubMaxDistance();

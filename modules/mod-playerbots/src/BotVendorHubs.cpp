@@ -92,7 +92,8 @@ uint32 BotVendorHubs::GetCount() const
     return n;
 }
 
-BotVendorHub const* BotVendorHubs::FindNearest(Player const* player, bool preferRepair) const
+BotVendorHub const* BotVendorHubs::FindNearest(Player const* player, bool preferRepair,
+    std::unordered_set<uint32> const* skip) const
 {
     if (!player || !_loaded)
         return nullptr;
@@ -112,7 +113,7 @@ BotVendorHub const* BotVendorHubs::FindNearest(Player const* player, bool prefer
 
     for (BotVendorHub const& hub : it->second)
     {
-        if (!IsFriendlyFaction(player, hub.faction))
+        if (!IsFriendlyFaction(player, hub.faction) || (skip && skip->count(hub.spawnGuid)))
             continue;
 
         float const dx = hub.x - px;
