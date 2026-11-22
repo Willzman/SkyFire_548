@@ -17,31 +17,47 @@
 
 /*
  * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
- * (src/server/scripts/EasternKingdoms/ZulAman/boss_janalai.cpp, GPL v2 or later),
- * replacing SkyFire's empty stub.
- * Changes: text groups follow SkyFire's creature_text rows, uint64 GUIDs, EnterCombat,
- * SkyFire summon/timer API. The 36 Dragonhawk Eggs are summoned by the boss, so their
- * DB spawns are removed by the matching SQL update.
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/ZulAman/boss_janalai.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
  */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
 #include "zulaman.h"
 
 namespace
 {
 
-enum Says
+enum ScriptTexts
 {
-    SAY_AGGRO               = 0,
-    SAY_PLAYER_KILL         = 1,
-    SAY_SUMMON_HATCHER      = 2,
-    SAY_FIRE_BOMB           = 3,
-    SAY_HATCH_ALL_EGGS      = 4,
-    EMOTE_FRENZY            = 5,
-    SAY_DEATH               = 6
+    SAY_AGGRO       = 0,
+    SAY_FIRE_BOMB   = 1,
+    SAY_HATCHER     = 2,
+    SAY_35          = 3,
+    SAY_KILL        = 4,
+    SAY_DEATH       = 5,
 };
 
 enum Spells
@@ -87,10 +103,9 @@ enum Events
 const int area_dx = 44;
 const int area_dy = 51;
 
-const uint8 MaxFireBombs = 40;
-const uint8 MaxEggs = 36;
+const Position posJanalai = {-33.93f, 1149.27f, 19.0f, 0.0f};
 
-const Position posFireWall[4] =
+const Position posFireWall[4] = 
 {
     {-33.89f, 1122.81f, 18.80f, 1.58f},
     {-10.28f, 1149.97f, 18.80f, 3.14f},
@@ -98,7 +113,7 @@ const Position posFireWall[4] =
     {-53.62f, 1150.03f, 18.80f, 0.00f}
 };
 
-const Position posHatchersWay[2][5] =
+const Position posHatchersWay[2][5] = 
 {
     {
         {-87.46f, 1170.09f, 6.0f, 0.0f},
@@ -116,7 +131,7 @@ const Position posHatchersWay[2][5] =
     }
 };
 
-const Position posEggs[MaxEggs] =
+const Position posEggs[36] =
 {
     { -41.177f,  1084.59f, 18.7948f, 1.06465f   },
     { -33.6638f, 1087.02f, 18.7948f, 0.959931f  },
@@ -156,22 +171,6 @@ const Position posEggs[MaxEggs] =
     { -39.7956f, 1081.47f, 18.7948f, 2.74017f   }
 };
 
-void ApplyBossImmunities(Creature* me)
-{
-    me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_GRIP, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_STUN, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_FEAR, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_ROOT, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_FREEZE, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_POLYMORPH, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_HORROR, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_SAPPED, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_CHARM, true);
-    me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_DISORIENTED, true);
-    me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
-}
-
 class boss_janalai : public CreatureScript
 {
     public:
@@ -181,48 +180,57 @@ class boss_janalai : public CreatureScript
         {
             boss_janalaiAI(Creature* creature) : BossAI(creature, DATA_JANALAI)
             {
-                ApplyBossImmunities(me);
+                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_GRIP, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_STUN, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_FEAR, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_ROOT, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_FREEZE, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_POLYMORPH, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_HORROR, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_SAPPED, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_CHARM, true);
+                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_DISORIENTED, true);
+                me->ApplySpellImmune(0, IMMUNITY_STATE, SPELL_AURA_MOD_CONFUSE, true);
             }
 
             bool bEnraged;
 
             uint8 bombsCount;
-            uint64 FireBombsGUID[MaxFireBombs];
+            uint64 FireBombsGUID[40];
 
-            void Reset() OVERRIDE
+            void Reset() override
             {
                 _Reset();
 
-                for (uint8 i = 0; i < MaxEggs; ++i)
+                for (uint8 i = 0; i < 36; ++i)
                     me->SummonCreature(NPC_EGG, posEggs[i], TempSummonType::TEMPSUMMON_DEAD_DESPAWN);
 
-                for (uint8 i = 0; i < MaxFireBombs; ++i)
-                    FireBombsGUID[i] = 0;
+                memset(&FireBombsGUID, 0, sizeof(FireBombsGUID));
                 bombsCount = 0;
                 bEnraged = false;
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/) override
             {
                 _JustDied();
                 Talk(SAY_DEATH);
             }
 
-            void KilledUnit(Unit* victim) OVERRIDE
+            void KilledUnit(Unit* /*victim*/) override
             {
-                if (victim->GetTypeId() == TypeID::TYPEID_PLAYER)
-                    Talk(SAY_PLAYER_KILL);
+                Talk(SAY_KILL);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/) override
             {
                 bEnraged = false;
                 Talk(SAY_AGGRO);
-                _EnterCombat();
                 events.ScheduleEvent(EVENT_FLAME_BREATH, 7000);
                 events.ScheduleEvent(EVENT_SUMMON_HATCHERS, 13000);
                 events.ScheduleEvent(EVENT_TELEPORT, 55000);
                 DoZoneInCombat();
+                instance->SetBossState(DATA_JANALAI, IN_PROGRESS);
             }
 
             void Firewall()
@@ -237,7 +245,7 @@ class boss_janalai : public CreatureScript
             void SpawnBombs()
             {
                 float dx, dy;
-                for (uint8 i = 0; i < MaxFireBombs; ++i)
+                for (uint8 i = 0; i < 40; ++i)
                 {
                     dx = float(irand(-area_dx / 2, area_dx / 2));
                     dy = float(irand(-area_dy / 2, area_dy / 2));
@@ -247,18 +255,17 @@ class boss_janalai : public CreatureScript
                 }
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 diff) override
             {
                 if (!UpdateVictim())
                     return;
 
                 EnterEvadeIfOutOfCombatArea(diff);
-
+                
                 if (me->HealthBelowPct(35) && !bEnraged)
                 {
                     bEnraged = true;
-                    Talk(SAY_HATCH_ALL_EGGS);
-                    Talk(EMOTE_FRENZY);
+                    Talk(SAY_35);
                     DoCast(me, SPELL_FRENZY, true);
                     events.CancelEvent(EVENT_SUMMON_HATCHERS);
                     DoCast(me, SPELL_HATCH_ALL);
@@ -269,8 +276,8 @@ class boss_janalai : public CreatureScript
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    switch (eventId)
-                    {
+                     switch (eventId)
+                     {
                         case EVENT_FLAME_BREATH:
                             me->SetReactState(REACT_PASSIVE);
                             me->AttackStop();
@@ -281,11 +288,10 @@ class boss_janalai : public CreatureScript
                             break;
                         case EVENT_CONTINUE:
                             me->SetReactState(REACT_AGGRESSIVE);
-                            if (me->GetVictim())
-                                AttackStart(me->GetVictim());
+                            AttackStart(me->GetVictim());
                             break;
                         case EVENT_SUMMON_HATCHERS:
-                            Talk(SAY_SUMMON_HATCHER);
+                            Talk(SAY_HATCHER);
                             if (!summons.HasEntry(NPC_AMANISHI_HATCHER1))
                                 me->SummonCreature(NPC_AMANISHI_HATCHER1, posHatchersWay[0][0], TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000);
                             if (!summons.HasEntry(NPC_AMANISHI_HATCHER2))
@@ -301,9 +307,9 @@ class boss_janalai : public CreatureScript
                             events.ScheduleEvent(EVENT_SUMMON_BOMBS, 1000);
                             break;
                         case EVENT_SUMMON_BOMBS:
-                            if (bombsCount < MaxFireBombs)
+                            if (bombsCount < 40)
                             {
-                                if (Creature* pBomb = Unit::GetCreature(*me, FireBombsGUID[bombsCount]))
+                                if (Creature* pBomb = Creature::GetCreature(*me, FireBombsGUID[bombsCount]))
                                     DoCast(pBomb, SPELL_FIRE_BOMB_THROW, true);
                                 bombsCount++;
                                 events.ScheduleEvent(EVENT_SUMMON_BOMBS, 100);
@@ -312,8 +318,8 @@ class boss_janalai : public CreatureScript
                                 events.ScheduleEvent(EVENT_DETONATE_BOMBS, 2000);
                             break;
                         case EVENT_DETONATE_BOMBS:
-                            for (uint8 i = 0; i < MaxFireBombs; ++i)
-                                if (Creature* pBomb = Unit::GetCreature(*me, FireBombsGUID[i]))
+                            for (uint8 i = 0; i < 40; ++i)
+                                if (Creature* pBomb = Creature::GetCreature(*me, FireBombsGUID[i]))
                                 {
                                     pBomb->RemoveAllAuras();
                                     pBomb->CastSpell(pBomb, SPELL_FIRE_BOMB_DAMAGE, true);
@@ -329,16 +335,17 @@ class boss_janalai : public CreatureScript
                             DoCast(me, SPELL_TELE_TO_CENTER, true);
                             events.ScheduleEvent(EVENT_SPAWN_BOMBS, 2000);
                             break;
-                    }
+
+                     }
                 }
 
                 DoMeleeAttackIfReady();
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            return GetZulAmanAI<boss_janalaiAI>(creature);
+            return GetInstanceAI<boss_janalaiAI>(creature);
         }
 };
 
@@ -359,20 +366,20 @@ class npc_janalai_hatcher : public CreatureScript
             InstanceScript* instance;
             uint32 waypoint;
             uint32 WaitTimer;
-            uint8 side;
+            bool side;
             bool hasChangedSide;
             bool isHatching;
 
-            void Reset() OVERRIDE
+            void Reset() override
             {
-                side = (me->GetEntry() == NPC_AMANISHI_HATCHER2) ? 1 : 0;
+                side =(me->GetEntry() ==  24504);
                 waypoint = 0;
                 isHatching = false;
                 hasChangedSide = false;
                 WaitTimer = 1;
             }
 
-            void MovementInform(uint32 /*type*/, uint32 /*pointId*/) OVERRIDE
+            void MovementInform(uint32 /*type*/, uint32 /*pointId*/) override
             {
                 if (waypoint == 5)
                 {
@@ -383,9 +390,9 @@ class npc_janalai_hatcher : public CreatureScript
                     WaitTimer = 1;
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 diff) override
             {
-                if (!instance || instance->GetBossState(DATA_JANALAI) != IN_PROGRESS)
+                if (instance->GetBossState(DATA_JANALAI) != IN_PROGRESS)
                 {
                     me->DespawnOrUnsummon();
                     return;
@@ -393,7 +400,7 @@ class npc_janalai_hatcher : public CreatureScript
 
                 if (!isHatching)
                 {
-                    if (WaitTimer && waypoint < 5)
+                    if (WaitTimer)
                     {
                         me->GetMotionMaster()->Clear();
                         me->GetMotionMaster()->MovePoint(0, posHatchersWay[side][waypoint]);
@@ -420,16 +427,15 @@ class npc_janalai_hatcher : public CreatureScript
                         }
                         else
                             me->DespawnOrUnsummon();
-                    }
-                    else
-                        WaitTimer -= diff;
+
+                    } else WaitTimer -= diff;
                 }
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            return GetZulAmanAI<npc_janalai_hatcherAI>(creature);
+            return GetInstanceAI<npc_janalai_hatcherAI>(creature);
         }
 };
 
@@ -445,7 +451,7 @@ class npc_janalai_egg : public CreatureScript
                 me->SetReactState(REACT_PASSIVE);
             }
 
-            void SpellHit(Unit* /*caster*/, SpellInfo const* spell) OVERRIDE
+            void SpellHit(Unit* /*caster*/, const SpellInfo* spell) override
             {
                 if (spell->Id == SPELL_HATCH_EGG || spell->Id == SPELL_HATCH_ALL)
                 {
@@ -453,13 +459,11 @@ class npc_janalai_egg : public CreatureScript
                     me->DespawnOrUnsummon();
                 }
             }
-
-            void UpdateAI(uint32 /*diff*/) OVERRIDE { }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            return GetZulAmanAI<npc_janalai_eggAI>(creature);
+            return GetInstanceAI<npc_janalai_eggAI>(creature);
         }
 };
 
@@ -475,18 +479,18 @@ class npc_janalai_firebomb : public CreatureScript
                 me->SetReactState(REACT_PASSIVE);
             }
 
-            void SpellHit(Unit* /*caster*/, SpellInfo const* spell) OVERRIDE
+            void SpellHit(Unit* /*caster*/, const SpellInfo* spell) override
             {
                 if (spell->Id == SPELL_FIRE_BOMB_THROW)
+                {
                     DoCast(me, SPELL_FIRE_BOMB_DUMMY, true);
+                }
             }
-
-            void UpdateAI(uint32 /*diff*/) OVERRIDE { }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            return GetZulAmanAI<npc_janalai_firebombAI>(creature);
+            return GetInstanceAI<npc_janalai_firebombAI>(creature);
         }
 };
 
@@ -505,23 +509,25 @@ class npc_janalai_hatchling : public CreatureScript
             InstanceScript* instance;
             EventMap events;
 
-            void Reset() OVERRIDE
+            void Reset() override
             {
                 events.Reset();
                 if (me->GetPositionY() > 1150)
-                    me->GetMotionMaster()->MovePoint(0, posHatchersWay[0][3].GetPositionX() + rand() % 4 - 2, 1150.0f + rand() % 4 - 2, posHatchersWay[0][3].GetPositionZ());
+                    me->GetMotionMaster()->MovePoint(0, posHatchersWay[0][3].GetPositionX()+rand()%4-2, 1150.0f+rand()%4-2, posHatchersWay[0][3].GetPositionZ());
                 else
-                    me->GetMotionMaster()->MovePoint(0, posHatchersWay[1][3].GetPositionX() + rand() % 4 - 2, 1150.0f + rand() % 4 - 2, posHatchersWay[1][3].GetPositionZ());
+                    me->GetMotionMaster()->MovePoint(0, posHatchersWay[1][3].GetPositionX()+rand()%4-2, 1150.0f+rand()%4-2, posHatchersWay[1][3].GetPositionZ());
+
+                //me->SetUnitMovementFlags(MOVEMENTFLAG_DISABLE_GRAVITY);
             }
 
-            void EnterCombat(Unit* /*who*/) OVERRIDE
+            void EnterCombat(Unit* /*who*/) override 
             {
                 events.ScheduleEvent(EVENT_FLAMEBUFFET, urand(7000, 15000));
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 diff) override
             {
-                if (!instance || instance->GetBossState(DATA_JANALAI) != IN_PROGRESS)
+                if (instance->GetBossState(DATA_JANALAI) != IN_PROGRESS)
                 {
                     me->DisappearAndDie();
                     return;
@@ -530,30 +536,26 @@ class npc_janalai_hatchling : public CreatureScript
                 if (!UpdateVictim())
                     return;
 
-                events.Update(diff);
-
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    switch (eventId)
-                    {
+                     switch (eventId)
+                     {
                         case EVENT_FLAMEBUFFET:
                             DoCastVictim(SPELL_FLAMEBUFFET);
-                            events.ScheduleEvent(EVENT_FLAMEBUFFET, urand(7000, 15000));
                             break;
-                    }
+                     }
                 }
 
                 DoMeleeAttackIfReady();
             }
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            return GetZulAmanAI<npc_janalai_hatchlingAI>(creature);
+            return GetInstanceAI<npc_janalai_hatchlingAI>(creature);
         }
 };
 
-// 43140 - Flame Breath: walks a line of fire away from Jan'alai
 class spell_janalai_flame_breath : public SpellScriptLoader
 {
     public:
@@ -562,8 +564,8 @@ class spell_janalai_flame_breath : public SpellScriptLoader
         class spell_janalai_flame_breath_AuraScript : public AuraScript
         {
             PrepareAuraScript(spell_janalai_flame_breath_AuraScript);
-
-            bool Load() OVERRIDE
+            
+            bool Load() override
             {
                 count = 0;
                 return true;
@@ -571,17 +573,15 @@ class spell_janalai_flame_breath : public SpellScriptLoader
 
             void PeriodicTick(AuraEffect const* /*aurEff*/)
             {
-                Unit* caster = GetCaster();
-                if (!caster)
+                if (!GetCaster())
                     return;
 
                 count++;
-                Position pos;
-                caster->GetNearPosition(pos, 4.0f * count, 0.0f);
-                caster->CastSpell(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), SPELL_FLAME_BREATH_1, true);
+                Position pos = GetCaster()->GetNearPosition(4.0f * count, 0.0f);
+                GetCaster()->CastSpell(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), SPELL_FLAME_BREATH_1, true);
             }
 
-            void Register() OVERRIDE
+            void Register() override
             {
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_janalai_flame_breath_AuraScript::PeriodicTick, EFFECT_1, SPELL_AURA_PERIODIC_DUMMY);
             }
@@ -590,7 +590,7 @@ class spell_janalai_flame_breath : public SpellScriptLoader
             uint8 count;
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const override
         {
             return new spell_janalai_flame_breath_AuraScript();
         }

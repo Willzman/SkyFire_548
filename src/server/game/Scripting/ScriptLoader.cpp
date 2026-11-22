@@ -252,7 +252,11 @@ void AddSC_boss_order_of_silver_hand();
 void AddSC_instance_stratholme();
 void AddSC_stratholme();
 //void AddSC_sunken_temple();                  // Sunken Temple
-//void AddSC_instance_sunken_temple();
+void AddSC_instance_sunken_temple();
+void AddSC_avatar_of_hakkar();
+void AddSC_jammalan_prophet();
+void AddSC_shade_of_eranikus();
+void AddSC_wardens_of_the_dream();
 void AddSC_instance_sunwell_plateau();       //Sunwell Plateau
 void AddSC_boss_kalecgos();
 void AddSC_boss_brutallus();
@@ -685,6 +689,10 @@ void AddSC_boss_mekgineer_steamrigger();
 void AddSC_boss_warlord_kalithresh();
 void AddSC_instance_steam_vault();
 void AddSC_instance_the_slave_pens();            //The Slave Pens
+void AddSC_boss_frostlord_ahune();
+void AddSC_boss_mennu_the_betrayer();
+void AddSC_boss_quagmirran();
+void AddSC_boss_rokmar_the_crackler();
 void AddSC_boss_hungarfen();                 //CR Underbog
 void AddSC_boss_the_black_stalker();
 void AddSC_instance_the_underbog();
@@ -708,6 +716,9 @@ void AddSC_instance_ramparts();
 void AddSC_arcatraz();                       //TK Arcatraz
 void AddSC_boss_harbinger_skyriss();
 void AddSC_instance_arcatraz();
+void AddSC_boss_dalliah_the_doomsayer();
+void AddSC_boss_wrath_scryer_soccothrates();
+void AddSC_boss_zereketh_the_unbound();
 void AddSC_boss_high_botanist_freywinn();    //TK Botanica
 void AddSC_boss_laj();
 void AddSC_boss_warp_splinter();
@@ -1225,7 +1236,11 @@ void AddEasternKingdomsScripts()
     AddSC_instance_stratholme();
     AddSC_stratholme();
     //AddSC_sunken_temple();                  // Sunken Temple
-    //AddSC_instance_sunken_temple();
+    AddSC_instance_sunken_temple();
+    AddSC_avatar_of_hakkar();
+    AddSC_jammalan_prophet();
+    AddSC_shade_of_eranikus();
+    AddSC_wardens_of_the_dream();
     AddSC_instance_sunwell_plateau();       //Sunwell Plateau
     AddSC_boss_kalecgos();
     AddSC_boss_brutallus();
@@ -1491,6 +1506,10 @@ void AddOutlandScripts()
     AddSC_boss_warlord_kalithresh();
     AddSC_instance_steam_vault();
     AddSC_instance_the_slave_pens();            //The Slave Pens
+    AddSC_boss_frostlord_ahune();
+    AddSC_boss_mennu_the_betrayer();
+    AddSC_boss_quagmirran();
+    AddSC_boss_rokmar_the_crackler();
     AddSC_boss_hungarfen();                 //CR Underbog
     AddSC_boss_the_black_stalker();
     AddSC_instance_the_underbog();
@@ -1514,6 +1533,9 @@ void AddOutlandScripts()
     AddSC_arcatraz();                       //TK Arcatraz
     AddSC_boss_harbinger_skyriss();
     AddSC_instance_arcatraz();
+    AddSC_boss_dalliah_the_doomsayer();
+    AddSC_boss_wrath_scryer_soccothrates();
+    AddSC_boss_zereketh_the_unbound();
     AddSC_boss_high_botanist_freywinn();    //TK Botanica
     AddSC_boss_laj();
     AddSC_boss_warp_splinter();

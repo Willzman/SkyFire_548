@@ -130,8 +130,12 @@ set(scripts_STAT_SRCS
   EasternKingdoms/Stratholme/stratholme.cpp
   #REWORKED IN CATACLYSM
   #EasternKingdoms/SunkenTemple/sunken_temple.cpp
-  #EasternKingdoms/SunkenTemple/sunken_temple.h
-  #EasternKingdoms/SunkenTemple/instance_sunken_temple.cpp
+  EasternKingdoms/SunkenTemple/sunken_temple.h
+  EasternKingdoms/SunkenTemple/instance_sunken_temple.cpp
+  EasternKingdoms/SunkenTemple/boss_avatar_of_hakkar.cpp
+  EasternKingdoms/SunkenTemple/boss_jammalan_prophet.cpp
+  EasternKingdoms/SunkenTemple/boss_shade_of_eranikus.cpp
+  EasternKingdoms/SunkenTemple/boss_wardens_of_the_dream.cpp
   EasternKingdoms/MagistersTerrace/boss_felblood_kaelthas.cpp
   EasternKingdoms/MagistersTerrace/magisters_terrace.h
   EasternKingdoms/MagistersTerrace/boss_priestess_delrissa.cpp
