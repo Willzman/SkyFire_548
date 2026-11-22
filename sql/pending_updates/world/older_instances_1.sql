@@ -189,7 +189,7 @@ DELETE FROM `spell_script_names` WHERE `spell_id` = 12480 AND `ScriptName` = 'sp
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (12480, 'spell_hex_of_jammalan_transformed');
 
 -- areatrigger_scripts
-DELETE FROM `areatrigger_scripts` WHERE `entry` = 4016 AND `ScriptName` = 'at_sunket_temple_eranikus';
+DELETE FROM `areatrigger_scripts` WHERE `entry` = 4016;
 INSERT INTO `areatrigger_scripts` (`entry`, `ScriptName`) VALUES (4016, 'at_sunket_temple_eranikus');
 
 -- creature_text for the ported scripts (LoA's rows, matching the scripts' Talk() ids)
