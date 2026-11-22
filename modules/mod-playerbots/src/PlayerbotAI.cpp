@@ -653,6 +653,7 @@ bool PlayerbotAI::SetTravelDestination(uint32 mapId, float x, float y, float z)
     _travel.z = z;
     _travel.active = true;
     _travelFailCount = 0;
+    _vendorHubTravelGuid = 0;
     _followGuid = 0;
     _lootGuid = 0;
     _chaseGuid = 0;
@@ -673,6 +674,7 @@ void PlayerbotAI::ClearTravelDestination()
 {
     _travel.active = false;
     _travelFailCount = 0;
+    _vendorHubTravelGuid = 0;
 }
 
 bool PlayerbotAI::IsTravelArrived(float tol) const
@@ -853,6 +855,14 @@ bool PlayerbotAI::RunTravel()
             why, moved.pathType, _bot->GetPositionX(), _bot->GetPositionY(), _bot->GetPositionZ(),
             _travel.x, _travel.y, _travel.z, moved.destZ, _bot->GetExactDist(_travel.x, _travel.y, _travel.z));
         sBotFindings->RecordAt(BotFindingType::PathFailed, _bot, _travel.x, _travel.y, _travel.z, note);
+        // No path to a vendor hub: pass it over like an empty one, or the vendor
+        // action sends the bot back at once (Gilneas: 100 failures in 10 minutes).
+        if (_vendorHubTravelGuid)
+        {
+            if (_emptyVendorHubs.empty())
+                _emptyVendorHubsSince = getMSTime();
+            _emptyVendorHubs.insert(_vendorHubTravelGuid);
+        }
         ClearTravelDestination();
     }
     return true;
@@ -5814,7 +5824,10 @@ bool PlayerbotAI::TravelToVendorHub(bool preferRepair)
     if ((dx * dx + dy * dy + dz * dz) > maxDist * maxDist)
         return false;
 
-    return SetTravelDestination(hub->mapId, hub->x, hub->y, hub->z);
+    if (!SetTravelDestination(hub->mapId, hub->x, hub->y, hub->z))
+        return false;
+    _vendorHubTravelGuid = hub->spawnGuid;
+    return true;
 }
 
 bool PlayerbotAI::NeedsVendorWorkPublic() const

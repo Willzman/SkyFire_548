@@ -632,6 +632,8 @@ private:
     // phase), and since when the set has been filling.
     std::unordered_set<uint32> _emptyVendorHubs;
     uint32 _emptyVendorHubsSince = 0;
+    // Spawn guid of the vendor hub the current travel goes to (0: other travel).
+    uint32 _vendorHubTravelGuid = 0;
     // Object / NPC GUID -> getMSTime() before which it is not used again.
     std::unordered_map<uint64, uint32> _questObjectRetry;
     // Entry -> uses in a row that did not advance its quest.
