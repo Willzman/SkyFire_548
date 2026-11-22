@@ -11,6 +11,8 @@
 #include "VehicleDefines.h"
 
 struct CreatureData;
+struct SummonPropertiesEntry;
+class TempSummon;
 
 class Transport : public GameObject, public TransportBase
 {
@@ -31,9 +33,13 @@ public:
     void AddPassenger(WorldObject* passenger);
     void RemovePassenger(WorldObject* passenger);
     std::set<WorldObject*> const& GetPassengers() const { return _passengers; }
+    std::set<WorldObject*> const& GetStaticPassengers() const { return _staticPassengers; }
 
     Creature* CreateNPCPassenger(uint32 guid, CreatureData const* data);
     GameObject* CreateGOPassenger(uint32 guid, GameObjectData const* data);
+
+    /// Summons a creature as a static passenger: pos holds transport offsets, and the creature is removed with the transport.
+    TempSummon* SummonPassenger(uint32 entry, Position const& pos, TempSummonType summonType, SummonPropertiesEntry const* properties = NULL, uint32 duration = 0, Unit* summoner = NULL, uint32 spellId = 0, uint32 vehId = 0);
 
     /// This method transforms supplied transport offsets into global coordinates
     void CalculatePassengerPosition(float& x, float& y, float& z, float* o /*= NULL*/) const

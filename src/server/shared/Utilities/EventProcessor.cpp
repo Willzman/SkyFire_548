@@ -5,6 +5,15 @@
 
 #include "EventProcessor.h"
 
+bool RepeatableFunctionEvent::Execute(uint64 /*e_time*/, uint32 /*p_time*/)
+{
+    if (m_function())
+        return true;
+
+    m_events->Schedule(m_repeat, this);
+    return false;
+}
+
 void EventProcessor::Update(uint32 p_time)
 {
     // update time
