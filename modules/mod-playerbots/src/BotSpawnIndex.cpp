@@ -108,10 +108,17 @@ void BotSpawnIndex::Load()
     LoadSpawns("gameobject", _gameobjects);
 
     _creatureStarters.clear();
+    _creatureStarterEntries.clear();
     _gameobjectStarters.clear();
     if (QuestRelations const* relations = sObjectMgr->GetCreatureQuestRelationMap())
         for (auto const& kv : *relations)
+        {
             _creatureStarters[kv.second].push_back(kv.first);
+            _creatureStarterEntries.push_back(kv.first);
+        }
+    std::sort(_creatureStarterEntries.begin(), _creatureStarterEntries.end());
+    _creatureStarterEntries.erase(std::unique(_creatureStarterEntries.begin(), _creatureStarterEntries.end()),
+        _creatureStarterEntries.end());
     if (QuestRelations const* relations = sObjectMgr->GetGOQuestRelationMap())
         for (auto const& kv : *relations)
             _gameobjectStarters[kv.second].push_back(kv.first);

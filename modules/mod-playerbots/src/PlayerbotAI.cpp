@@ -230,6 +230,11 @@ namespace
     constexpr float BOT_REPAIR_SEEK_DIST = 20.0f;
     constexpr float BOT_VENDOR_SEEK_DIST = 20.0f;
     constexpr float BOT_QUEST_SEEK_DIST = 20.0f;
+    // A bot with room in its log looks this far for a quest giver it can take a
+    // quest from, at most this often, and tries one giver again after this long.
+    constexpr float BOT_QUEST_STARTER_RADIUS = 400.0f;
+    constexpr uint32 BOT_QUEST_STARTER_SEARCH_MS = 15 * IN_MILLISECONDS;
+    constexpr uint32 BOT_QUEST_STARTER_RETRY_MS = 10 * MINUTE * IN_MILLISECONDS;
     // Skip quest NPCs with no takeable/turn-in work (bugged flags, wrong phase,
     // already done). Re-check after this so level-ups can unlock them later.
     constexpr uint32 BOT_QUEST_NPC_IGNORE_MS = 10 * MINUTE * IN_MILLISECONDS;
@@ -7020,10 +7025,75 @@ bool PlayerbotAI::HandleAutoQuesting()
             return true;
         if (TravelToNearbyQuestgiver())
             return true;
+        if (TravelToQuestStarter())
+            return true;
     }
 
     _forceQuest = false;
     return false;
+}
+
+// Nothing to do nearby: walk to the closest quest giver (from the spawn index)
+// with a quest the bot can take. Without this a bot whose log ran dry more than
+// BOT_QUEST_SEEK_DIST from the next giver only ground mobs: Mahep (Shadowglen)
+// reached level 6 without a quest, 120 yd from Ilthalaine.
+bool PlayerbotAI::TravelToQuestStarter()
+{
+    if (!_bot || HasTravelDestination() || _pendingTeleport.active || !sBotSpawnIndex->IsLoaded())
+        return false;
+    if (_bot->IsInCombat() || !_bot->getAttackers().empty() || !_bot->SatisfyQuestLog(false))
+        return false;
+
+    uint32 const now = getMSTime();
+    if (int32(_starterSearchMs - now) > 0)
+        return false;
+    _starterSearchMs = now + BOT_QUEST_STARTER_SEARCH_MS;
+
+    FactionTemplateEntry const* botFaction = _bot->GetFactionTemplateEntry();
+    uint32 bestEntry = 0;
+    BotSpawn best;
+    float bestDist = BOT_QUEST_STARTER_RADIUS;
+    for (uint32 entry : sBotSpawnIndex->GetCreatureStarterEntries())
+    {
+        auto const retry = _starterRetry.find(entry);
+        if (retry != _starterRetry.end() && int32(retry->second - now) > 0)
+            continue;
+
+        bool available = false;
+        QuestRelationBounds const starts = sObjectMgr->GetCreatureQuestRelationBounds(entry);
+        for (auto itr = starts.first; itr != starts.second && !available; ++itr)
+        {
+            Quest const* quest = sObjectMgr->GetQuestTemplate(itr->second);
+            available = quest && _bot->GetQuestStatus(itr->second) == QUEST_STATUS_NONE
+                && !IsQuestAbandoned(itr->second)
+                && _bot->CanTakeQuest(quest, false) && _bot->CanAddQuest(quest, false);
+        }
+        if (!available)
+            continue;
+
+        CreatureTemplate const* creature = sObjectMgr->GetCreatureTemplate(entry);
+        FactionTemplateEntry const* faction = creature ? sFactionTemplateStore.LookupEntry(creature->faction_A) : nullptr;
+        if (botFaction && faction && botFaction->IsHostileTo(*faction))
+            continue;
+
+        BotSpawn spawn;
+        if (!sBotSpawnIndex->FindNearest(entry, false, _bot->GetMapId(), _bot->GetPositionX(),
+            _bot->GetPositionY(), _bot->GetPositionZ(), true, spawn))
+            continue;
+        float const dist = _bot->GetExactDist(spawn.x, spawn.y, spawn.z);
+        if (dist >= bestDist)
+            continue;
+        bestDist = dist;
+        best = spawn;
+        bestEntry = entry;
+    }
+
+    // Each giver gets one trip a while: one in a phase the bot is not in, or
+    // whose quest the core refuses, must not pull the bot back every search.
+    if (!bestEntry || !TravelToSpawn(best))
+        return false;
+    _starterRetry[bestEntry] = now + BOT_QUEST_STARTER_RETRY_MS;
+    return true;
 }
 
 void PlayerbotAI::MoveToPosition(float x, float y, float z)

@@ -43,6 +43,8 @@ public:
     // Creature / gameobject entries that start the quest (empty when none).
     std::vector<uint32> const& GetCreatureStarters(uint32 questId) const;
     std::vector<uint32> const& GetGameObjectStarters(uint32 questId) const;
+    // Every creature entry that starts at least one quest, sorted.
+    std::vector<uint32> const& GetCreatureStarterEntries() const { return _creatureStarterEntries; }
 
     // Creature entries whose own loot table holds the quest objective item.
     std::vector<uint32> const& GetItemDroppers(uint32 itemId) const;
@@ -74,6 +76,7 @@ private:
     RowVec _creatures;    // sorted by entry
     RowVec _gameobjects;  // sorted by entry
     EntryMap _creatureStarters;
+    std::vector<uint32> _creatureStarterEntries;
     EntryMap _gameobjectStarters;
     EntryMap _itemDroppers;
     EntryMap _itemContainers;
