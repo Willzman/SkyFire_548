@@ -1,14 +1,54 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Nexus/Nexus/boss_keristrasza.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
+#include "ScriptMgr.h"
+#include "../../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
-#include "nexus.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
 #include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "nexus.h"
+
+namespace
+{
 
 enum Spells
 {
@@ -18,7 +58,7 @@ enum Spells
     SPELL_CRYSTAL_CHAINS                          = 50997,
     SPELL_ENRAGE                                  = 8599,
     SPELL_CRYSTALFIRE_BREATH                      = 48096,
-    H_SPELL_CRYSTALFIRE_BREATH                    = 57091,
+    SPELL_CRYSTALFIRE_BREATH_H                    = 57091,
     SPELL_CRYSTALIZE                              = 48179,
     SPELL_INTENSE_COLD                            = 48094,
     SPELL_INTENSE_COLD_TRIGGERED                  = 48095
@@ -26,12 +66,11 @@ enum Spells
 
 enum Yells
 {
-    //Yell
     SAY_AGGRO                                     = 0,
     SAY_SLAY                                      = 1,
     SAY_ENRAGE                                    = 2,
     SAY_DEATH                                     = 3,
-    SAY_CRYSTAL_NOVA                              = 4
+    SAY_CRYSTAL_NOVA                              = 4,
 };
 
 enum Misc
@@ -42,177 +81,178 @@ enum Misc
 
 class boss_keristrasza : public CreatureScript
 {
-public:
-    boss_keristrasza() : CreatureScript("boss_keristrasza") { }
+    public:
+        boss_keristrasza() : CreatureScript("boss_keristrasza") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new boss_keristraszaAI(creature);
-    }
-
-    struct boss_keristraszaAI : public ScriptedAI
-    {
-        boss_keristraszaAI(Creature* creature) : ScriptedAI(creature)
+        struct boss_keristraszaAI : public ScriptedAI
         {
-            instance = creature->GetInstanceScript();
-        }
-
-        InstanceScript* instance;
-
-        std::list<uint64> intenseColdList;
-        uint64 auiContainmentSphereGUIDs[DATA_CONTAINMENT_SPHERES];
-        uint32 uiCrystalfireBreathTimer;
-        uint32 uiCrystalChainsCrystalizeTimer;
-        uint32 uiTailSweepTimer;
-        bool intenseCold;
-        bool bEnrage;
-
-        void Reset() OVERRIDE
-        {
-            uiCrystalfireBreathTimer = 14*IN_MILLISECONDS;
-            uiCrystalChainsCrystalizeTimer = DUNGEON_MODE(30*IN_MILLISECONDS, 11*IN_MILLISECONDS);
-            uiTailSweepTimer = 5*IN_MILLISECONDS;
-            bEnrage = false;
-
-            intenseCold = true;
-            intenseColdList.clear();
-
-            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
-
-            RemovePrison(CheckContainmentSpheres());
-
-            if (instance)
-                instance->SetData(DATA_KERISTRASZA_EVENT, NOT_STARTED);
-        }
-
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-            Talk(SAY_AGGRO);
-            DoCastAOE(SPELL_INTENSE_COLD);
-
-            if (instance)
-                instance->SetData(DATA_KERISTRASZA_EVENT, IN_PROGRESS);
-        }
-
-        void JustDied(Unit* /*killer*/) OVERRIDE
-        {
-            Talk(SAY_DEATH);
-
-            if (instance)
-                instance->SetData(DATA_KERISTRASZA_EVENT, DONE);
-        }
-
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
-        {
-            Talk(SAY_SLAY);
-        }
-
-        bool CheckContainmentSpheres(bool remove_prison = false)
-        {
-            if (!instance)
-                return false;
-
-            auiContainmentSphereGUIDs[0] = instance->GetData64(ANOMALUS_CONTAINMET_SPHERE);
-            auiContainmentSphereGUIDs[1] = instance->GetData64(ORMOROKS_CONTAINMET_SPHERE);
-            auiContainmentSphereGUIDs[2] = instance->GetData64(TELESTRAS_CONTAINMET_SPHERE);
-
-            GameObject* ContainmentSpheres[DATA_CONTAINMENT_SPHERES];
-
-            for (uint8 i = 0; i < DATA_CONTAINMENT_SPHERES; ++i)
+            boss_keristraszaAI(Creature* creature) : ScriptedAI(creature)
             {
-                ContainmentSpheres[i] = instance->instance->GetGameObject(auiContainmentSphereGUIDs[i]);
-                if (!ContainmentSpheres[i])
+                instance = creature->GetInstanceScript();
+            }
+
+            InstanceScript* instance;
+
+            std::list<uint64> intenseColdList;
+            uint64 auiContainmentSphereGUIDs[DATA_CONTAINMENT_SPHERES];
+            uint32 uiCrystalfireBreathTimer;
+            uint32 uiCrystalChainsCrystalizeTimer;
+            uint32 uiTailSweepTimer;
+            bool intenseCold;
+            bool bEnrage;
+
+            void Reset() override
+            {
+                uiCrystalfireBreathTimer = 14 * IN_MILLISECONDS;
+                uiCrystalChainsCrystalizeTimer = DUNGEON_MODE(30 * IN_MILLISECONDS, 11 * IN_MILLISECONDS);
+                uiTailSweepTimer = 5 * IN_MILLISECONDS;
+                bEnrage = false;
+
+                intenseCold = true;
+                intenseColdList.clear();
+
+                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
+
+                RemovePrison(CheckContainmentSpheres());
+
+                if (instance)
+                    instance->SetData(DATA_KERISTRASZA_EVENT, NOT_STARTED);
+            }
+
+            void EnterCombat(Unit* /*who*/) override
+            {
+                Talk(SAY_AGGRO);
+                DoCastAOE(SPELL_INTENSE_COLD);
+
+                if (instance)
+                    instance->SetData(DATA_KERISTRASZA_EVENT, IN_PROGRESS);
+            }
+
+            void JustDied(Unit* /*killer*/) override
+            {
+                Talk(SAY_DEATH);
+
+                if (instance)
+                    instance->SetData(DATA_KERISTRASZA_EVENT, DONE);
+            }
+
+            void KilledUnit(Unit* victim) override
+            {
+                if (victim->GetTypeId() == TypeID::TYPEID_PLAYER)
+                    Talk(SAY_SLAY);
+            }
+
+            bool CheckContainmentSpheres(bool remove_prison = false)
+            {
+                if (!instance)
                     return false;
-                if (ContainmentSpheres[i]->GetGoState() != GOState::GO_STATE_ACTIVE)
-                    return false;
-            }
-            if (remove_prison)
-                RemovePrison(true);
-            return true;
-        }
 
-        void RemovePrison(bool remove)
+                auiContainmentSphereGUIDs[0] = instance->GetData64(ANOMALUS_CONTAINMET_SPHERE);
+                auiContainmentSphereGUIDs[1] = instance->GetData64(ORMOROKS_CONTAINMET_SPHERE);
+                auiContainmentSphereGUIDs[2] = instance->GetData64(TELESTRAS_CONTAINMET_SPHERE);
+
+                GameObject* ContainmentSpheres[DATA_CONTAINMENT_SPHERES];
+
+                for (uint8 i = 0; i < DATA_CONTAINMENT_SPHERES; ++i)
+                {
+                    ContainmentSpheres[i] = instance->instance->GetGameObject(auiContainmentSphereGUIDs[i]);
+                    if (!ContainmentSpheres[i])
+                        return false;
+                    if (ContainmentSpheres[i]->GetGoState() != GOState::GO_STATE_ACTIVE)
+                        return false;
+                }
+                if (remove_prison)
+                    RemovePrison(true);
+                return true;
+            }
+
+            void RemovePrison(bool remove)
+            {
+                if (remove)
+                {
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                    me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    if (me->HasAura(SPELL_FROZEN_PRISON))
+                        me->RemoveAurasDueToSpell(SPELL_FROZEN_PRISON);
+                }
+                else
+                {
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+                    me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
+                    DoCast(me, SPELL_FROZEN_PRISON, false);
+                }
+            }
+
+            void SetGUID(uint64 guid, int32 id /* = 0 */) override
+            {
+                if (id == DATA_INTENSE_COLD)
+                    intenseColdList.push_back(guid);
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (!UpdateVictim())
+                    return;
+
+                if (!bEnrage && HealthBelowPct(25))
+                {
+                    Talk(SAY_ENRAGE);
+                    DoCast(me, SPELL_ENRAGE);
+                    bEnrage = true;
+                }
+
+                if (uiCrystalfireBreathTimer <= diff)
+                {
+                    DoCast(me->GetVictim(), SPELL_CRYSTALFIRE_BREATH);
+                    uiCrystalfireBreathTimer = 14 * IN_MILLISECONDS;
+                } else uiCrystalfireBreathTimer -= diff;
+
+                if (uiTailSweepTimer <= diff)
+                {
+                    DoCast(me, SPELL_TAIL_SWEEP);
+                    uiTailSweepTimer = 5 * IN_MILLISECONDS;
+                } else uiTailSweepTimer -= diff;
+
+                if (uiCrystalChainsCrystalizeTimer <= diff)
+                {
+                    Talk(SAY_CRYSTAL_NOVA);
+                    if (IsHeroic())
+                        DoCast(me, SPELL_CRYSTALIZE);
+                    else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
+                        DoCast(target, SPELL_CRYSTAL_CHAINS);
+                    uiCrystalChainsCrystalizeTimer = DUNGEON_MODE(30 * IN_MILLISECONDS, 11 * IN_MILLISECONDS);
+                } else uiCrystalChainsCrystalizeTimer -= diff;
+
+                DoMeleeAttackIfReady();
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            if (remove)
-            {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                if (me->HasAura(SPELL_FROZEN_PRISON))
-                    me->RemoveAurasDueToSpell(SPELL_FROZEN_PRISON);
-            }
-            else
-            {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                DoCast(me, SPELL_FROZEN_PRISON, false);
-            }
+            return new boss_keristraszaAI(creature);
         }
-
-        void SetGUID(uint64 guid, int32 id/* = 0 */) OVERRIDE
-        {
-            if (id == DATA_INTENSE_COLD)
-                intenseColdList.push_back(guid);
-        }
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if (!UpdateVictim())
-                return;
-
-            if (!bEnrage && HealthBelowPct(25))
-            {
-                Talk(SAY_ENRAGE);
-                DoCast(me, SPELL_ENRAGE);
-                bEnrage = true;
-            }
-
-            if (uiCrystalfireBreathTimer <= diff)
-            {
-                DoCastVictim(SPELL_CRYSTALFIRE_BREATH);
-                uiCrystalfireBreathTimer = 14*IN_MILLISECONDS;
-            } else uiCrystalfireBreathTimer -= diff;
-
-            if (uiTailSweepTimer <= diff)
-            {
-                DoCast(me, SPELL_TAIL_SWEEP);
-                uiTailSweepTimer = 5*IN_MILLISECONDS;
-            } else uiTailSweepTimer -= diff;
-
-            if (uiCrystalChainsCrystalizeTimer <= diff)
-            {
-                Talk(SAY_CRYSTAL_NOVA);
-                if (IsHeroic())
-                    DoCast(me, SPELL_CRYSTALIZE);
-                else if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
-                    DoCast(target, SPELL_CRYSTAL_CHAINS);
-                uiCrystalChainsCrystalizeTimer = DUNGEON_MODE(30*IN_MILLISECONDS, 11*IN_MILLISECONDS);
-            } else uiCrystalChainsCrystalizeTimer -= diff;
-
-            DoMeleeAttackIfReady();
-        }
-    };
 };
 
-class containment_sphere : public GameObjectScript
+class go_containment_sphere : public GameObjectScript
 {
-public:
-    containment_sphere() : GameObjectScript("containment_sphere") { }
+    public:
+        go_containment_sphere() : GameObjectScript("go_containment_sphere") { }
 
-    bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
-    {
-        InstanceScript* instance = go->GetInstanceScript();
-
-        Creature* pKeristrasza = Unit::GetCreature(*go, instance ? instance->GetData64(DATA_KERISTRASZA) : 0);
-        if (pKeristrasza && pKeristrasza->IsAlive())
+        bool OnGossipHello(Player* /*player*/, GameObject* go) override
         {
-            // maybe these are hacks :(
-            go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
-            go->SetGoState(GOState::GO_STATE_ACTIVE);
+            InstanceScript* instance = go->GetInstanceScript();
 
-            CAST_AI(boss_keristrasza::boss_keristraszaAI, pKeristrasza->AI())->CheckContainmentSpheres(true);
+            Creature* pKeristrasza = Unit::GetCreature(*go, instance ? instance->GetData64(DATA_KERISTRASZA) : 0);
+            if (pKeristrasza && pKeristrasza->IsAlive())
+            {
+                // maybe these are hacks :(
+                go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                go->SetGoState(GOState::GO_STATE_ACTIVE);
+
+                CAST_AI(boss_keristrasza::boss_keristraszaAI, pKeristrasza->AI())->CheckContainmentSpheres(true);
+            }
+            return true;
         }
-        return true;
-    }
 };
 
 class spell_intense_cold : public SpellScriptLoader
@@ -229,19 +269,19 @@ class spell_intense_cold : public SpellScriptLoader
                 if (aurEff->GetBase()->GetStackAmount() < 2)
                     return;
                 Unit* caster = GetCaster();
-                /// @todo the caster should be boss but not the player
+                //TODO: the caster should be boss but not the player
                 if (!caster || !caster->GetAI())
                     return;
                 caster->GetAI()->SetGUID(GetTarget()->GetGUID(), DATA_INTENSE_COLD);
             }
 
-            void Register() OVERRIDE
+            void Register() override
             {
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_intense_cold_AuraScript::HandlePeriodicTick, EFFECT_1, SPELL_AURA_PERIODIC_DAMAGE);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const override
         {
             return new spell_intense_cold_AuraScript();
         }
@@ -250,33 +290,29 @@ class spell_intense_cold : public SpellScriptLoader
 class achievement_intense_cold : public AchievementCriteriaScript
 {
     public:
-        achievement_intense_cold() : AchievementCriteriaScript("achievement_intense_cold")
-        {
-        }
+        achievement_intense_cold() : AchievementCriteriaScript("achievement_intense_cold") { }
 
-        bool OnCheck(Player* player, Unit* target) OVERRIDE
+        bool OnCheck(Player* source, Unit* target) override
         {
             if (!target)
                 return false;
 
-            Creature* creatureTarget = target->ToCreature();
-            if (!creatureTarget || !creatureTarget->AI())
-                return false;
-
-            std::list<uint64> intenseColdList = CAST_AI(boss_keristrasza::boss_keristraszaAI, creatureTarget->AI())->intenseColdList;
+            std::list<uint64> intenseColdList = CAST_AI(boss_keristrasza::boss_keristraszaAI, target->ToCreature()->AI())->intenseColdList;
             if (!intenseColdList.empty())
-                for (std::list<uint64>::iterator itr = intenseColdList.begin(); itr != intenseColdList.end(); ++itr)
-                    if (player->GetGUID() == *itr)
+                for (auto&& guid : intenseColdList)
+                    if (source->GetGUID() == guid)
                         return false;
 
             return true;
         }
 };
 
+} // namespace
+
 void AddSC_boss_keristrasza()
 {
     new boss_keristrasza();
-    new containment_sphere();
+    new go_containment_sphere();
     new achievement_intense_cold();
     new spell_intense_cold();
 }

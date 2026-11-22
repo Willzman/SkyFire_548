@@ -1,14 +1,56 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
-#include "InstanceScript.h"
-#include "nexus.h"
-#include "Player.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Nexus/Nexus/instance_nexus.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
-#define NUMBER_OF_ENCOUNTERS      4
+#include "ScriptMgr.h"
+#include "../../../Pandaria/pandaria_loa_compat.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "nexus.h"
+
+namespace
+{
+
+#define NUMBER_OF_ENCOUNTERS      5
 
 enum Factions
 {
@@ -17,236 +59,248 @@ enum Factions
 
 class instance_nexus : public InstanceMapScript
 {
-public:
-    instance_nexus() : InstanceMapScript("instance_nexus", 576) { }
+    public:
+        instance_nexus() : InstanceMapScript("instance_nexus", 576) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
-    {
-        return new instance_nexus_InstanceMapScript(map);
-    }
-
-    struct instance_nexus_InstanceMapScript : public InstanceScript
-    {
-        instance_nexus_InstanceMapScript(Map* map) : InstanceScript(map) { }
-
-        uint32 m_auiEncounter[NUMBER_OF_ENCOUNTERS];
-
-        uint64 Anomalus;
-        uint64 Keristrasza;
-
-        uint64 AnomalusContainmentSphere;
-        uint64 OrmoroksContainmentSphere;
-        uint64 TelestrasContainmentSphere;
-
-        std::string strInstData;
-
-        void Initialize() OVERRIDE
+        struct instance_nexus_InstanceMapScript : public InstanceScript
         {
-            memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+            instance_nexus_InstanceMapScript(Map *map) : InstanceScript(map) { }
 
-            Anomalus = 0;
-            Keristrasza = 0;
-            AnomalusContainmentSphere = 0;
-            OrmoroksContainmentSphere = 0;
-            TelestrasContainmentSphere = 0;
-        }
+            uint32 m_auiEncounter[NUMBER_OF_ENCOUNTERS];
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
-        {
-            Map::PlayerList const &players = instance->GetPlayers();
-            uint32 TeamInInstance = 0;
+            uint64 anomalusGUID;
+            uint64 keristraszaGUID;
+            uint64 commanderGUID;
 
-            if (!players.isEmpty())
+            uint64 AnomalusContainmentSphere;
+            uint64 OrmoroksContainmentSphere;
+            uint64 TelestrasContainmentSphere;
+
+            std::string strInstData;
+
+            void Initialize() override
             {
-                if (Player* player = players.begin()->GetSource())
-                    TeamInInstance = player->GetTeam();
+                memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+
+                anomalusGUID = 0;
+                keristraszaGUID = 0;
+                commanderGUID = 0;
+
+                AnomalusContainmentSphere = 0;
+                OrmoroksContainmentSphere = 0;
+                TelestrasContainmentSphere = 0;
             }
-            switch (creature->GetEntry())
-            {
-                case 26763:
-                    Anomalus = creature->GetGUID();
-                    break;
-                case 26723:
-                    Keristrasza = creature->GetGUID();
-                    break;
-                // Alliance npcs are spawned by default, if you are alliance, you will fight against horde npcs.
-                case 26800:
-                {
-                    if (ServerAllowsTwoSideGroups())
-                        creature->setFaction(FACTION_HOSTILE_FOR_ALL);
-                    if (TeamInInstance == ALLIANCE)
-                        creature->UpdateEntry(26799, HORDE);
-                    break;
-                }
-                case 26802:
-                {
-                    if (ServerAllowsTwoSideGroups())
-                        creature->setFaction(FACTION_HOSTILE_FOR_ALL);
-                    if (TeamInInstance == ALLIANCE)
-                        creature->UpdateEntry(26801, HORDE);
-                    break;
-                }
-                case 26805:
-                {
-                    if (ServerAllowsTwoSideGroups())
-                        creature->setFaction(FACTION_HOSTILE_FOR_ALL);
-                    if (TeamInInstance == ALLIANCE)
-                        creature->UpdateEntry(26803, HORDE);
-                    break;
-                }
-                case 27949:
-                {
-                    if (ServerAllowsTwoSideGroups())
-                        creature->setFaction(FACTION_HOSTILE_FOR_ALL);
-                    if (TeamInInstance == ALLIANCE)
-                        creature->UpdateEntry(27947, HORDE);
-                    break;
-                }
-                case 26796:
-                {
-                    if (ServerAllowsTwoSideGroups())
-                        creature->setFaction(FACTION_HOSTILE_FOR_ALL);
-                    if (TeamInInstance == ALLIANCE)
-                        creature->UpdateEntry(26798, HORDE);
-                    break;
-                }
-            }
-        }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
-        {
-            switch (go->GetEntry())
+            void OnCreatureCreate(Creature* creature) override
             {
-                case 188527:
-                {
-                    AnomalusContainmentSphere = go->GetGUID();
-                    if (m_auiEncounter[1] == DONE)
-                        go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
-                    break;
-                }
-                case 188528:
-                {
-                    OrmoroksContainmentSphere = go->GetGUID();
-                    if (m_auiEncounter[2] == DONE)
-                        go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
-                    break;
-                }
-                case 188526:
-                {
-                    TelestrasContainmentSphere = go->GetGUID();
-                    if (m_auiEncounter[0] == DONE)
-                        go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
-                    break;
-                }
-            }
-        }
+                Map::PlayerList const& players = instance->GetPlayers();
+                uint32 TeamInInstance = 0;
 
-        uint32 GetData(uint32 identifier) const OVERRIDE
-        {
-            switch (identifier)
-            {
-                case DATA_MAGUS_TELESTRA_EVENT: return m_auiEncounter[0];
-                case DATA_ANOMALUS_EVENT:       return m_auiEncounter[1];
-                case DATA_ORMOROK_EVENT:        return m_auiEncounter[2];
-                case DATA_KERISTRASZA_EVENT:    return m_auiEncounter[3];
-            }
-            return 0;
-        }
-
-        void SetData(uint32 identifier, uint32 data) OVERRIDE
-        {
-            switch (identifier)
-            {
-                case DATA_MAGUS_TELESTRA_EVENT:
+                if (!players.isEmpty())
                 {
-                    if (data == DONE)
+                    if (Player* player = players.begin()->GetSource())
+                        TeamInInstance = player->GetTeam();
+                }
+
+                switch (creature->GetEntry())
+                {
+                    case NPC_ANOMALUS:
+                        anomalusGUID = creature->GetGUID();
+                        break;
+                    case NPC_KERISTRASZA:
+                        keristraszaGUID = creature->GetGUID();
+                        break;
+                    // Alliance npcs are spawned by default, if you are alliance, you will fight against horde npcs.
+                    case NPC_ALLIANCE_BERSERKER:
                     {
-                        GameObject* Sphere = instance->GetGameObject(TelestrasContainmentSphere);
-                        if (Sphere)
-                            Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        if (ServerAllowsTwoSideGroups())
+                            creature->setFaction(FACTION_HOSTILE_FOR_ALL);
+                        if (TeamInInstance == ALLIANCE)
+                            creature->UpdateEntry(NPC_HORDE_BERSERKER, HORDE);
+                        break;
                     }
-                    m_auiEncounter[0] = data;
-                    break;
-                }
-                case DATA_ANOMALUS_EVENT:
-                {
-                    if (data == DONE)
+                    case NPC_ALLIANCE_RANGER:
                     {
-                        if (GameObject* Sphere = instance->GetGameObject(AnomalusContainmentSphere))
-                            Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        if (ServerAllowsTwoSideGroups())
+                            creature->setFaction(FACTION_HOSTILE_FOR_ALL);
+                        if (TeamInInstance == ALLIANCE)
+                            creature->UpdateEntry(NPC_HORDE_RANGER, HORDE);
+                        break;
                     }
-                    m_auiEncounter[1] = data;
-                    break;
-                }
-                case DATA_ORMOROK_EVENT:
-                {
-                    if (data == DONE)
+                    case NPC_ALLIANCE_CLERIC:
                     {
-                        if (GameObject* Sphere = instance->GetGameObject(OrmoroksContainmentSphere))
-                            Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        if (ServerAllowsTwoSideGroups())
+                            creature->setFaction(FACTION_HOSTILE_FOR_ALL);
+                        if (TeamInInstance == ALLIANCE)
+                            creature->UpdateEntry(NPC_HORDE_CLERIC, HORDE);
+                        break;
                     }
-                    m_auiEncounter[2] = data;
-                    break;
+                    case NPC_ALLIANCE_COMMANDER:
+                    {
+                        if (ServerAllowsTwoSideGroups())
+                            creature->setFaction(FACTION_HOSTILE_FOR_ALL);
+                        if (TeamInInstance == ALLIANCE)
+                            creature->UpdateEntry(NPC_HORDE_COMMANDER, HORDE);
+                        break;
+                    }
+                    case NPC_COMMANDER_STOUTBEARD:
+                    {
+                        if (ServerAllowsTwoSideGroups())
+                            creature->setFaction(FACTION_HOSTILE_FOR_ALL);
+                        if (TeamInInstance == ALLIANCE)
+                            creature->UpdateEntry(NPC_COMMANDER_KOLURG, HORDE);
+                        commanderGUID = creature->GetGUID();
+                        break;
+                    }
                 }
-                case DATA_KERISTRASZA_EVENT:
-                    m_auiEncounter[3] = data;
-                    break;
             }
 
-            if (data == DONE)
+            void OnGameObjectCreate(GameObject* go) override
             {
-                OUT_SAVE_INST_DATA;
-
-                std::ostringstream saveStream;
-                saveStream << m_auiEncounter[0] << ' ' << m_auiEncounter[1] << ' ' << m_auiEncounter[2] << ' '
-                    << m_auiEncounter[3];
-
-                strInstData = saveStream.str();
-
-                SaveToDB();
-                OUT_SAVE_INST_DATA_COMPLETE;
+                switch (go->GetEntry())
+                {
+                    case GO_ANOMALUS_CONTAINMENT_SPHERE:
+                    {
+                        AnomalusContainmentSphere = go->GetGUID();
+                        if (m_auiEncounter[1] == DONE)
+                            go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        break;
+                    }
+                    case GO_ORMOROKS_CONTAINMENT_SPHERE:
+                    {
+                        OrmoroksContainmentSphere = go->GetGUID();
+                        if (m_auiEncounter[2] == DONE)
+                            go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        break;
+                    }
+                    case GO_TELESTRAS_CONTAINMENT_SPHERE:
+                    {
+                        TelestrasContainmentSphere = go->GetGUID();
+                        if (m_auiEncounter[0] == DONE)
+                            go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        break;
+                    }
+                }
             }
-        }
 
-        uint64 GetData64(uint32 uiIdentifier) const OVERRIDE
-        {
-            switch (uiIdentifier)
+            uint32 GetData(uint32 type) const override
             {
-                case DATA_ANOMALUS:                 return Anomalus;
-                case DATA_KERISTRASZA:              return Keristrasza;
-                case ANOMALUS_CONTAINMET_SPHERE:    return AnomalusContainmentSphere;
-                case ORMOROKS_CONTAINMET_SPHERE:    return OrmoroksContainmentSphere;
-                case TELESTRAS_CONTAINMET_SPHERE:   return TelestrasContainmentSphere;
+                switch (type)
+                {
+                    case DATA_COMMANDER:            return m_auiEncounter[0];
+                    case DATA_MAGUS_TELESTRA_EVENT: return m_auiEncounter[0];
+                    case DATA_ANOMALUS_EVENT:       return m_auiEncounter[1];
+                    case DATA_ORMOROK_EVENT:        return m_auiEncounter[2];
+                    case DATA_KERISTRASZA_EVENT:    return m_auiEncounter[3];
+                }
+                return 0;
             }
-            return 0;
-        }
 
-        std::string GetSaveData() OVERRIDE
-        {
-            return strInstData;
-        }
-
-        void Load(const char *chrIn) OVERRIDE
-        {
-            if (!chrIn)
+            void SetData(uint32 type, uint32 data) override
             {
-                OUT_LOAD_INST_DATA_FAIL;
-                return;
+                switch (type)
+                {
+                    case DATA_COMMANDER:
+                        m_auiEncounter[0] = data;
+                        break;
+                    case DATA_MAGUS_TELESTRA_EVENT:
+                    {
+                        if (data == DONE)
+                        {
+                            GameObject* Sphere = instance->GetGameObject(TelestrasContainmentSphere);
+                            if (Sphere)
+                                Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        }
+                        m_auiEncounter[1] = data;
+                        break;
+                    }
+                    case DATA_ANOMALUS_EVENT:
+                    {
+                        if (data == DONE)
+                        {
+                            if (GameObject* Sphere = instance->GetGameObject(AnomalusContainmentSphere))
+                                Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        }
+                        m_auiEncounter[2] = data;
+                        break;
+                    }
+                    case DATA_ORMOROK_EVENT:
+                    {
+                        if (data == DONE)
+                        {
+                            if (GameObject* Sphere = instance->GetGameObject(OrmoroksContainmentSphere))
+                                Sphere->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        }
+                        m_auiEncounter[3] = data;
+                        break;
+                    }
+                    case DATA_KERISTRASZA_EVENT:
+                        m_auiEncounter[4] = data;
+                        break;
+                }
+
+                if (data == DONE)
+                {
+                    OUT_SAVE_INST_DATA;
+
+                    std::ostringstream saveStream;
+                    saveStream << m_auiEncounter[0] << " " << m_auiEncounter[1] << " " << m_auiEncounter[2] << " "
+                        << m_auiEncounter[3] << " " << m_auiEncounter[4];
+
+                    strInstData = saveStream.str();
+
+                    SaveToDB();
+                    OUT_SAVE_INST_DATA_COMPLETE;
+                }
             }
 
-            OUT_LOAD_INST_DATA(chrIn);
+            uint64 GetData64(uint32 type) const override
+            {
+                switch (type)
+                {
+                    case DATA_COMMANDER:                return commanderGUID;
+                    case DATA_ANOMALUS:                 return anomalusGUID;
+                    case DATA_KERISTRASZA:              return keristraszaGUID;
+                    case ANOMALUS_CONTAINMET_SPHERE:    return AnomalusContainmentSphere;
+                    case ORMOROKS_CONTAINMET_SPHERE:    return OrmoroksContainmentSphere;
+                    case TELESTRAS_CONTAINMET_SPHERE:   return TelestrasContainmentSphere;
+                }
+                return 0;
+            }
 
-            std::istringstream loadStream(chrIn);
-            loadStream >> m_auiEncounter[0] >> m_auiEncounter[1] >> m_auiEncounter[2] >> m_auiEncounter[3];
+            std::string GetSaveData() override
+            {
+                return strInstData;
+            }
 
-            for (uint8 i = 0; i < NUMBER_OF_ENCOUNTERS; ++i)
-                if (m_auiEncounter[i] == IN_PROGRESS)
-                    m_auiEncounter[i] = NOT_STARTED;
+            void Load(const char* in) override
+            {
+                if (!in)
+                {
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
+                }
 
-            OUT_LOAD_INST_DATA_COMPLETE;
+                OUT_LOAD_INST_DATA(in);
+
+                std::istringstream loadStream(in);
+                loadStream >> m_auiEncounter[0] >> m_auiEncounter[1] >> m_auiEncounter[2] >> m_auiEncounter[3] >> m_auiEncounter[4];
+
+                for (uint8 i = 0; i < NUMBER_OF_ENCOUNTERS; ++i)
+                    if (m_auiEncounter[i] == IN_PROGRESS)
+                        m_auiEncounter[i] = NOT_STARTED;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
+            }
+        };
+
+        InstanceScript* GetInstanceScript(InstanceMap* map) const override
+        {
+            return new instance_nexus_InstanceMapScript(map);
         }
-    };
 };
+
+} // namespace
 
 void AddSC_instance_nexus()
 {
