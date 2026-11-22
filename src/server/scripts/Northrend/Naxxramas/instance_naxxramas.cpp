@@ -1,14 +1,56 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/instance_naxxramas.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
 #include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
 #include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
 #include "naxxramas.h"
 
-DoorData const doorData[] =
+namespace
+{
+
+static DoorData const doorData[] =
 {
     { GO_ROOM_ANUBREKHAN,       BOSS_ANUBREKHAN,    DOOR_TYPE_ROOM,         BOUNDARY_S      },
     { GO_PASSAGE_ANUBREKHAN,    BOSS_ANUBREKHAN,    DOOR_TYPE_PASSAGE,      BOUNDARY_NONE   },
@@ -43,10 +85,9 @@ DoorData const doorData[] =
     { GO_MILI_EYE_RAMP_BOSS,    BOSS_HORSEMEN,      DOOR_TYPE_PASSAGE,      BOUNDARY_NONE   },
     { GO_CONS_EYE_RAMP,         BOSS_THADDIUS,      DOOR_TYPE_PASSAGE,      BOUNDARY_NONE   },
     { GO_CONS_EYE_RAMP_BOSS,    BOSS_THADDIUS,      DOOR_TYPE_PASSAGE,      BOUNDARY_NONE   },
-    { 0,                        0,                  DOOR_TYPE_ROOM,         BOUNDARY_NONE   }
 };
 
-MinionData const minionData[] =
+static std::vector<MinionData> const minionData =
 {
     { NPC_FOLLOWER_WORSHIPPER,  BOSS_FAERLINA   },
     { NPC_DK_UNDERSTUDY,        BOSS_RAZUVIOUS  },
@@ -96,30 +137,39 @@ class instance_naxxramas : public InstanceMapScript
             instance_naxxramas_InstanceMapScript(Map* map) : InstanceScript(map)
             {
                 SetBossNumber(EncounterCount);
-                LoadDoorData(doorData);
-                LoadMinionData(minionData);
+                LoadDoorData(LoaCompat::TerminatedDoorData(doorData));
+                LoadMinionData(&minionData[0]);
 
-                GothikGateGUID          = 0;
-                HorsemenChestGUID       = 0;
-                FaerlinaGUID            = 0;
-                ThaneGUID               = 0;
-                LadyGUID                = 0;
-                BaronGUID               = 0;
-                SirGUID                 = 0;
-                ThaddiusGUID            = 0;
-                HeiganGUID              = 0;
-                FeugenGUID              = 0;
-                StalaggGUID             = 0;
-                SapphironGUID           = 0;
-                KelthuzadGUID           = 0;
-                KelthuzadTriggerGUID    = 0;
+                GothikGateGUID = 0;
+                HorsemenChestGUID = 0;
+                FaerlinaGUID = 0;
+                ThaneGUID = 0;
+                LadyGUID = 0;
+                BaronGUID = 0;
+                SirGUID = 0;
+                ThaddiusGUID = 0;
+                HeiganGUID = 0;
+                FeugenGUID = 0;
+                StalaggGUID = 0;
+                SapphironGUID = 0;
+                KelthuzadGUID = 0;
+                KelthuzadTriggerGUID = 0;
+                sphereGUID = 0;
 
                 playerDied              = 0;
+
+                aracPortalGUID = 0;
+                millitaryPortalGUID = 0;
+                constructionPortalGUID = 0;
+                plaguePortalGUID = 0;
+
+
+                m_mEvents.Reset();
 
                 memset(PortalsGUID, 0, sizeof(PortalsGUID));
             }
 
-            void OnCreatureCreate(Creature* creature) OVERRIDE
+            void OnCreatureCreate(Creature* creature) override
             {
                 switch (creature->GetEntry())
                 {
@@ -163,12 +213,12 @@ class instance_naxxramas : public InstanceMapScript
                 AddMinion(creature, true);
             }
 
-            void OnCreatureRemove(Creature* creature) OVERRIDE
+            void OnCreatureRemove(Creature* creature) override
             {
                 AddMinion(creature, false);
             }
 
-            void OnGameObjectCreate(GameObject* go) OVERRIDE
+            void OnGameObjectCreate(GameObject* go) override
             {
                 if (go->GetGOInfo()->displayId == 6785 || go->GetGOInfo()->displayId == 1287)
                 {
@@ -201,6 +251,25 @@ class instance_naxxramas : public InstanceMapScript
                     case GO_KELTHUZAD_TRIGGER:
                         KelthuzadTriggerGUID = go->GetGUID();
                         break;
+                    case GO_ORB_OF_NAXXRAMAS:
+                        if (GetBossState(BOSS_THADDIUS) == DONE && GetBossState(BOSS_MAEXXNA) == DONE && GetBossState(BOSS_HORSEMEN) == DONE && GetBossState(BOSS_LOATHEB) == DONE)
+                            break;
+
+                        sphereGUID = go->GetGUID();
+                        go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_INTERACT_COND);
+                        break;
+                    case GO_CONS_PORTAL:
+                        constructionPortalGUID = go->GetGUID();
+                        break;
+                    case GO_ARAC_PORTAL:
+                        aracPortalGUID = go->GetGUID();
+                        break;
+                    case GO_PLAG_PORTAL:
+                        plaguePortalGUID = go->GetGUID();
+                        break;
+                    case GO_MILI_PORTAL:
+                        millitaryPortalGUID = go->GetGUID();
+                        break;
                     default:
                         break;
                 }
@@ -208,7 +277,7 @@ class instance_naxxramas : public InstanceMapScript
                 AddDoor(go, true);
             }
 
-            void OnGameObjectRemove(GameObject* go) OVERRIDE
+            void OnGameObjectRemove(GameObject* go) override
             {
                 if (go->GetGOInfo()->displayId == 6785 || go->GetGOInfo()->displayId == 1287)
                 {
@@ -231,11 +300,9 @@ class instance_naxxramas : public InstanceMapScript
                     default:
                         break;
                 }
-
-                AddDoor(go, false);
             }
 
-            void OnUnitDeath(Unit* unit) OVERRIDE
+            void OnUnitDeath(Unit* unit) override
             {
                 if (unit->GetTypeId() == TypeID::TYPEID_PLAYER && IsEncounterInProgress())
                 {
@@ -244,7 +311,7 @@ class instance_naxxramas : public InstanceMapScript
                 }
             }
 
-            void SetData(uint32 id, uint32 value) OVERRIDE
+            void SetData(uint32 id, uint32 value) override
             {
                 switch (id)
                 {
@@ -272,15 +339,21 @@ class instance_naxxramas : public InstanceMapScript
                                 minHorsemenDiedTime = now;
 
                             maxHorsemenDiedTime = now;
+
+                            if (!m_mEvents.IsScheduled(1))
+                                m_mEvents.ScheduleEvent(1, 15 * IN_MILLISECONDS);
                         }
                         break;
                     case DATA_ABOMINATION_KILLED:
                         AbominationCount = value;
+
+                        if (AbominationCount >= 18)
+                            instance->SetWorldState(WORLDSTATE_JUST_CANT_GET_ENOUGH, 1);
                         break;
                 }
             }
 
-            uint32 GetData(uint32 id) const OVERRIDE
+            uint32 GetData(uint32 id) const override
             {
                 switch (id)
                 {
@@ -293,7 +366,7 @@ class instance_naxxramas : public InstanceMapScript
                 return 0;
             }
 
-            uint64 GetData64(uint32 id) const OVERRIDE
+            uint64 GetData64(uint32 id) const override
             {
                 switch (id)
                 {
@@ -327,12 +400,22 @@ class instance_naxxramas : public InstanceMapScript
                         return PortalsGUID[3];
                     case DATA_KELTHUZAD_TRIGGER:
                         return KelthuzadTriggerGUID;
+                    case GO_ORB_OF_NAXXRAMAS:
+                        return sphereGUID;
+                    case GO_CONS_PORTAL:
+                        return constructionPortalGUID;
+                    case GO_ARAC_PORTAL:
+                        return aracPortalGUID;
+                    case GO_PLAG_PORTAL:
+                        return plaguePortalGUID;
+                    case GO_MILI_PORTAL:
+                        return millitaryPortalGUID;
                 }
 
                 return 0;
             }
 
-            bool SetBossState(uint32 id, EncounterState state) OVERRIDE
+            bool SetBossState(uint32 id, EncounterState state) override
             {
                 if (!InstanceScript::SetBossState(id, state))
                     return false;
@@ -344,6 +427,22 @@ class instance_naxxramas : public InstanceMapScript
                         horsemenChest->SetRespawnTime(horsemenChest->GetRespawnDelay());
                         horsemenChest->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
                     }
+                }
+
+                switch (id)
+                {
+                    case BOSS_THADDIUS:
+                    case BOSS_MAEXXNA:
+                    case BOSS_LOATHEB:
+                    case BOSS_HORSEMEN:
+                        if (GetBossState(BOSS_THADDIUS) == DONE && GetBossState(BOSS_MAEXXNA) == DONE && GetBossState(BOSS_HORSEMEN) == DONE && GetBossState(BOSS_LOATHEB) == DONE)
+                            if (GameObject* go = instance->GetGameObject(GetData64(GO_ORB_OF_NAXXRAMAS)))
+                                go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_INTERACT_COND);
+
+                        // Unlock portals
+                        if (GameObject* portal = instance->GetGameObject(GetData64(invPortalType.find(id)->second)))
+                            portal->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+                        break;
                 }
 
                 return true;
@@ -382,16 +481,16 @@ class instance_naxxramas : public InstanceMapScript
                 return true;
             }
 
-            bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const* /*source*/, Unit const* /*target = NULL*/, uint32 /*miscvalue1 = 0*/) OVERRIDE
+            bool CheckAchievementCriteriaMeet(uint32 criteria_id, Player const* /*source*/, Unit const* /*target = NULL*/, uint32 /*miscvalue1 = 0*/) override
             {
                 switch (criteria_id)
                 {
                     case 7600:  // Criteria for achievement 2176: And They Would All Go Down Together 15sec of each other 10-man
-                        if (DifficultyID(instance->GetSpawnMode()) == DIFFICULTY_10MAN_NORMAL && (maxHorsemenDiedTime - minHorsemenDiedTime) < 15)
+                        if (instance->GetDifficulty() == DIFFICULTY_10MAN_NORMAL && (maxHorsemenDiedTime - minHorsemenDiedTime) < 15)
                             return true;
                         return false;
                     case 7601:  // Criteria for achievement 2177: And They Would All Go Down Together 15sec of each other 25-man
-                        if (DifficultyID(instance->GetSpawnMode()) == DIFFICULTY_25MAN_NORMAL && (maxHorsemenDiedTime - minHorsemenDiedTime) < 15)
+                        if (instance->GetDifficulty() == DIFFICULTY_25MAN_NORMAL && (maxHorsemenDiedTime - minHorsemenDiedTime) < 15)
                             return true;
                         return false;
                     // Difficulty checks are done on DB.
@@ -415,7 +514,24 @@ class instance_naxxramas : public InstanceMapScript
                 return false;
             }
 
-            std::string GetSaveData() OVERRIDE
+            void Update(uint32 diff) override
+            {
+                m_mEvents.Update(diff);
+
+                while (uint32 eventId = m_mEvents.ExecuteEvent())
+                {
+                    if (eventId == 1)
+                    {
+                        if (GetBossState(BOSS_HORSEMEN) != IN_PROGRESS)
+                            break;
+
+                        instance->SetWorldState(WORLDSTATE_GO_DOWN_TOGETHER, 0);
+                    }
+                    break;
+                }
+            }
+
+            std::string GetSaveData() override
             {
                 OUT_SAVE_INST_DATA;
 
@@ -426,7 +542,7 @@ class instance_naxxramas : public InstanceMapScript
                 return saveStream.str();
             }
 
-            void Load(const char* strIn) OVERRIDE
+            void Load(const char* strIn) override
             {
                 if (!strIn)
                 {
@@ -460,6 +576,7 @@ class instance_naxxramas : public InstanceMapScript
             }
 
         protected:
+            EventMap m_mEvents;
             /* The Arachnid Quarter */
             // Grand Widow Faerlina
             uint64 FaerlinaGUID;
@@ -489,6 +606,7 @@ class instance_naxxramas : public InstanceMapScript
             uint64 StalaggGUID;
 
             /* Frostwyrm Lair */
+            uint64 sphereGUID;
             // Sapphiron
             uint64 SapphironGUID;
             // Kel'Thuzad
@@ -499,15 +617,44 @@ class instance_naxxramas : public InstanceMapScript
 
             /* The Immortal / The Undying */
             uint32 playerDied;
+
+            // Portal Data
+            uint64 aracPortalGUID;
+            uint64 millitaryPortalGUID;
+            uint64 constructionPortalGUID;
+            uint64 plaguePortalGUID;
         };
 
-        InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+        InstanceScript* GetInstanceScript(InstanceMap* map) const override
         {
             return new instance_naxxramas_InstanceMapScript(map);
         }
 };
 
+} // namespace
+
+// LoA checks these criteria through the map's world state in its core; SkyFire keeps its criteria scripts (and their
+// achievement_criteria_data rows) and reads the world state the boss scripts set.
+class naxxramas_world_state_achievement : public AchievementCriteriaScript
+{
+    public:
+        naxxramas_world_state_achievement(char const* name, uint32 worldState) : AchievementCriteriaScript(name), _worldState(worldState) { }
+
+        bool OnCheck(Player* player, Unit* /*target*/) override
+        {
+            return player && player->GetMap()->GetWorldState(_worldState) == 1;
+        }
+
+    private:
+        uint32 _worldState;
+};
+
 void AddSC_instance_naxxramas()
 {
+    new naxxramas_world_state_achievement("achievement_just_cant_get_enough", WORLDSTATE_JUST_CANT_GET_ENOUGH);
+    new naxxramas_world_state_achievement("achievement_momma_said_knock_you_out", WORLDSTATE_MOMMA_SAID_KNOCK_U_OUT);
+    new naxxramas_world_state_achievement("achievement_polarity_switch", WORLDSTATE_SHOCKING);
+    new naxxramas_world_state_achievement("achievement_safety_dance", WORLDSTATE_SAFETY_DANCE);
+    new naxxramas_world_state_achievement("achievement_spore_loser", WORLDSTATE_SPORE_LOSER);
     new instance_naxxramas();
 }

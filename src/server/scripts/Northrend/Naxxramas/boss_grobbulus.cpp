@@ -1,12 +1,54 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/boss_grobbulus.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
-#include "naxxramas.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
 #include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "naxxramas.h"
+
+namespace
+{
 
 enum Spells
 {
@@ -37,7 +79,7 @@ class boss_grobbulus : public CreatureScript
 public:
     boss_grobbulus() : CreatureScript("boss_grobbulus") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new boss_grobbulusAI(creature);
     }
@@ -49,7 +91,7 @@ public:
             me->ApplySpellImmune(0, IMMUNITY_ID, SPELL_POISON_CLOUD_ADD, true);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/) override
         {
             _EnterCombat();
             events.ScheduleEvent(EVENT_CLOUD, 15000);
@@ -58,7 +100,7 @@ public:
             events.ScheduleEvent(EVENT_BERSERK, 12*60000);
         }
 
-        void SpellHitTarget(Unit* target, const SpellInfo* spell) OVERRIDE
+        void SpellHitTarget(Unit* target, const SpellInfo* spell) override
         {
             if (spell->Id == uint32(SPELL_SLIME_SPRAY))
             {
@@ -67,7 +109,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim())
                 return;
@@ -97,9 +139,11 @@ public:
                         return;
                 }
             }
+
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
 class npc_grobbulus_poison_cloud : public CreatureScript
@@ -107,7 +151,7 @@ class npc_grobbulus_poison_cloud : public CreatureScript
 public:
     npc_grobbulus_poison_cloud() : CreatureScript("npc_grobbulus_poison_cloud") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new npc_grobbulus_poison_cloudAI(creature);
     }
@@ -121,13 +165,13 @@ public:
 
         uint32 Cloud_Timer;
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             Cloud_Timer = 1000;
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (Cloud_Timer <= diff)
             {
@@ -136,7 +180,10 @@ public:
             } else Cloud_Timer -= diff;
         }
     };
+
 };
+
+} // namespace
 
 void AddSC_boss_grobbulus()
 {

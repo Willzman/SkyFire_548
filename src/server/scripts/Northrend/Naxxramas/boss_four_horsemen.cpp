@@ -1,13 +1,54 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/boss_four_horsemen.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
 #include "naxxramas.h"
+
+namespace
+{
 
 enum Horsemen
 {
@@ -75,7 +116,7 @@ class boss_four_horsemen : public CreatureScript
 public:
     boss_four_horsemen() : CreatureScript("boss_four_horsemen") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new boss_four_horsemenAI(creature);
     }
@@ -104,13 +145,13 @@ public:
         bool encounterActionReset;
         bool doDelayPunish;
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             if (!encounterActionReset)
                 DoEncounteraction(NULL, false, true, false);
 
             if (instance)
-                instance->SetData(uint32(DATA_HORSEMEN0) + id, NOT_STARTED);
+                instance->SetData(DATA_HORSEMEN0 + id, NOT_STARTED);
 
             me->SetReactState(REACT_AGGRESSIVE);
             uiEventStarterGUID = 0;
@@ -123,6 +164,8 @@ public:
             encounterActionReset = false;
             doDelayPunish = false;
             _Reset();
+
+            me->GetMap()->SetWorldState(WORLDSTATE_GO_DOWN_TOGETHER, 1);
         }
 
         bool DoEncounteraction(Unit* who, bool attack, bool reset, bool checkAllDead)
@@ -208,7 +251,7 @@ public:
             }
         }
 
-        void MovementInform(uint32 type, uint32 id) OVERRIDE
+        void MovementInform(uint32 type, uint32 id) override
         {
             if (type != POINT_MOTION_TYPE)
                 return;
@@ -251,7 +294,7 @@ public:
             }
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
+        void MoveInLineOfSight(Unit* who) override
 
         {
             BossAI::MoveInLineOfSight(who);
@@ -259,7 +302,7 @@ public:
                 SelectNearestTarget(who);
         }
 
-        void AttackStart(Unit* who) OVERRIDE
+        void AttackStart(Unit* who) override
         {
             if (!movementCompleted && !movementStarted)
             {
@@ -278,19 +321,19 @@ public:
             }
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/) override
         {
             if (!(rand()%5))
                 Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/) override
         {
             events.Reset();
             summons.DespawnAll();
 
             if (instance)
-                instance->SetData(uint32(DATA_HORSEMEN0) + id, DONE);
+                instance->SetData(DATA_HORSEMEN0 + id, DONE);
 
             if (instance && DoEncounteraction(NULL, false, false, true))
             {
@@ -305,7 +348,7 @@ public:
             Talk(SAY_DEATH);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/) override
         {
             _EnterCombat();
             Talk(SAY_AGGRO);
@@ -315,7 +358,7 @@ public:
             events.ScheduleEvent(EVENT_BERSERK, 15*100*1000);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (nextWP && movementStarted && !movementCompleted && !nextMovementStarted)
             {
@@ -378,6 +421,7 @@ public:
                 doDelayPunish = true;
         }
     };
+
 };
 
 class spell_four_horsemen_mark : public SpellScriptLoader
@@ -423,17 +467,19 @@ class spell_four_horsemen_mark : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register() override
             {
                 AfterEffectApply += AuraEffectApplyFn(spell_four_horsemen_mark_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL_OR_REAPPLY_MASK);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const override
         {
             return new spell_four_horsemen_mark_AuraScript();
         }
 };
+
+} // namespace
 
 void AddSC_boss_four_horsemen()
 {

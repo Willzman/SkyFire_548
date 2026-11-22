@@ -1,13 +1,54 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/boss_heigan.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
 #include "SpellScript.h"
-#include "naxxramas.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
 #include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "naxxramas.h"
+
+namespace
+{
 
 enum Heigan
 {
@@ -36,18 +77,12 @@ enum Phases
     PHASE_DANCE,
 };
 
-enum Misc
-{
-    ACTION_SAFETY_DANCE_FAIL        = 1,
-    DATA_SAFETY_DANCE               = 19962139
-};
-
 class boss_heigan : public CreatureScript
 {
 public:
     boss_heigan() : CreatureScript("boss_heigan") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new boss_heiganAI(creature);
     }
@@ -61,35 +96,27 @@ public:
         bool safetyDance;
         Phases phase;
 
-        void KilledUnit(Unit* who) OVERRIDE
+        void Reset() override
+        {
+            events.Reset();
+            me->GetMap()->SetWorldState(WORLDSTATE_SAFETY_DANCE, 1);
+        }
+
+        void KilledUnit(Unit* who) override
         {
             if (!(rand()%5))
                 Talk(SAY_SLAY);
             if (who->GetTypeId() == TypeID::TYPEID_PLAYER)
-                safetyDance = false;
+                me->GetMap()->SetWorldState(WORLDSTATE_SAFETY_DANCE, 0);
         }
 
-        void SetData(uint32 id, uint32 data) OVERRIDE
-        {
-            if (id == DATA_SAFETY_DANCE)
-                safetyDance = data ? true : false;
-        }
-
-        uint32 GetData(uint32 type) const OVERRIDE
-        {
-            if (type == DATA_SAFETY_DANCE)
-                return safetyDance ? 1 : 0;
-
-            return 0;
-        }
-
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/) override
         {
             _JustDied();
             Talk(SAY_DEATH);
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/) override
         {
             _EnterCombat();
             Talk(SAY_AGGRO);
@@ -124,7 +151,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim() || !CheckInRoom())
                 return;
@@ -166,6 +193,7 @@ public:
             DoMeleeAttackIfReady();
         }
     };
+
 };
 
 class spell_heigan_eruption : public SpellScriptLoader
@@ -186,44 +214,25 @@ class spell_heigan_eruption : public SpellScriptLoader
                 if (GetHitDamage() >= int32(GetHitPlayer()->GetHealth()))
                     if (InstanceScript* instance = caster->GetInstanceScript())
                         if (Creature* Heigan = ObjectAccessor::GetCreature(*caster, instance->GetData64(DATA_HEIGAN)))
-                            Heigan->AI()->SetData(DATA_SAFETY_DANCE, 0);
+                            Heigan->GetMap()->SetWorldState(WORLDSTATE_SAFETY_DANCE, 0);
             }
 
-            void Register() OVERRIDE
+            void Register() override
             {
                 OnEffectHitTarget += SpellEffectFn(spell_heigan_eruption_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
             }
         };
 
-        SpellScript* GetSpellScript() const OVERRIDE
+        SpellScript* GetSpellScript() const override
         {
             return new spell_heigan_eruption_SpellScript();
         }
 };
 
-class achievement_safety_dance : public AchievementCriteriaScript
-{
-    public:
-        achievement_safety_dance() : AchievementCriteriaScript("achievement_safety_dance")
-        {
-        }
-
-        bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
-        {
-            if (!target)
-                return false;
-
-            if (Creature* Heigan = target->ToCreature())
-                if (Heigan->AI()->GetData(DATA_SAFETY_DANCE))
-                    return true;
-
-            return false;
-        }
-};
+} // namespace
 
 void AddSC_boss_heigan()
 {
     new boss_heigan();
     new spell_heigan_eruption();
-    new achievement_safety_dance();
 }

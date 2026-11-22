@@ -1,10 +1,34 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/naxxramas.h, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
 #ifndef DEF_NAXXRAMAS_H
 #define DEF_NAXXRAMAS_H
+
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
+#include "ScriptedCreature.h"
+#include "InstanceScript.h"
+#include "ObjectMgr.h"
 
 uint32 const EncounterCount     = 15;
 
@@ -119,7 +143,8 @@ enum GameObjectsIds
     GO_CONS_EYE_RAMP_BOSS       = 181232,
     GO_CONS_NOX_TESLA_FEUGEN    = 181477,
     GO_CONS_NOX_TESLA_STALAGG   = 181478,
-    GO_BIRTH                    = 181356
+    GO_BIRTH                    = 181356,
+    GO_ORB_OF_NAXXRAMAS         = 202278,
 };
 
 enum SpellIds
@@ -128,6 +153,24 @@ enum SpellIds
     SPELL_SLIME                 = 28801
 };
 
+enum Worldstates
+{
+    WORLDSTATE_HUNDRED_CLUB           = 6414,
+    WORLDSTATE_SAFETY_DANCE           = 6319,
+    WORLDSTATE_MOMMA_SAID_KNOCK_U_OUT = 6323,
+    WORLDSTATE_SHOCKING               = 6433,
+    WORLDSTATE_SPORE_LOSER            = 6436,
+    WORLDSTATE_GO_DOWN_TOGETHER       = 6431,
+    WORLDSTATE_JUST_CANT_GET_ENOUGH   = 6438,
+};
+
+const std::map<uint32, uint32> invPortalType =
+{
+    { BOSS_THADDIUS, GO_CONS_PORTAL },
+    { BOSS_MAEXXNA,  GO_ARAC_PORTAL },
+    { BOSS_LOATHEB,  GO_PLAG_PORTAL },
+    { BOSS_HORSEMEN, GO_MILI_PORTAL },
+};
 /*
 template<class AI>
 CreatureAI* GetNaxxramasAI(Creature* creature)

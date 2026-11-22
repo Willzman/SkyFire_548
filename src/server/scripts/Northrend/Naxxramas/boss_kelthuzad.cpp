@@ -1,7 +1,25 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Naxxramas/boss_kelthuzad.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
 /* ScriptData
 SDName: Boss_KelThuzad
@@ -10,12 +28,34 @@ SDComment: VERIFY SCRIPT
 SDCategory: Naxxramas
 EndScriptData */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
 #include "SpellScript.h"
 #include "SpellAuraEffects.h"
-#include "naxxramas.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
 #include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "naxxramas.h"
+
+namespace
+{
 
 enum Yells
 {
@@ -233,7 +273,7 @@ const Position PosWeavers[MAX_WEAVERS] =
 };
 
 // predicate function to select not charmed target
-struct NotCharmedTargetSelector : public SF_UNARY_FUNCTION<Unit*, bool>
+struct NotCharmedTargetSelector 
 {
     NotCharmedTargetSelector() { }
 
@@ -282,7 +322,7 @@ public:
             chained.clear();
         }
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             _Reset();
 
@@ -299,6 +339,8 @@ public:
 
             if (instance)
                 instance->SetData(DATA_ABOMINATION_KILLED, 0);
+
+            me->GetMap()->SetWorldState(WORLDSTATE_JUST_CANT_GET_ENOUGH, 0);
 
             if (GameObject* pKTTrigger = me->GetMap()->GetGameObject(KTTriggerGUID))
             {
@@ -323,12 +365,12 @@ public:
             nWeaver = 0;
         }
 
-        void KilledUnit(Unit* /*victim*/) OVERRIDE
+        void KilledUnit(Unit* /*victim*/) override
         {
             Talk(SAY_SLAY);
         }
 
-        void JustDied(Unit* /*killer*/) OVERRIDE
+        void JustDied(Unit* /*killer*/) override
         {
             _JustDied();
             Talk(SAY_DEATH);
@@ -336,7 +378,7 @@ public:
             ResetPlayerScale();
         }
 
-        void EnterCombat(Unit* /*who*/) OVERRIDE
+        void EnterCombat(Unit* /*who*/) override
         {
             me->setFaction(uiFaction);
 
@@ -369,7 +411,7 @@ public:
             KTTriggerGUID = instance ? instance->GetData64(DATA_KELTHUZAD_TRIGGER) : 0;
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (!UpdateVictim())
                 return;
@@ -497,7 +539,7 @@ public:
                                     float scale = target->GetObjectScale();
                                     chained.insert(std::make_pair(target->GetGUID(), scale));
                                     target->SetObjectScale(scale * 2);
-                                    events.ScheduleEvent(EVENT_CHAINED_SPELL, 2000); //core has 2000ms to set unit flag charm
+                                    events.ScheduleEvent(EVENT_CHAINED_SPELL, 2000); //core has 2000 to set unit flag charm
                                 }
                             }
                             if (!chained.empty())
@@ -587,10 +629,10 @@ public:
                         case EVENT_DETONATE:
                         {
                             std::vector<Unit*> unitList;
-                            ThreatContainer::StorageType const &threatList = me->getThreatManager().getThreatList();
-                            for (ThreatContainer::StorageType::const_iterator itr = threatList.begin(); itr != threatList.end(); ++itr)
+                            auto threatList = me->getThreatManager().GetUnsortedThreatList();
+                            for (HostileReference const* ref : threatList)
                             {
-                                Unit* const target = (*itr)->getTarget();
+                                Unit* const target = ref->GetVictim();
 
                                 if (target->GetTypeId() == TypeID::TYPEID_PLAYER
                                         && target->getPowerType() == POWER_MANA
@@ -634,7 +676,7 @@ public:
         }
     };
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new boss_kelthuzadAI(creature);
     }
@@ -645,7 +687,7 @@ class at_kelthuzad_center : public AreaTriggerScript
 public:
     at_kelthuzad_center() : AreaTriggerScript("at_kelthuzad_center") { }
 
-    bool OnTrigger(Player* player, const AreaTriggerEntry* /*at*/) OVERRIDE
+    bool OnTrigger(Player* player, const AreaTriggerEntry* /*at*/) override
     {
         if (player->IsGameMaster())
             return false;
@@ -715,14 +757,14 @@ class npc_kelthuzad_abomination : public CreatureScript
                 _instance = creature->GetInstanceScript();
             }
 
-            void Reset() OVERRIDE
+            void Reset() override
             {
                 _events.Reset();
                 _events.ScheduleEvent(EVENT_MORTAL_WOUND, urand(2000, 5000));
                 DoCast(me, SPELL_FRENZY, true);
             }
 
-            void UpdateAI(uint32 diff) OVERRIDE
+            void UpdateAI(uint32 diff) override
             {
                 if (!UpdateVictim())
                     return;
@@ -743,7 +785,7 @@ class npc_kelthuzad_abomination : public CreatureScript
                 }
             }
 
-            void JustDied(Unit* /*killer*/) OVERRIDE
+            void JustDied(Unit* /*killer*/) override
             {
                 if (_instance)
                     _instance->SetData(DATA_ABOMINATION_KILLED, _instance->GetData(DATA_ABOMINATION_KILLED) + 1);
@@ -754,7 +796,7 @@ class npc_kelthuzad_abomination : public CreatureScript
             EventMap _events;
         };
 
-        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        CreatureAI* GetAI(Creature* creature) const override
         {
             return new npc_kelthuzad_abominationAI(creature);
         }
@@ -769,7 +811,7 @@ class spell_kelthuzad_detonate_mana : public SpellScriptLoader
         {
             PrepareAuraScript(spell_kelthuzad_detonate_mana_AuraScript);
 
-            bool Validate(SpellInfo const* /*spell*/) OVERRIDE
+            bool Validate(SpellInfo const* /*spell*/) override
             {
                 if (!sSpellMgr->GetSpellInfo(SPELL_MANA_DETONATION_DAMAGE))
                     return false;
@@ -788,35 +830,19 @@ class spell_kelthuzad_detonate_mana : public SpellScriptLoader
                 }
             }
 
-            void Register() OVERRIDE
+            void Register() override
             {
                 OnEffectPeriodic += AuraEffectPeriodicFn(spell_kelthuzad_detonate_mana_AuraScript::HandleScript, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
-        AuraScript* GetAuraScript() const OVERRIDE
+        AuraScript* GetAuraScript() const override
         {
             return new spell_kelthuzad_detonate_mana_AuraScript();
         }
 };
 
-class achievement_just_cant_get_enough : public AchievementCriteriaScript
-{
-   public:
-       achievement_just_cant_get_enough() : AchievementCriteriaScript("achievement_just_cant_get_enough") { }
-
-       bool OnCheck(Player* /*player*/, Unit* target) OVERRIDE
-       {
-           if (!target)
-               return false;
-
-           if (InstanceScript* instance = target->GetInstanceScript())
-               if (instance->GetData(DATA_ABOMINATION_KILLED) >= 18)
-                   return true;
-
-           return false;
-       }
-};
+} // namespace
 
 void AddSC_boss_kelthuzad()
 {
@@ -824,5 +850,4 @@ void AddSC_boss_kelthuzad()
     new at_kelthuzad_center();
     new npc_kelthuzad_abomination();
     new spell_kelthuzad_detonate_mana();
-    new achievement_just_cant_get_enough();
 }
