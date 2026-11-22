@@ -21,6 +21,7 @@
 #define SKYFIRE_PANDARIA_LOA_COMPAT_H
 
 #include "ScriptedCreature.h"
+#include "ScriptedEscortAI.h"
 #include "InstanceScript.h"
 #include "Player.h"
 #include "Pet.h"
@@ -33,6 +34,10 @@
 #include "SpellScript.h"
 #include "Spell.h"
 #include "SpellMgr.h"
+#include "SpellCalculations.h"
+#include "Weather.h"
+#include "WorldPacket.h"
+#include "Opcodes.h"
 
 namespace LoaCompat
 {
@@ -510,7 +515,213 @@ namespace LoaCompat
             && std::fabs(target->GetPositionZ() - center->GetPositionZ()) <= extentsZ / 2.0f;
     }
 
+    // LoA Map::SetZoneMusic / SetZoneWeather / SetZoneOverrideLight. SkyFire's Map keeps no per-zone state, so these
+    // only send the packet to the players who are in the zone now: a player who enters later does not get it.
+    inline void SendZonePacket(Map* map, uint32 zoneId, WorldPacket* data)
+    {
+        if (!map)
+            return;
+        Map::PlayerList const& players = map->GetPlayers();
+        for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+            if (Player* player = itr->GetSource())
+                if (player->GetZoneId() == zoneId)
+                    player->SendDirectMessage(data);
+    }
+
+    inline void SetZoneMusic(Map* map, uint32 zoneId, uint32 musicId)
+    {
+        WorldPacket data(SMSG_PLAY_MUSIC, 4);
+        data << uint32(musicId);
+        SendZonePacket(map, zoneId, &data);
+    }
+
+    inline void SetZoneWeather(Map* map, uint32 zoneId, WeatherState weatherId, float intensity)
+    {
+        WorldPacket data(SMSG_WEATHER, 4 + 4 + 1);
+        data << uint32(weatherId);
+        data << float(intensity);
+        data.WriteBit(false);              // Abrupt
+        data.FlushBits();
+        SendZonePacket(map, zoneId, &data);
+    }
+
+    // transitionTime in milliseconds; overrideLightId 0 goes back to the area's own light.
+    inline void SetZoneOverrideLight(Map* map, uint32 zoneId, uint32 areaLightId, uint32 overrideLightId, uint32 transitionTime)
+    {
+        WorldPacket data(SMSG_OVERRIDE_LIGHT, 12);
+        data << uint32(areaLightId);       // Light.dbc entry (map default)
+        data << uint32(overrideLightId);   // Light.dbc entry (override)
+        data << uint32(transitionTime);
+        SendZonePacket(map, zoneId, &data);
+    }
+
+    // Does the creature have the power for this spell (first SpellPower.dbc row that applies)? For CasterMovement.
+    inline bool HasPowerFor(Creature* me, SpellInfo const* spell)
+    {
+        if (!spell)
+            return false;
+        for (uint32 i = 0; i < sSpellPowerStore.GetNumRows(); ++i)
+        {
+            SpellPowerEntry const* spellPower = sSpellPowerStore.LookupEntry(i);
+            if (!spellPower || spellPower->spellId != spell->Id)
+                continue;
+            if (spellPower->ShapeShiftSpellID && !me->HasAura(spellPower->ShapeShiftSpellID))
+                continue;
+            if (spellPower->powerType > uint32(POWER_ENERGY))
+                return true;
+            Powers power = Powers(spellPower->powerType);
+            Skyfire::Spells::SpellPowerCostCalculationData costData =
+            {
+                spellPower->manaCost,
+                spellPower->manaPerSecond,
+                spellPower->ManaCostPercentageFloat,
+                spellPower->ChannelCostPercentageFloat,
+                int32(power),
+                me->GetCreateHealth(),
+                power == POWER_MANA ? me->GetCreateMana() : uint32(me->GetMaxPower(power))
+            };
+            return uint32(me->GetPower(power)) >= Skyfire::Spells::CalculateSpellPowerCosts(costData).PowerCost;
+        }
+        return true;
+    }
+
 } // namespace LoaCompat
+
+// LoA CasterMovement (ScriptedCreature.h): keeps a caster at spell range, and sends it into melee when it is silenced,
+// out of power or has every listed spell on cooldown.
+class CasterMovement
+{
+    public:
+        CasterMovement(Creature* me, uint32 updateInterval = 500) : _me(me), _updateInterval(updateInterval) { }
+        virtual ~CasterMovement() { }
+
+        virtual void Chase(Unit* target) { UpdateMovement(target, true); }
+
+        virtual void Update(uint32 diff, Unit* victim = NULL)
+        {
+            if (_me->HasUnitState(UNIT_STATE_CASTING | UNIT_STATE_LOST_CONTROL))
+                return;
+
+            if (_movementUpdateTimer > diff)
+            {
+                _movementUpdateTimer -= diff;
+                return;
+            }
+            _movementUpdateTimer = _updateInterval;
+
+            if (!victim && !(victim = _me->GetVictim()))
+            {
+                if (_me->IsGuardian())
+                {
+                    if (_me->GetMotionMaster()->GetCurrentMovementGeneratorType() == FOLLOW_MOTION_TYPE)
+                        return;
+
+                    _chasingInMelee = false;
+                    if (Unit* owner = _me->GetOwner())
+                        _me->GetMotionMaster()->MoveFollow(owner, PET_FOLLOW_DIST, _me->GetFollowAngle());
+                }
+                return;
+            }
+
+            UpdateMovement(victim);
+        }
+
+        bool IsChasingInMelee() const { return _chasingInMelee; }
+        bool IsUnableToCast() const { return _unableToCast; }
+
+        CasterMovement& Spell(uint32 spellId)
+        {
+            CasterDistanceBySpell(spellId, !_spells.empty());
+            _spells.push_back(spellId);
+            return *this;
+        }
+        CasterMovement& MeleeDistance(float distance) { _meleeDistance = distance; return *this; }
+        CasterMovement& CasterDistance(float distance) { _casterDistance = distance; return *this; }
+        CasterMovement& CasterDistanceBySpell(uint32 spellId, bool onlyCloser = false)
+        {
+            // LoA asserts on an unknown spell; here it keeps the current distance
+            if (SpellInfo const* spell = sSpellMgr->GetSpellInfo(spellId))
+                if (float range = spell->GetMaxRange(false, _me))
+                    if (!onlyCloser || _casterDistance > range - 5.0f)
+                        _casterDistance = std::max(NOMINAL_MELEE_RANGE, range - 5.0f); // 5 yards less: spells measure range from the combat reach
+            return *this;
+        }
+        CasterMovement& MeleeWhenUnableToCast(bool on = true) { _meleeWhenUnableToCast = on; return *this; }
+
+    protected:
+        Creature* _me;
+        uint32 _updateInterval;
+
+        std::vector<uint32> _spells;
+        float _meleeDistance = 0.0f;
+        float _casterDistance = 30.0f;
+        bool _meleeWhenUnableToCast = true;
+
+        uint32 _movementUpdateTimer = 0;
+        bool _chasingInMelee = false;
+        bool _unableToCast = false;
+
+        void UpdateMovement(Unit* target, bool force = false)
+        {
+            _unableToCast = false;
+            if (_meleeWhenUnableToCast)
+            {
+                _unableToCast = _me->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED);
+                if (!_unableToCast && !_spells.empty())
+                {
+                    _unableToCast = true;
+                    for (uint32 spell : _spells)
+                        if (!_me->HasSpellCooldown(spell) && LoaCompat::HasPowerFor(_me, sSpellMgr->GetSpellInfo(spell)))
+                        {
+                            _unableToCast = false;
+                            break;
+                        }
+                }
+            }
+
+            if (!_unableToCast)
+            {
+                if (_chasingInMelee || force)
+                {
+                    if (!_me->GetMotionMaster()->GetMotionSlot(MOTION_SLOT_CONTROLLED))
+                        _me->StopMoving();
+                    _me->GetMotionMaster()->MoveChase(target, _casterDistance, 0.0f);
+                    _chasingInMelee = false;
+                }
+            }
+            else if (!_chasingInMelee || force)
+            {
+                if (!_me->GetMotionMaster()->GetMotionSlot(MOTION_SLOT_CONTROLLED))
+                    _me->StopMoving();
+                _me->GetMotionMaster()->MoveChase(target, std::max(0.01f, _meleeDistance));
+                _chasingInMelee = true;
+            }
+        }
+};
+
+// LoA EscortAI (ScriptedEscortAI.h) is SkyFire's npc_escortAI with two differences: WaypointReached also gets a path
+// id and is optional, and Start has no run argument (the script calls SetRun, before or after Start).
+struct EscortAI : public npc_escortAI
+{
+    explicit EscortAI(Creature* creature) : npc_escortAI(creature), _run(false) { }
+
+    virtual void WaypointReached(uint32 /*waypointId*/, uint32 /*pathId*/) { }
+    void WaypointReached(uint32 pointId) override { WaypointReached(pointId, 0); }
+
+    void SetRun(bool on = true)
+    {
+        _run = on;
+        npc_escortAI::SetRun(on);
+    }
+
+    void Start(bool isActiveAttacker = true, uint64 playerGUID = 0, Quest const* quest = NULL, bool instantRespawn = false, bool canLoopPath = false)
+    {
+        npc_escortAI::Start(isActiveAttacker, _run, playerGUID, quest, instantRespawn, canLoopPath);
+    }
+
+    private:
+        bool _run;
+};
 
 // LoA UnitAI.h spec target selectors (true = valid target). Usable with remove_if / SelectTarget.
 // MeeleSpecTargetSelector and TankSpecTargetSelector live in the core (AI/CoreAI/UnitAI.h) with the same rules.

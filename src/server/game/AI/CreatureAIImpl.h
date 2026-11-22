@@ -616,6 +616,20 @@ public:
     }
 
     /**
+    * @name IsScheduled
+    * @brief Returns whether an event with the specified id is scheduled (any phase or group).
+    * @param eventId Wanted event id.
+    */
+    bool IsScheduled(uint32 eventId) const
+    {
+        for (EventStore::const_iterator itr = _eventMap.begin(); itr != _eventMap.end(); ++itr)
+            if (eventId == (itr->second & 0x0000FFFF))
+                return true;
+
+        return false;
+    }
+
+    /**
      * @name GetNextEventTime
      * @return Time of next event.
      */
