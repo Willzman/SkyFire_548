@@ -411,31 +411,6 @@ enum BinaryBrew
     SPELL_LEARN_GOBLIN_BINARY       = 50246
 };
 
-// 50243 - Teach Language
-class spell_brewfest_botm_teach_language : public SpellScript
-{
-    PrepareSpellScript(spell_brewfest_botm_teach_language);
-
-    bool Validate(SpellInfo const* /*spellInfo*/) override
-    {
-        if (!sSpellMgr->GetSpellInfo(SPELL_LEARN_GNOMISH_BINARY) ||
-            !sSpellMgr->GetSpellInfo(SPELL_LEARN_GOBLIN_BINARY))
-            return false;
-        return true;
-    }
-
-    void HandleDummy(SpellEffIndex /*effIndex*/)
-    {
-        if (Player* caster = GetCaster()->ToPlayer())
-            caster->CastSpell(caster, caster->GetTeam() == ALLIANCE ? SPELL_LEARN_GNOMISH_BINARY : SPELL_LEARN_GOBLIN_BINARY, true);
-    }
-
-    void Register() override
-    {
-        OnEffectHit += SpellEffectFn(spell_brewfest_botm_teach_language::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
-    }
-};
-
 enum WildWinterPilsner
 {
     SPELL_BOTM_UNLEASH_THE_BEAST    = 50099
@@ -727,7 +702,6 @@ void AddSC_event_brewfest()
     new spell_script<spell_brewfest_botm_empty_bottle_throw_resolve>("spell_brewfest_botm_empty_bottle_throw_resolve");
     new aura_script<spell_brewfest_botm_bloated>("spell_brewfest_botm_bloated");
     new aura_script<spell_brewfest_botm_internal_combustion>("spell_brewfest_botm_internal_combustion");
-    new spell_script<spell_brewfest_botm_teach_language>("spell_brewfest_botm_teach_language");
     new aura_script<spell_brewfest_botm_the_beast_within>("spell_brewfest_botm_the_beast_within");
     new aura_script<spell_brewfest_botm_gassy>("spell_brewfest_botm_gassy");
     new spell_script<spell_brewfest_botm_jungle_madness>("spell_brewfest_botm_jungle_madness");

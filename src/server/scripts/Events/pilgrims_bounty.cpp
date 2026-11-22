@@ -82,7 +82,7 @@ struct npc_lonely_turkey : public ScriptedAI
             if (Unit* owner = me->ToTempSummon()->GetSummoner())
                 me->GetMotionMaster()->MovePoint(0, owner->GetPositionX() + 25 * cos(owner->GetOrientation()), owner->GetPositionY() + 25 * cos(owner->GetOrientation()), owner->GetPositionZ());
 
-        timer = 3.5 * IN_MILLISECONDS;
+        timer = 3500;
     }
 
     void UpdateAI(uint32 diff) override

@@ -75,7 +75,7 @@ class spell_racer_slam_slamming : public SpellScript
 
     void HandleCast()
     {
-        auto check = [=](Unit* target)
+        auto check = [this](Unit* target)
         {
             if (!GetCaster()->IsInDist(target, 30))
                 return false;
@@ -120,7 +120,7 @@ class spell_racer_slam_hit_resolve : public SpellScript
 
     void SelectTarget(std::list<WorldObject*>& targets)
     {
-        targets.remove_if([=](WorldObject const* target)
+        targets.remove_if([this](WorldObject const* target)
         {
             if (target == GetCaster())
                 return true;
