@@ -237,7 +237,13 @@ Position const BrannIntroWaypoint[MAX_BRANN_WAYPOINTS_INTRO] =
     { 1635.000f, -169.5145f, 427.2523f, 0.0f },
 };
 Position const AlgalonSummonPos = { 1632.531f, -304.8516f, 450.1123f, 1.530165f };
-Position const AlgalonLandPos   = { 1632.668f, -302.7656f, 417.3211f, 1.530165f };
+} // namespace
+
+// declared in ulduar.h and used by other files: needs external linkage
+extern Position const AlgalonLandPos   = { 1632.668f, -302.7656f, 417.3211f, 1.530165f };
+
+namespace
+{
 
 #define LIVING_CONSTELLATION_COUNT 11
 Position const ConstellationPos[LIVING_CONSTELLATION_COUNT] =

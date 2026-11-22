@@ -515,20 +515,32 @@ Position const StormwindIllusionLaughingSkull[6]     =
 // End Illusions
 
 Position const YoggSaronSpawnPos            = { 1980.43f, -25.7708f, 324.9724f, 3.141593f };
-Position const ObservationRingKeepersPos[4] =
+} // namespace
+
+// declared in ulduar.h and used by other files: needs external linkage
+extern Position const ObservationRingKeepersPos[4] =
 {
     { 1945.682f,  33.34201f, 411.4408f, 5.270895f },  // Freya
     { 1945.761f, -81.52171f, 411.4407f, 1.029744f },  // Hodir
     { 2028.822f, -65.73573f, 411.4426f, 2.460914f },  // Thorim
     { 2028.766f,  17.42014f, 411.4446f, 3.857178f },  // Mimiron
 };
-Position const YSKeepersPos[4] =
+
+namespace
+{
+} // namespace
+
+// declared in ulduar.h and used by other files: needs external linkage
+extern Position const YSKeepersPos[4] =
 {
     { 2036.873f,  25.42513f, 338.4984f, 3.909538f },  // Freya
     { 1939.045f, -90.87457f, 338.5426f, 0.994837f },  // Hodir
     { 1939.148f,  42.49035f, 338.5427f, 5.235988f },  // Thorim
     { 2036.658f, -73.58822f, 338.4985f, 2.460914f },  // Mimiron
 };
+
+namespace
+{
 Position const IllusionsMiscPos[2] =
 {
     { 1928.793f,  65.03109f, 242.3763f, 0.0f }, // Garona end position
