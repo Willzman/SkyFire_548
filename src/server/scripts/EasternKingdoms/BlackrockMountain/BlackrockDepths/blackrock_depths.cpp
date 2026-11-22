@@ -1,15 +1,56 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "ScriptMgr.h"
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/BlackrockMountain/BlackrockDepths/blackrock_depths.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
+#include "ScriptMgr.h"
+#include "../../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
-#include "ScriptedEscortAI.h"
 #include "ScriptedGossip.h"
-#include "blackrock_depths.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
 #include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+#include "ScriptedEscortAI.h"
+#include "blackrock_depths.h"
 #include "WorldSession.h"
+
+namespace
+{
 
 //go_shadowforge_brazier
 class go_shadowforge_brazier : public GameObjectScript
@@ -17,7 +58,7 @@ class go_shadowforge_brazier : public GameObjectScript
 public:
     go_shadowforge_brazier() : GameObjectScript("go_shadowforge_brazier") { }
 
-    bool OnGossipHello(Player* /*player*/, GameObject* go) OVERRIDE
+    bool OnGossipHello(Player* /*player*/, GameObject* go) override
     {
         if (InstanceScript* instance = go->GetInstanceScript())
         {
@@ -70,7 +111,7 @@ class at_ring_of_law : public AreaTriggerScript
 public:
     at_ring_of_law() : AreaTriggerScript("at_ring_of_law") { }
 
-    bool OnTrigger(Player* player, const AreaTriggerEntry* /*at*/) OVERRIDE
+    bool OnTrigger(Player* player, const AreaTriggerEntry* /*at*/) override
     {
         if (InstanceScript* instance = player->GetInstanceScript())
         {
@@ -103,14 +144,14 @@ class npc_grimstone : public CreatureScript
 public:
     npc_grimstone() : CreatureScript("npc_grimstone") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new npc_grimstoneAI(creature);
     }
 
-    struct npc_grimstoneAI : public npc_escortAI
+    struct npc_grimstoneAI : public EscortAI
     {
-        npc_grimstoneAI(Creature* creature) : npc_escortAI(creature)
+        npc_grimstoneAI(Creature* creature) : EscortAI(creature)
         {
             instance = creature->GetInstanceScript();
             MobSpawnId = rand()%6;
@@ -130,7 +171,7 @@ public:
 
         bool CanWalk;
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
@@ -169,7 +210,7 @@ public:
             MobDeath_Timer = 2500;
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             switch (waypointId)
             {
@@ -210,7 +251,7 @@ public:
             instance->HandleGameObject(instance->GetData64(id), open);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (!instance)
                 return;
@@ -262,7 +303,7 @@ public:
                     case 0:
                         Talk(SAY_TEXT5);
                         HandleGameObject(DATA_ARENA4, false);
-                        Start(false, false);
+                        Start(false);
                         CanWalk = true;
                         Event_Timer = 0;
                         break;
@@ -322,7 +363,7 @@ public:
             }
 
             if (CanWalk)
-                npc_escortAI::UpdateAI(diff);
+                EscortAI::UpdateAI(diff);
            }
     };
 };
@@ -340,7 +381,7 @@ class npc_phalanx : public CreatureScript
 public:
     npc_phalanx() : CreatureScript("npc_phalanx") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new npc_phalanxAI(creature);
     }
@@ -353,14 +394,14 @@ public:
         uint32 FireballVolley_Timer;
         uint32 MightyBlow_Timer;
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             ThunderClap_Timer = 12000;
             FireballVolley_Timer = 0;
             MightyBlow_Timer = 15000;
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             //Return since we have no target
             if (!UpdateVictim())
@@ -418,7 +459,7 @@ class npc_kharan_mighthammer : public CreatureScript
 public:
     npc_kharan_mighthammer() : CreatureScript("npc_kharan_mighthammer") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
     {
         player->PlayerTalkClass->ClearMenus();
         switch (action)
@@ -467,7 +508,7 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    bool OnGossipHello(Player* player, Creature* creature) override
     {
         if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
@@ -512,7 +553,7 @@ class npc_lokhtos_darkbargainer : public CreatureScript
 public:
     npc_lokhtos_darkbargainer() : CreatureScript("npc_lokhtos_darkbargainer") { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) OVERRIDE
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_INFO_DEF + 1)
@@ -526,7 +567,7 @@ public:
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    bool OnGossipHello(Player* player, Creature* creature) override
     {
         if (creature->IsQuestGiver())
             player->PrepareQuestMenu(creature->GetGUID());
@@ -556,7 +597,7 @@ enum DughalQuests
     QUEST_JAIL_BREAK                      = 4322
 };
 
-#define SAY_DUGHAL_FREE         "Thank you, $N! I'm free!!!"
+#define SAY_DUGHAL_FREE         "Thank you, $n! I'm free!!!"
 #define GOSSIP_DUGHAL           "You're free, Dughal! Get out of here!"
 
 /*
@@ -565,31 +606,31 @@ class npc_dughal_stormwing : public CreatureScript
 public:
     npc_dughal_stormwing() : CreatureScript("npc_dughal_stormwing") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         npc_dughal_stormwingAI* dughal_stormwingAI = new npc_dughal_stormwingAI(creature);
 
-        dughal_stormwingAI->AddWaypoint(0, 280.42f, -82.86f, -77.12f, 0);
-        dughal_stormwingAI->AddWaypoint(1, 287.64f, -87.01f, -76.79f, 0);
-        dughal_stormwingAI->AddWaypoint(2, 354.63f, -64.95f, -67.53f, 0);
+        dughal_stormwingAI->AddWaypoint(0, 280.42f, -82.86f, -77.12f, 0.0f, (0), false);
+        dughal_stormwingAI->AddWaypoint(1, 287.64f, -87.01f, -76.79f, 0.0f, (0), false);
+        dughal_stormwingAI->AddWaypoint(2, 354.63f, -64.95f, -67.53f, 0.0f, (0), false);
 
         return dughal_stormwingAI;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) OVERRIDE
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) override
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
             player->CLOSE_GOSSIP_MENU();
-            CAST_AI(npc_escort::npc_escortAI, (creature->AI()))->Start(false, true, player->GetGUID());
+            CAST_AI(npc_escort::EscortAI, (creature->AI()))->SetRun(true); CAST_AI(npc_escort::EscortAI, (creature->AI()))->Start(false, player->GetGUID());
             creature->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             instance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_IN_PROGRESS);
         }
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    bool OnGossipHello(Player* player, Creature* creature) override
     {
         if (player->GetQuestStatus(QUEST_JAIL_BREAK) == QUEST_STATUS_INCOMPLETE && instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS)
         {
@@ -599,16 +640,16 @@ public:
         return true;
     }
 
-    struct npc_dughal_stormwingAI : public npc_escortAI
+    struct npc_dughal_stormwingAI : public EscortAI
     {
-        npc_dughal_stormwingAI(Creature* creature) : npc_escortAI(creature) { }
+        npc_dughal_stormwingAI(Creature* creature) : EscortAI(creature) { }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             switch (waypointId)
             {
                 case 0:
-                    me->Say(SAY_DUGHAL_FREE, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_DUGHAL_FREE, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 1:
                     instance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_OBJECTIVE_COMPLETED);
@@ -622,10 +663,10 @@ public:
             }
         }
 
-        void EnterCombat(Unit* who) OVERRIDE { }
-        void Reset() OVERRIDE { }
+        void EnterCombat(Unit* who) override { }
+        void Reset() override { }
 
-        void JustDied(Unit* killer) OVERRIDE
+        void JustDied(Unit* killer) override
         {
             if (IsBeingEscorted && killer == me)
             {
@@ -636,7 +677,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED) return;
             if ((instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS || instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_FAILED || instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_ENDED)&& instance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_ENDED)
@@ -651,7 +692,7 @@ public:
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             }
-            npc_escortAI::UpdateAI(diff);
+            EscortAI::UpdateAI(diff);
         }
     };
 };
@@ -661,12 +702,12 @@ public:
 // npc_marshal_windsor
 #define SAY_WINDSOR_AGGRO1          "You locked up the wrong Marshal. Prepare to be destroyed!"
 #define SAY_WINDSOR_AGGRO2          "I bet you're sorry now, aren't you !?!!"
-#define SAY_WINDSOR_AGGRO3          "You better hold me back $N or they are going to feel some prison house beatings."
+#define SAY_WINDSOR_AGGRO3          "You better hold me back $n or they are going to feel some prison house beatings."
 #define SAY_WINDSOR_1               "Let's get a move on. My gear should be in the storage area up this way..."
-#define SAY_WINDSOR_4_1             "Check that cell, $N. If someone is alive in there, we need to get them out."
+#define SAY_WINDSOR_4_1             "Check that cell, $n. If someone is alive in there, we need to get them out."
 #define SAY_WINDSOR_4_2             "Get him out of there!"
-#define SAY_WINDSOR_4_3             "Good work! We're almost there, $N. This way."
-#define SAY_WINDSOR_6               "This is it, $N. My stuff should be in that room. Cover me, I'm going in!"
+#define SAY_WINDSOR_4_3             "Good work! We're almost there, $n. This way."
+#define SAY_WINDSOR_6               "This is it, $n. My stuff should be in that room. Cover me, I'm going in!"
 #define SAY_WINDSOR_9               "Ah, there it is!"
 
 enum MarshalWindsor
@@ -681,42 +722,42 @@ class npc_marshal_windsor : public CreatureScript
 public:
     npc_marshal_windsor() : CreatureScript("npc_marshal_windsor") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         npc_marshal_windsorAI* marshal_windsorAI = new npc_marshal_windsorAI(creature);
 
-        marshal_windsorAI->AddWaypoint(0, 316.336f, -225.528f, -77.7258f, 7000);
-        marshal_windsorAI->AddWaypoint(1, 316.336f, -225.528f, -77.7258f, 2000);
-        marshal_windsorAI->AddWaypoint(2, 322.96f, -207.13f, -77.87f, 0);
-        marshal_windsorAI->AddWaypoint(3, 281.05f, -172.16f, -75.12f, 0);
-        marshal_windsorAI->AddWaypoint(4, 272.19f, -139.14f, -70.61f, 0);
-        marshal_windsorAI->AddWaypoint(5, 283.62f, -116.09f, -70.21f, 0);
-        marshal_windsorAI->AddWaypoint(6, 296.18f, -94.30f, -74.08f, 0);
-        marshal_windsorAI->AddWaypoint(7, 294.57f, -93.11f, -74.08f, 0);
-        marshal_windsorAI->AddWaypoint(8, 314.31f, -74.31f, -76.09f, 0);
-        marshal_windsorAI->AddWaypoint(9, 360.22f, -62.93f, -66.77f, 0);
-        marshal_windsorAI->AddWaypoint(10, 383.38f, -69.40f, -63.25f, 0);
-        marshal_windsorAI->AddWaypoint(11, 389.99f, -67.86f, -62.57f, 0);
-        marshal_windsorAI->AddWaypoint(12, 400.98f, -72.01f, -62.31f, 0);
-        marshal_windsorAI->AddWaypoint(13, 404.22f, -62.30f, -63.50f, 2300);
-        marshal_windsorAI->AddWaypoint(14, 404.22f, -62.30f, -63.50f, 1500);
-        marshal_windsorAI->AddWaypoint(15, 407.65f, -51.86f, -63.96f, 0);
-        marshal_windsorAI->AddWaypoint(16, 403.61f, -51.71f, -63.92f, 1000);
-        marshal_windsorAI->AddWaypoint(17, 403.61f, -51.71f, -63.92f, 2000);
-        marshal_windsorAI->AddWaypoint(18, 403.61f, -51.71f, -63.92f, 1000);
-        marshal_windsorAI->AddWaypoint(19, 403.61f, -51.71f, -63.92f, 0);
+        marshal_windsorAI->AddWaypoint(0, 316.336f, -225.528f, -77.7258f, 0.0f, (7000), false);
+        marshal_windsorAI->AddWaypoint(1, 316.336f, -225.528f, -77.7258f, 0.0f, (2000), false);
+        marshal_windsorAI->AddWaypoint(2, 322.96f, -207.13f, -77.87f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(3, 281.05f, -172.16f, -75.12f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(4, 272.19f, -139.14f, -70.61f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(5, 283.62f, -116.09f, -70.21f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(6, 296.18f, -94.30f, -74.08f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(7, 294.57f, -93.11f, -74.08f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(8, 314.31f, -74.31f, -76.09f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(9, 360.22f, -62.93f, -66.77f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(10, 383.38f, -69.40f, -63.25f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(11, 389.99f, -67.86f, -62.57f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(12, 400.98f, -72.01f, -62.31f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(13, 404.22f, -62.30f, -63.50f, 0.0f, (2300), false);
+        marshal_windsorAI->AddWaypoint(14, 404.22f, -62.30f, -63.50f, 0.0f, (1500), false);
+        marshal_windsorAI->AddWaypoint(15, 407.65f, -51.86f, -63.96f, 0.0f, (0), false);
+        marshal_windsorAI->AddWaypoint(16, 403.61f, -51.71f, -63.92f, 0.0f, (1000), false);
+        marshal_windsorAI->AddWaypoint(17, 403.61f, -51.71f, -63.92f, 0.0f, (2000), false);
+        marshal_windsorAI->AddWaypoint(18, 403.61f, -51.71f, -63.92f, 0.0f, (1000), false);
+        marshal_windsorAI->AddWaypoint(19, 403.61f, -51.71f, -63.92f, 0.0f, (0), false);
 
         return marshal_windsorAI;
     }
 
-    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) OVERRIDE
+    bool OnQuestAccept(Player* player, Creature* creature, Quest const* quest) override
     {
         if (quest->GetQuestId() == 4322)
         {
             PlayerStart = player;
             if (instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
             {
-                CAST_AI(npc_escort::npc_escortAI, (creature->AI()))->Start(true, false, player->GetGUID());
+                CAST_AI(npc_escort::EscortAI, (creature->AI()))->Start(true, player->GetGUID());
                 instance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_IN_PROGRESS);
                 creature->setFaction(11);
             }
@@ -724,30 +765,30 @@ public:
         return false;
     }
 
-    struct npc_marshal_windsorAI : public npc_escortAI
+    struct npc_marshal_windsorAI : public EscortAI
     {
-        npc_marshal_windsorAI(Creature* creature) : npc_escortAI(creature)
+        npc_marshal_windsorAI(Creature* creature) : EscortAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             switch (waypointId)
             {
                 case 1:
-                    me->Say(SAY_WINDSOR_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 7:
                     me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                    me->Say(SAY_WINDSOR_4_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_4_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold = true;
                     break;
                 case 10:
                     me->setFaction(534);
                     break;
                 case 12:
-                    me->Say(SAY_WINDSOR_6, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_6, Language::LANG_UNIVERSAL, PlayerGUID);
                     instance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_IN_PROGRESS);
                     break;
                 case 13:
@@ -758,7 +799,7 @@ public:
                     me->setFaction(11);
                     break;
                 case 16:
-                    me->Say(SAY_WINDSOR_9, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_9, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 17:
                     me->HandleEmoteCommand(EMOTE_STATE_USESTANDING);//EMOTE_STATE_WORK
@@ -770,36 +811,36 @@ public:
                     me->SetVisible(false);
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                     me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                    me->SummonCreature(NPC_REGINALD_WINDSOR, 403.61f, -51.71f, -63.92f, 3.600434f, TEMPSUMMON_DEAD_DESPAWN, 0);
+                    me->SummonCreature(NPC_REGINALD_WINDSOR, 403.61f, -51.71f, -63.92f, 3.600434f, TempSummonType::TEMPSUMMON_DEAD_DESPAWN, 0);
                     instance->SetData(DATA_SUPPLY_ROOM, ENCOUNTER_STATE_ENDED);
                     break;
             }
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who) override
         {
             switch (urand(0, 2))
             {
                 case 0:
-                    me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO1, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 1:
-                    me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 2:
-                    me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO3, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
             }
         }
 
-        void Reset() OVERRIDE { }
+        void Reset() override { }
 
-        void JustDied(Unit* slayer) OVERRIDE
+        void JustDied(Unit* slayer) override
         {
             instance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
                 return;
@@ -809,12 +850,12 @@ public:
 
             if (!instance->GetData(DATA_GATE_D) && instance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_NOT_STARTED)
             {
-                me->Say(SAY_WINDSOR_4_2, LANG_UNIVERSAL, PlayerGUID);
+                me->Say(SAY_WINDSOR_4_2, Language::LANG_UNIVERSAL, PlayerGUID);
                 instance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_BEFORE_START);
             }
             if (instance->GetData(DATA_DUGHAL) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED)
             {
-                me->Say(SAY_WINDSOR_4_3, LANG_UNIVERSAL, PlayerGUID);
+                me->Say(SAY_WINDSOR_4_3, Language::LANG_UNIVERSAL, PlayerGUID);
                 instance->SetData(DATA_DUGHAL, ENCOUNTER_STATE_ENDED);
             }
             if ((instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS || instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_FAILED || instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_ENDED)&& instance->GetData(DATA_SUPPLY_ROOM) == ENCOUNTER_STATE_ENDED)
@@ -829,7 +870,7 @@ public:
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             }
-            npc_escortAI::UpdateAI(diff);
+            EscortAI::UpdateAI(diff);
         }
     };
 };
@@ -837,7 +878,7 @@ public:
   */
 
 // npc_marshal_reginald_windsor
-#define SAY_REGINALD_WINDSOR_0_1    "Can you feel the power, $N??? It's time to ROCK!"
+#define SAY_REGINALD_WINDSOR_0_1    "Can you feel the power, $n??? It's time to ROCK!"
 #define SAY_REGINALD_WINDSOR_0_2    "Now we just have to free Tobias and we can get out of here. This way!"
 #define SAY_REGINALD_WINDSOR_5_1    "Open it."
 #define SAY_REGINALD_WINDSOR_5_2    "I never did like those two. Let's get moving."
@@ -848,7 +889,7 @@ public:
 #define SAY_REGINALD_WINDSOR_13_2   "Administering fists of fury on Crest Killer!"
 #define SAY_REGINALD_WINDSOR_13_3   "He has to be in the last cell. Unless... they killed him."
 #define SAY_REGINALD_WINDSOR_14_1   "Get him out of there!"
-#define SAY_REGINALD_WINDSOR_14_2   "Excellent work, $N. Let's find the exit. I think I know the way. Follow me!"
+#define SAY_REGINALD_WINDSOR_14_2   "Excellent work, $n. Let's find the exit. I think I know the way. Follow me!"
 #define SAY_REGINALD_WINDSOR_20_1   "We made it!"
 #define SAY_REGINALD_WINDSOR_20_2   "Meet me at Maxwell's encampment. We'll go over the next stages of the plan there and figure out a way to decode my tablets without the decryption ring."
 
@@ -865,114 +906,114 @@ class npc_marshal_reginald_windsor : public CreatureScript
 public:
     npc_marshal_reginald_windsor() : CreatureScript("npc_marshal_reginald_windsor") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         npc_marshal_reginald_windsorAI* marshal_reginald_windsorAI = new npc_marshal_reginald_windsorAI(creature);
 
-        marshal_reginald_windsorAI->AddWaypoint(0, 403.61f, -52.71f, -63.92f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(1, 403.61f, -52.71f, -63.92f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(2, 406.33f, -54.87f, -63.95f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(3, 407.99f, -73.91f, -62.26f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(4, 557.03f, -119.71f, -61.83f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(5, 573.40f, -124.39f, -65.07f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(6, 593.91f, -130.29f, -69.25f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(7, 593.21f, -132.16f, -69.25f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(8, 593.21f, -132.16f, -69.25f, 3000);
-        marshal_reginald_windsorAI->AddWaypoint(9, 622.81f, -135.55f, -71.92f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(10, 634.68f, -151.29f, -70.32f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(11, 635.06f, -153.25f, -70.32f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(12, 635.06f, -153.25f, -70.32f, 3000);
-        marshal_reginald_windsorAI->AddWaypoint(13, 635.06f, -153.25f, -70.32f, 1500);
-        marshal_reginald_windsorAI->AddWaypoint(14, 655.25f, -172.39f, -73.72f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(15, 654.79f, -226.30f, -83.06f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(16, 622.85f, -268.85f, -83.96f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(17, 579.45f, -275.56f, -80.44f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(18, 561.19f, -266.85f, -75.59f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(19, 547.91f, -253.92f, -70.34f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(20, 549.20f, -252.40f, -70.34f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(21, 549.20f, -252.40f, -70.34f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(22, 555.33f, -269.16f, -74.40f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(23, 554.31f, -270.88f, -74.40f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(24, 554.31f, -270.88f, -74.40f, 4000);
-        marshal_reginald_windsorAI->AddWaypoint(25, 536.10f, -249.60f, -67.47f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(26, 520.94f, -216.65f, -59.28f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(27, 505.99f, -148.74f, -62.17f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(28, 484.21f, -56.24f, -62.43f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(29, 470.39f, -6.01f, -70.10f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(30, 451.27f, 30.85f, -70.07f, 0);
-        marshal_reginald_windsorAI->AddWaypoint(31, 452.45f, 29.85f, -70.37f, 1500);
-        marshal_reginald_windsorAI->AddWaypoint(32, 452.45f, 29.85f, -70.37f, 7000);
-        marshal_reginald_windsorAI->AddWaypoint(33, 452.45f, 29.85f, -70.37f, 10000);
-        marshal_reginald_windsorAI->AddWaypoint(34, 451.27f, 31.85f, -70.07f, 0);
+        marshal_reginald_windsorAI->AddWaypoint(0, 403.61f, -52.71f, -63.92f, 0.0f, (4000), false);
+        marshal_reginald_windsorAI->AddWaypoint(1, 403.61f, -52.71f, -63.92f, 0.0f, (4000), false);
+        marshal_reginald_windsorAI->AddWaypoint(2, 406.33f, -54.87f, -63.95f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(3, 407.99f, -73.91f, -62.26f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(4, 557.03f, -119.71f, -61.83f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(5, 573.40f, -124.39f, -65.07f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(6, 593.91f, -130.29f, -69.25f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(7, 593.21f, -132.16f, -69.25f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(8, 593.21f, -132.16f, -69.25f, 0.0f, (3000), false);
+        marshal_reginald_windsorAI->AddWaypoint(9, 622.81f, -135.55f, -71.92f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(10, 634.68f, -151.29f, -70.32f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(11, 635.06f, -153.25f, -70.32f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(12, 635.06f, -153.25f, -70.32f, 0.0f, (3000), false);
+        marshal_reginald_windsorAI->AddWaypoint(13, 635.06f, -153.25f, -70.32f, 0.0f, (1500), false);
+        marshal_reginald_windsorAI->AddWaypoint(14, 655.25f, -172.39f, -73.72f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(15, 654.79f, -226.30f, -83.06f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(16, 622.85f, -268.85f, -83.96f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(17, 579.45f, -275.56f, -80.44f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(18, 561.19f, -266.85f, -75.59f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(19, 547.91f, -253.92f, -70.34f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(20, 549.20f, -252.40f, -70.34f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(21, 549.20f, -252.40f, -70.34f, 0.0f, (4000), false);
+        marshal_reginald_windsorAI->AddWaypoint(22, 555.33f, -269.16f, -74.40f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(23, 554.31f, -270.88f, -74.40f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(24, 554.31f, -270.88f, -74.40f, 0.0f, (4000), false);
+        marshal_reginald_windsorAI->AddWaypoint(25, 536.10f, -249.60f, -67.47f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(26, 520.94f, -216.65f, -59.28f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(27, 505.99f, -148.74f, -62.17f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(28, 484.21f, -56.24f, -62.43f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(29, 470.39f, -6.01f, -70.10f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(30, 451.27f, 30.85f, -70.07f, 0.0f, (0), false);
+        marshal_reginald_windsorAI->AddWaypoint(31, 452.45f, 29.85f, -70.37f, 0.0f, (1500), false);
+        marshal_reginald_windsorAI->AddWaypoint(32, 452.45f, 29.85f, -70.37f, 0.0f, (7000), false);
+        marshal_reginald_windsorAI->AddWaypoint(33, 452.45f, 29.85f, -70.37f, 0.0f, (10000), false);
+        marshal_reginald_windsorAI->AddWaypoint(34, 451.27f, 31.85f, -70.07f, 0.0f, (0), false);
 
         return marshal_reginald_windsorAI;
     }
 
-    struct npc_marshal_reginald_windsorAI : public npc_escortAI
+    struct npc_marshal_reginald_windsorAI : public EscortAI
     {
-        npc_marshal_reginald_windsorAI(Creature* creature) : npc_escortAI(creature)
+        npc_marshal_reginald_windsorAI(Creature* creature) : EscortAI(creature)
         {
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             wp = waypointId;
             switch (waypointId)
             {
                 case 0:
                     me->setFaction(11);
-                    me->Say(SAY_REGINALD_WINDSOR_0_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_0_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 1:
-                    me->Say(SAY_REGINALD_WINDSOR_0_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_0_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 7:
                     me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                    me->Say(SAY_REGINALD_WINDSOR_5_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_5_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
                 case 8:
-                    me->Say(SAY_REGINALD_WINDSOR_5_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_5_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 11:
                     me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                    me->Say(SAY_REGINALD_WINDSOR_7_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_7_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
                 case 12:
-                    me->Say(SAY_REGINALD_WINDSOR_7_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_7_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 13:
-                    me->Say(SAY_REGINALD_WINDSOR_7_3, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_7_3, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 20:
                     me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                    me->Say(SAY_REGINALD_WINDSOR_13_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_13_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
                 case 21:
-                    me->Say(SAY_REGINALD_WINDSOR_13_3, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_13_3, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 23:
                     me->HandleEmoteCommand(EMOTE_STATE_POINT);
-                    me->Say(SAY_REGINALD_WINDSOR_14_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_14_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     IsOnHold=true;
                     break;
                 case 24:
-                    me->Say(SAY_REGINALD_WINDSOR_14_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_14_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 31:
-                    me->Say(SAY_REGINALD_WINDSOR_20_1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_20_1, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 32:
-                    me->Say(SAY_REGINALD_WINDSOR_20_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_20_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     PlayerStart->GroupEventHappens(QUEST_JAIL_BREAK, me);
                     instance->SetData(DATA_SHILL, ENCOUNTER_STATE_ENDED);
                     break;
             }
         }
 
-        void MoveInLineOfSight(Unit* who) OVERRIDE
+        void MoveInLineOfSight(Unit* who) override
 
         {
             if (HasEscortState(STATE_ESCORT_ESCORTING))
@@ -986,35 +1027,35 @@ public:
                     if (me->IsWithinDistInMap(who, Radius))
                     {
                         SetEscortPaused(false);
-                        Start(true, false, who->GetGUID());
+                        Start(true, who->GetGUID());
                     }
                 }
             }
         }
 
-        void EnterCombat(Unit* who) OVERRIDE
+        void EnterCombat(Unit* who) override
         {
             switch (urand(0, 2))
             {
                 case 0:
-                    me->Say(SAY_WINDSOR_AGGRO1, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO1, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 1:
-                    me->Say(SAY_WINDSOR_AGGRO2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO2, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 2:
-                    me->Say(SAY_WINDSOR_AGGRO3, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_WINDSOR_AGGRO3, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
             }
         }
-        void Reset() OVERRIDE { }
+        void Reset() override { }
 
-        void JustDied(Unit* slayer) OVERRIDE
+        void JustDied(Unit* slayer) override
         {
             instance->SetData(DATA_QUEST_JAIL_BREAK, ENCOUNTER_STATE_FAILED);
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
                 return;
@@ -1050,7 +1091,7 @@ public:
                 if (!instance->GetData(DATA_GATE_C) && instance->GetData(DATA_CREST) == ENCOUNTER_STATE_NOT_STARTED)
                 {
                     instance->SetData(DATA_NPC_CREST, 1);
-                    me->Say(SAY_REGINALD_WINDSOR_13_2, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_REGINALD_WINDSOR_13_2, Language::LANG_UNIVERSAL, PlayerGUID);
                     instance->SetData(DATA_CREST, ENCOUNTER_STATE_IN_PROGRESS);
                 }
                 if (instance->GetData(DATA_NPC_CREST) && instance->GetData(DATA_CREST) == ENCOUNTER_STATE_IN_PROGRESS)
@@ -1060,7 +1101,7 @@ public:
                 }
             }
             if (instance->GetData(DATA_TOBIAS) == ENCOUNTER_STATE_OBJECTIVE_COMPLETED) SetEscortPaused(false);
-            npc_escortAI::UpdateAI(diff);
+            EscortAI::UpdateAI(diff);
         }
     };
 };
@@ -1075,7 +1116,7 @@ class npc_tobias_seecher : public CreatureScript
 public:
     npc_tobias_seecher() : CreatureScript("npc_tobias_seecher") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         npc_tobias_seecherAI* tobias_seecherAI = new npc_tobias_seecherAI(creature);
 
@@ -1088,20 +1129,20 @@ public:
         return tobias_seecherAI;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) OVERRIDE
+    bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action) override
     {
         player->PlayerTalkClass->ClearMenus();
         if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
             player->CLOSE_GOSSIP_MENU();
-            CAST_AI(npc_escort::npc_escortAI, (creature->AI()))->Start(false, true, player->GetGUID());
+            CAST_AI(npc_escort::EscortAI, (creature->AI()))->SetRun(true); CAST_AI(npc_escort::EscortAI, (creature->AI()))->Start(false, player->GetGUID());
             creature->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             instance->SetData(DATA_TOBIAS, ENCOUNTER_STATE_IN_PROGRESS);
         }
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) OVERRIDE
+    bool OnGossipHello(Player* player, Creature* creature) override
     {
         if (player->GetQuestStatus(QUEST_JAIL_BREAK) == QUEST_STATUS_INCOMPLETE && instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_IN_PROGRESS)
         {
@@ -1111,14 +1152,14 @@ public:
         return true;
     }
 
-    struct npc_tobias_seecherAI : public npc_escortAI
+    struct npc_tobias_seecherAI : public EscortAI
     {
-        npc_tobias_seecherAI(Creature* creature) : npc_escortAI(creature) { }
+        npc_tobias_seecherAI(Creature* creature) : EscortAI(creature) { }
 
-        void EnterCombat(Unit* who) OVERRIDE { }
-        void Reset() OVERRIDE { }
+        void EnterCombat(Unit* who) override { }
+        void Reset() override { }
 
-        void JustDied(Unit* killer) OVERRIDE
+        void JustDied(Unit* killer) override
         {
             if (IsBeingEscorted && killer == me)
             {
@@ -1129,12 +1170,12 @@ public:
             }
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             switch (waypointId)
             {
                 case 0:
-                    me->Say(SAY_TOBIAS_FREE, LANG_UNIVERSAL, PlayerGUID);
+                    me->Say(SAY_TOBIAS_FREE, Language::LANG_UNIVERSAL, PlayerGUID);
                     break;
                 case 2:
                     instance->SetData(DATA_TOBIAS, ENCOUNTER_STATE_OBJECTIVE_COMPLETED);
@@ -1148,7 +1189,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (instance->GetData(DATA_QUEST_JAIL_BREAK) == ENCOUNTER_STATE_NOT_STARTED)
                 return;
@@ -1165,7 +1206,7 @@ public:
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
             }
-            npc_escortAI::UpdateAI(diff);
+            EscortAI::UpdateAI(diff);
         }
     };
 };
@@ -1193,7 +1234,7 @@ class npc_rocknot : public CreatureScript
 public:
     npc_rocknot() : CreatureScript("npc_rocknot") { }
 
-    bool OnQuestReward(Player* /*player*/, Creature* creature, Quest const* quest, uint32 /*item*/) OVERRIDE
+    bool OnQuestReward(Player* /*player*/, Creature* creature, Quest const* quest, uint32 /*item*/) override
     {
         InstanceScript* instance = creature->GetInstanceScript();
         if (!instance)
@@ -1215,22 +1256,22 @@ public:
                 creature->AI()->Talk(SAY_GOT_BEER);
                 creature->CastSpell(creature, SPELL_DRUNKEN_RAGE, false);
 
-                if (npc_escortAI* escortAI = CAST_AI(npc_rocknot::npc_rocknotAI, creature->AI()))
-                    escortAI->Start(false, false);
+                if (EscortAI* escortAI = CAST_AI(npc_rocknot::npc_rocknotAI, creature->AI()))
+                    escortAI->Start(false);
             }
         }
 
         return true;
     }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
+    CreatureAI* GetAI(Creature* creature) const override
     {
         return new npc_rocknotAI(creature);
     }
 
-    struct npc_rocknotAI : public npc_escortAI
+    struct npc_rocknotAI : public EscortAI
     {
-        npc_rocknotAI(Creature* creature) : npc_escortAI(creature)
+        npc_rocknotAI(Creature* creature) : EscortAI(creature)
         {
             instance = creature->GetInstanceScript();
         }
@@ -1240,7 +1281,7 @@ public:
         uint32 BreakKeg_Timer;
         uint32 BreakDoor_Timer;
 
-        void Reset() OVERRIDE
+        void Reset() override
         {
             if (HasEscortState(STATE_ESCORT_ESCORTING))
                 return;
@@ -1255,7 +1296,7 @@ public:
                 go->SetGoState((GOState)state);
         }
 
-        void WaypointReached(uint32 waypointId) OVERRIDE
+        void WaypointReached(uint32 waypointId, uint32 pathId) override
         {
             if (!instance)
                 return;
@@ -1281,7 +1322,7 @@ public:
             }
         }
 
-        void UpdateAI(uint32 diff) OVERRIDE
+        void UpdateAI(uint32 diff) override
         {
             if (!instance)
                 return;
@@ -1315,10 +1356,92 @@ public:
                 } else BreakDoor_Timer -= diff;
             }
 
-            npc_escortAI::UpdateAI(diff);
+            EscortAI::UpdateAI(diff);
         }
     };
 };
+
+// Lord Roccor 9025
+class npc_lord_roccor : public CreatureScript
+{
+    public:
+        npc_lord_roccor() : CreatureScript("npc_lord_roccor") { }
+
+        enum iSpells
+        {
+            SPELL_GROUND_TREMOR = 6524,
+            SPELL_EARTH_SHOCK   = 13728,
+            SPELL_FLAME_SHOCK   = 13729,
+        };
+
+        enum iEvents
+        {
+            EVENT_GROUND_TREMOR = 1,
+            EVENT_EARTH_SHOCK   = 2,
+            EVENT_FLAME_SHOCK   = 3,
+        };
+
+        struct npc_lord_roccorAI : public ScriptedAI
+        {
+            npc_lord_roccorAI(Creature* creature) : ScriptedAI(creature) { }
+
+            EventMap events;
+
+            void Reset() override
+            {
+                events.Reset();
+            }
+
+            void EnterCombat(Unit* who) override 
+            {
+                events.ScheduleEvent(EVENT_EARTH_SHOCK, urand(7 * IN_MILLISECONDS, 9 * IN_MILLISECONDS));
+                events.ScheduleEvent(EVENT_EARTH_SHOCK, 14 * IN_MILLISECONDS);
+                events.ScheduleEvent(EVENT_FLAME_SHOCK, urand(5 * IN_MILLISECONDS, 13 * IN_MILLISECONDS));
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (!UpdateVictim())
+                    return;
+
+                events.Update(diff);
+
+                while (uint32 eventId = events.ExecuteEvent())
+                {
+                    switch (eventId)
+                    {
+                        case EVENT_GROUND_TREMOR:
+                            DoCast(me, SPELL_GROUND_TREMOR);
+                            events.ScheduleEvent(EVENT_EARTH_SHOCK, urand(7 * IN_MILLISECONDS, 9 * IN_MILLISECONDS));
+                            break;
+                        case EVENT_EARTH_SHOCK:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
+                                DoCast(target, SPELL_EARTH_SHOCK);
+                            else if (Unit* target = me->GetVictim())
+                                DoCast(target, SPELL_EARTH_SHOCK);
+
+                            events.ScheduleEvent(EVENT_EARTH_SHOCK, urand(9 * IN_MILLISECONDS, 15 * IN_MILLISECONDS));
+                            break;
+                        case EVENT_FLAME_SHOCK:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
+                                DoCast(target, SPELL_FLAME_SHOCK);
+
+                            events.ScheduleEvent(EVENT_FLAME_SHOCK, urand(8 * IN_MILLISECONDS, 18 * IN_MILLISECONDS));
+                            break;
+                    }
+                }
+
+                DoMeleeAttackIfReady();
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
+        {
+            return new npc_lord_roccorAI(creature);
+        }
+};
+
+} // namespace
 
 void AddSC_blackrock_depths()
 {
@@ -1329,6 +1452,7 @@ void AddSC_blackrock_depths()
     new npc_kharan_mighthammer();
     new npc_lokhtos_darkbargainer();
     new npc_rocknot();
+    new npc_lord_roccor();
     // Fix us
     /*new npc_dughal_stormwing();
       new npc_tobias_seecher();

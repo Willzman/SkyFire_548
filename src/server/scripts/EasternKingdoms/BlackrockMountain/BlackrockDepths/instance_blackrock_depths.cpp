@@ -1,29 +1,81 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/BlackrockMountain/BlackrockDepths/instance_blackrock_depths.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
+
 #include "ScriptMgr.h"
+#include "../../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
 #include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
 #include "blackrock_depths.h"
+
+namespace
+{
 
 #define TIMER_TOMBOFTHESEVEN    15000
 #define MAX_ENCOUNTER           6
 
 enum Creatures
 {
-    NPC_EMPEROR             = 9019,
-    NPC_PHALANX             = 9502,
-    NPC_ANGERREL            = 9035,
-    NPC_DOPEREL             = 9040,
-    NPC_HATEREL             = 9034,
-    NPC_VILEREL             = 9036,
-    NPC_SEETHREL            = 9038,
-    NPC_GLOOMREL            = 9037,
-    NPC_DOOMREL             = 9039,
-    NPC_MAGMUS              = 9938,
-    NPC_MOIRA               = 8929
+    NPC_EMPEROR                 = 9019,
+    NPC_PHALANX                 = 9502,
+    NPC_ANGERREL                = 9035,
+    NPC_DOPEREL                 = 9040,
+    NPC_HATEREL                 = 9034,
+    NPC_VILEREL                 = 9036,
+    NPC_SEETHREL                = 9038,
+    NPC_GLOOMREL                = 9037,
+    NPC_DOOMREL                 = 9039,
+    NPC_MAGMUS                  = 9938,
+    NPC_MOIRA                   = 8929,
+
+    // Quests:: Horde
+    NPC_HIGH_EXECUTIONER_NEZRAK = 45823,
+    NPC_GALAMAV_MARKSMAN        = 45839,
+    NPC_THALTRAK_PROUDTUSK      = 45821,
+
+    // Quests:: Alliance
+    NPC_MORGAN                  = 45903,
+    NPC_ORALIUS                 = 45891,
+    NPC_JALINDA_SPRIG           = 45892,
 };
 
 enum GameObjects
@@ -56,7 +108,7 @@ class instance_blackrock_depths : public InstanceMapScript
 public:
     instance_blackrock_depths() : InstanceMapScript("instance_blackrock_depths", 230) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
+    InstanceScript* GetInstanceScript(InstanceMap* map) const override
     {
         return new instance_blackrock_depths_InstanceMapScript(map);
     }
@@ -72,6 +124,7 @@ public:
         uint64 PhalanxGUID;
         uint64 MagmusGUID;
         uint64 MoiraGUID;
+        uint64 CorenGUID;
 
         uint64 GoArena1GUID;
         uint64 GoArena2GUID;
@@ -101,37 +154,13 @@ public:
         uint64 TombEventStarterGUID;
         uint32 TombTimer;
         uint32 TombEventCounter;
+        uint32 teamInInstance;
 
-        void Initialize() OVERRIDE
+        void Initialize() override
         {
             memset(&encounter, 0, sizeof(encounter));
 
-            EmperorGUID = 0;
-            PhalanxGUID = 0;
-            MagmusGUID = 0;
-            MoiraGUID = 0;
-
-            GoArena1GUID = 0;
-            GoArena2GUID = 0;
-            GoArena3GUID = 0;
-            GoArena4GUID = 0;
-            GoShadowLockGUID = 0;
-            GoShadowMechGUID = 0;
-            GoShadowGiantGUID = 0;
-            GoShadowDummyGUID = 0;
-            GoBarKegGUID = 0;
-            GoBarKegTrapGUID = 0;
-            GoBarDoorGUID = 0;
-            GoTombEnterGUID = 0;
-            GoTombExitGUID = 0;
-            GoLyceumGUID = 0;
-            GoSFSGUID = 0;
-            GoSFNGUID = 0;
-            GoGolemNGUID = 0;
-            GoGolemSGUID = 0;
-            GoThroneGUID = 0;
-            GoChestGUID = 0;
-            GoSpectralChaliceGUID = 0;
+            teamInInstance = 0;
 
             BarAleCount = 0;
             GhostKillCount = 0;
@@ -143,108 +172,134 @@ public:
                 TombBossGUIDs[i] = 0;
         }
 
-        void OnCreatureCreate(Creature* creature) OVERRIDE
+        void OnPlayerEnter(Player* player) override
         {
+            if (!teamInInstance)
+                teamInInstance = player->GetTeam();
+        }
+
+        void OnCreatureCreate(Creature* creature) override
+        {
+            if (!teamInInstance)
+            {
+                Map::PlayerList const &players = instance->GetPlayers();
+                if (!players.isEmpty())
+                    if (Player* player = players.begin()->GetSource())
+                        teamInInstance = player->GetTeam();
+            }
+
             switch (creature->GetEntry())
             {
-            case NPC_EMPEROR: EmperorGUID = creature->GetGUID(); break;
-            case NPC_PHALANX: PhalanxGUID = creature->GetGUID(); break;
-            case NPC_MOIRA: MoiraGUID = creature->GetGUID(); break;
-            case NPC_DOOMREL: TombBossGUIDs[0] = creature->GetGUID(); break;
-            case NPC_DOPEREL: TombBossGUIDs[1] = creature->GetGUID(); break;
-            case NPC_HATEREL: TombBossGUIDs[2] = creature->GetGUID(); break;
-            case NPC_VILEREL: TombBossGUIDs[3] = creature->GetGUID(); break;
-            case NPC_SEETHREL: TombBossGUIDs[4] = creature->GetGUID(); break;
-            case NPC_GLOOMREL: TombBossGUIDs[5] = creature->GetGUID(); break;
-            case NPC_ANGERREL: TombBossGUIDs[6] = creature->GetGUID(); break;
-            case NPC_MAGMUS:
-                MagmusGUID = creature->GetGUID();
-                if (!creature->IsAlive())
-                    HandleGameObject(GetData64(DATA_THRONE_DOOR), true); // if Magmus is dead open door to last boss
-                break;
+                case NPC_EMPEROR: EmperorGUID = creature->GetGUID(); break;
+                case NPC_PHALANX: PhalanxGUID = creature->GetGUID(); break;
+                case NPC_MOIRA: MoiraGUID = creature->GetGUID(); break;
+                case NPC_DOOMREL: TombBossGUIDs[0] = creature->GetGUID(); break;
+                case NPC_DOPEREL: TombBossGUIDs[1] = creature->GetGUID(); break;
+                case NPC_HATEREL: TombBossGUIDs[2] = creature->GetGUID(); break;
+                case NPC_VILEREL: TombBossGUIDs[3] = creature->GetGUID(); break;
+                case NPC_SEETHREL: TombBossGUIDs[4] = creature->GetGUID(); break;
+                case NPC_GLOOMREL: TombBossGUIDs[5] = creature->GetGUID(); break;
+                case NPC_ANGERREL: TombBossGUIDs[6] = creature->GetGUID(); break;
+                case NPC_MAGMUS:
+                    MagmusGUID = creature->GetGUID();
+                    if (!creature->IsAlive())
+                        HandleGameObject(GetData64(DATA_THRONE_DOOR), true); // if Magmus is dead open door to last boss
+                    break;
+                case NPC_HIGH_EXECUTIONER_NEZRAK:
+                    if (teamInInstance == ALLIANCE)
+                        creature->UpdateEntry(NPC_MORGAN, ALLIANCE);
+                    break;
+                case NPC_GALAMAV_MARKSMAN:
+                    if (teamInInstance == ALLIANCE)
+                        creature->UpdateEntry(NPC_ORALIUS, ALLIANCE);
+                    break;
+                case NPC_THALTRAK_PROUDTUSK:
+                    if (teamInInstance == ALLIANCE)
+                        creature->UpdateEntry(NPC_JALINDA_SPRIG, ALLIANCE);
+                    break;
             }
         }
 
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
+        void OnGameObjectCreate(GameObject* go) override
         {
             switch (go->GetEntry())
             {
-            case GO_ARENA1: GoArena1GUID = go->GetGUID(); break;
-            case GO_ARENA2: GoArena2GUID = go->GetGUID(); break;
-            case GO_ARENA3: GoArena3GUID = go->GetGUID(); break;
-            case GO_ARENA4: GoArena4GUID = go->GetGUID(); break;
-            case GO_SHADOW_LOCK: GoShadowLockGUID = go->GetGUID(); break;
-            case GO_SHADOW_MECHANISM: GoShadowMechGUID = go->GetGUID(); break;
-            case GO_SHADOW_GIANT_DOOR: GoShadowGiantGUID = go->GetGUID(); break;
-            case GO_SHADOW_DUMMY: GoShadowDummyGUID = go->GetGUID(); break;
-            case GO_BAR_KEG_SHOT: GoBarKegGUID = go->GetGUID(); break;
-            case GO_BAR_KEG_TRAP: GoBarKegTrapGUID = go->GetGUID(); break;
-            case GO_BAR_DOOR: GoBarDoorGUID = go->GetGUID(); break;
-            case GO_TOMB_ENTER: GoTombEnterGUID = go->GetGUID(); break;
-            case GO_TOMB_EXIT:
-                GoTombExitGUID = go->GetGUID();
-                if (GhostKillCount >= 7)
-                    HandleGameObject(0, true, go);
-                else
-                    HandleGameObject(0, false, go);
-                break;
-            case GO_LYCEUM: GoLyceumGUID = go->GetGUID(); break;
-            case GO_SF_S: GoSFSGUID = go->GetGUID(); break;
-            case GO_SF_N: GoSFNGUID = go->GetGUID(); break;
-            case GO_GOLEM_ROOM_N: GoGolemNGUID = go->GetGUID(); break;
-            case GO_GOLEM_ROOM_S: GoGolemSGUID = go->GetGUID(); break;
-            case GO_THRONE_ROOM: GoThroneGUID = go->GetGUID(); break;
-            case GO_CHEST_SEVEN: GoChestGUID = go->GetGUID(); break;
-            case GO_SPECTRAL_CHALICE: GoSpectralChaliceGUID = go->GetGUID(); break;
+                case GO_ARENA1: GoArena1GUID = go->GetGUID(); break;
+                case GO_ARENA2: GoArena2GUID = go->GetGUID(); break;
+                case GO_ARENA3: GoArena3GUID = go->GetGUID(); break;
+                case GO_ARENA4: GoArena4GUID = go->GetGUID(); break;
+                case GO_SHADOW_LOCK: GoShadowLockGUID = go->GetGUID(); break;
+                case GO_SHADOW_MECHANISM: GoShadowMechGUID = go->GetGUID(); break;
+                case GO_SHADOW_GIANT_DOOR: GoShadowGiantGUID = go->GetGUID(); break;
+                case GO_SHADOW_DUMMY: GoShadowDummyGUID = go->GetGUID(); break;
+                case GO_BAR_KEG_SHOT: GoBarKegGUID = go->GetGUID(); break;
+                case GO_BAR_KEG_TRAP: GoBarKegTrapGUID = go->GetGUID(); break;
+                case GO_BAR_DOOR: GoBarDoorGUID = go->GetGUID(); break;
+                case GO_TOMB_ENTER: GoTombEnterGUID = go->GetGUID(); break;
+                case GO_TOMB_EXIT:
+                    GoTombExitGUID = go->GetGUID();
+                    if (GhostKillCount >= 7)
+                        HandleGameObject(0, true, go);
+                    else
+                        HandleGameObject(0, false, go);
+                    break;
+                case GO_LYCEUM: GoLyceumGUID = go->GetGUID(); break;
+                case GO_SF_S: GoSFSGUID = go->GetGUID(); break;
+                case GO_SF_N: GoSFNGUID = go->GetGUID(); break;
+                case GO_GOLEM_ROOM_N: GoGolemNGUID = go->GetGUID(); break;
+                case GO_GOLEM_ROOM_S: GoGolemSGUID = go->GetGUID(); break;
+                case GO_THRONE_ROOM: GoThroneGUID = go->GetGUID(); break;
+                case GO_CHEST_SEVEN: GoChestGUID = go->GetGUID(); break;
+                case GO_SPECTRAL_CHALICE: GoSpectralChaliceGUID = go->GetGUID(); break;
             }
         }
 
-        void SetData64(uint32 type, uint64 data) OVERRIDE
+        void SetData64(uint32 type, uint64 data) override
         {
             SF_LOG_DEBUG("scripts", "Instance Blackrock Depths: SetData64 update (Type: %u Data " UI64FMTD ")", type, data);
 
             switch (type)
             {
-            case DATA_EVENSTARTER:
-                TombEventStarterGUID = data;
-                if (!TombEventStarterGUID)
-                    TombOfSevenReset();//reset
-                else
-                    TombOfSevenStart();//start
-                break;
+                case DATA_EVENSTARTER:
+                    TombEventStarterGUID = data;
+                    if (!TombEventStarterGUID)
+                        TombOfSevenReset();//reset
+                    else
+                        TombOfSevenStart();//start
+                    break;
             }
         }
 
-        void SetData(uint32 type, uint32 data) OVERRIDE
+        void SetData(uint32 type, uint32 data) override
         {
             SF_LOG_DEBUG("scripts", "Instance Blackrock Depths: SetData update (Type: %u Data %u)", type, data);
 
             switch (type)
             {
-            case TYPE_RING_OF_LAW:
-                encounter[0] = data;
-                break;
-            case TYPE_VAULT:
-                encounter[1] = data;
-                break;
-            case TYPE_BAR:
-                if (data == SPECIAL)
-                    ++BarAleCount;
-                else
-                    encounter[2] = data;
-                break;
-            case TYPE_TOMB_OF_SEVEN:
-                encounter[3] = data;
-                break;
-            case TYPE_LYCEUM:
-                encounter[4] = data;
-                break;
-            case TYPE_IRON_HALL:
-                encounter[5] = data;
-                break;
-            case DATA_GHOSTKILL:
-                GhostKillCount += data;
-                break;
+                case TYPE_RING_OF_LAW:
+                    encounter[0] = data;
+                    break;
+                case TYPE_VAULT:
+                    encounter[1] = data;
+                    break;
+                case TYPE_BAR:
+                    if (data == SPECIAL)
+                        ++BarAleCount;
+                    else
+                        encounter[2] = data;
+                    break;
+                case TYPE_TOMB_OF_SEVEN:
+                    encounter[3] = data;
+                    break;
+                case TYPE_LYCEUM:
+                    encounter[4] = data;
+                    break;
+                case TYPE_IRON_HALL:
+                    encounter[5] = data;
+                    break;
+                case DATA_GHOSTKILL:
+                    GhostKillCount += data;
+                    break;
             }
 
             if (data == DONE || GhostKillCount >= 7)
@@ -262,79 +317,79 @@ public:
             }
         }
 
-        uint32 GetData(uint32 type) const OVERRIDE
+        uint32 GetData(uint32 type) const override
         {
             switch (type)
             {
-            case TYPE_RING_OF_LAW:
-                return encounter[0];
-            case TYPE_VAULT:
-                return encounter[1];
-            case TYPE_BAR:
-                if (encounter[2] == IN_PROGRESS && BarAleCount == 3)
-                    return SPECIAL;
-                else
-                    return encounter[2];
-            case TYPE_TOMB_OF_SEVEN:
-                return encounter[3];
-            case TYPE_LYCEUM:
-                return encounter[4];
-            case TYPE_IRON_HALL:
-                return encounter[5];
-            case DATA_GHOSTKILL:
-                return GhostKillCount;
+                case TYPE_RING_OF_LAW:
+                    return encounter[0];
+                case TYPE_VAULT:
+                    return encounter[1];
+                case TYPE_BAR:
+                    if (encounter[2] == IN_PROGRESS && BarAleCount == 3)
+                        return SPECIAL;
+                    else
+                        return encounter[2];
+                case TYPE_TOMB_OF_SEVEN:
+                    return encounter[3];
+                case TYPE_LYCEUM:
+                    return encounter[4];
+                case TYPE_IRON_HALL:
+                    return encounter[5];
+                case DATA_GHOSTKILL:
+                    return GhostKillCount;
             }
             return 0;
         }
 
-        uint64 GetData64(uint32 data) const OVERRIDE
+        uint64 GetData64(uint32 data) const override
         {
             switch (data)
             {
-            case DATA_EMPEROR:
-                return EmperorGUID;
-            case DATA_PHALANX:
-                return PhalanxGUID;
-            case DATA_MOIRA:
-                return MoiraGUID;
-            case DATA_ARENA1:
-                return GoArena1GUID;
-            case DATA_ARENA2:
-                return GoArena2GUID;
-            case DATA_ARENA3:
-                return GoArena3GUID;
-            case DATA_ARENA4:
-                return GoArena4GUID;
-            case DATA_GO_BAR_KEG:
-                return GoBarKegGUID;
-            case DATA_GO_BAR_KEG_TRAP:
-                return GoBarKegTrapGUID;
-            case DATA_GO_BAR_DOOR:
-                return GoBarDoorGUID;
-            case DATA_EVENSTARTER:
-                return TombEventStarterGUID;
-            case DATA_SF_BRAZIER_N:
-                return GoSFNGUID;
-            case DATA_SF_BRAZIER_S:
-                return GoSFSGUID;
-            case DATA_THRONE_DOOR:
-                return GoThroneGUID;
-            case DATA_GOLEM_DOOR_N:
-                return GoGolemNGUID;
-            case DATA_GOLEM_DOOR_S:
-                return GoGolemSGUID;
-            case DATA_GO_CHALICE:
-                return GoSpectralChaliceGUID;
+                case DATA_EMPEROR:
+                    return EmperorGUID;
+                case DATA_PHALANX:
+                    return PhalanxGUID;
+                case DATA_MOIRA:
+                    return MoiraGUID;
+                case DATA_ARENA1:
+                    return GoArena1GUID;
+                case DATA_ARENA2:
+                    return GoArena2GUID;
+                case DATA_ARENA3:
+                    return GoArena3GUID;
+                case DATA_ARENA4:
+                    return GoArena4GUID;
+                case DATA_GO_BAR_KEG:
+                    return GoBarKegGUID;
+                case DATA_GO_BAR_KEG_TRAP:
+                    return GoBarKegTrapGUID;
+                case DATA_GO_BAR_DOOR:
+                    return GoBarDoorGUID;
+                case DATA_EVENSTARTER:
+                    return TombEventStarterGUID;
+                case DATA_SF_BRAZIER_N:
+                    return GoSFNGUID;
+                case DATA_SF_BRAZIER_S:
+                    return GoSFSGUID;
+                case DATA_THRONE_DOOR:
+                    return GoThroneGUID;
+                case DATA_GOLEM_DOOR_N:
+                    return GoGolemNGUID;
+                case DATA_GOLEM_DOOR_S:
+                    return GoGolemSGUID;
+                case DATA_GO_CHALICE:
+                    return GoSpectralChaliceGUID;
             }
             return 0;
         }
 
-        std::string GetSaveData() OVERRIDE
+        std::string GetSaveData() override
         {
             return str_data;
         }
 
-        void Load(const char* in) OVERRIDE
+        void Load(const char* in) override
         {
             if (!in)
             {
@@ -385,6 +440,7 @@ public:
                     {//do not call EnterEvadeMode(), it will create infinit loops
                         boss->Respawn();
                         boss->RemoveAllAuras();
+                        boss->getHostileRefManager().deleteReferences();
                         boss->DeleteThreatList();
                         boss->CombatStop(true);
                         boss->LoadCreaturesAddon();
@@ -416,7 +472,7 @@ public:
             TombEventStarterGUID = 0;
             SetData(TYPE_TOMB_OF_SEVEN, DONE);
         }
-        void Update(uint32 diff) OVERRIDE
+        void Update(uint32 diff) override
         {
             if (TombEventStarterGUID && GhostKillCount < 7)
             {
@@ -443,6 +499,8 @@ public:
         }
     };
 };
+
+} // namespace
 
 void AddSC_instance_blackrock_depths()
 {
