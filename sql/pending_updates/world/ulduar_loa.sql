@@ -144,8 +144,6 @@ DELETE FROM `spell_script_names` WHERE `spell_id` = 62692 AND `ScriptName` = 'sp
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (62692, 'spell_aura_of_despair_aura');
 DELETE FROM `spell_script_names` WHERE `spell_id` = 62713 AND `ScriptName` = 'spell_elder_ironbranch_essence_targeting';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (62713, 'spell_elder_ironbranch_essence_targeting');
-DELETE FROM `spell_script_names` WHERE `spell_id` = 62791 AND `ScriptName` = 'spell_xt002_heart_overload_periodic';
-INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (62791, 'spell_xt002_heart_overload_periodic');
 DELETE FROM `spell_script_names` WHERE `spell_id` = 62807 AND `ScriptName` = 'spell_achievement_related_staying_buffed_all_winter';
 INSERT INTO `spell_script_names` (`spell_id`, `ScriptName`) VALUES (62807, 'spell_achievement_related_staying_buffed_all_winter');
 DELETE FROM `spell_script_names` WHERE `spell_id` = 62821 AND `ScriptName` = 'spell_achievement_related_staying_buffed_all_winter';
@@ -659,7 +657,6 @@ INSERT INTO `achievement_criteria_data` (`criteria_id`, `type`, `value1`, `value
 (10421, 11, 0, 0, 'achievement_but_i_am_on_your_side_25'),
 (10452, 11, 0, 0, 'achievement_i_could_say_that_this_cache_was_rare'),
 (10458, 11, 0, 0, 'achievement_i_could_say_that_this_cache_was_rare_25'),
-(10042, 18, 0, 0, ''),
 (10185, 18, 0, 0, ''),
 (10279, 18, 0, 0, ''),
 (10296, 18, 0, 0, ''),
@@ -669,41 +666,14 @@ INSERT INTO `achievement_criteria_data` (`criteria_id`, `type`, `value1`, `value
 (10324, 18, 0, 0, ''),
 (10325, 18, 0, 0, ''),
 (10326, 18, 0, 0, ''),
-(10340, 18, 0, 0, ''),
-(10341, 18, 0, 0, ''),
-(10342, 18, 0, 0, ''),
-(10347, 18, 0, 0, ''),
-(10348, 18, 0, 0, ''),
-(10349, 18, 0, 0, ''),
-(10350, 18, 0, 0, ''),
-(10351, 18, 0, 0, ''),
-(10352, 18, 0, 0, ''),
-(10353, 18, 0, 0, ''),
-(10354, 18, 0, 0, ''),
-(10355, 18, 0, 0, ''),
-(10357, 18, 0, 0, ''),
-(10361, 18, 0, 0, ''),
-(10362, 18, 0, 0, ''),
-(10363, 18, 0, 0, ''),
-(10364, 18, 0, 0, ''),
 (10388, 18, 0, 0, ''),
-(10403, 18, 0, 0, ''),
-(10404, 18, 0, 0, ''),
 (10409, 18, 0, 0, ''),
 (10410, 18, 0, 0, ''),
 (10412, 18, 0, 0, ''),
 (10414, 18, 0, 0, ''),
 (10415, 18, 0, 0, ''),
 (10416, 18, 0, 0, ''),
-(10417, 18, 0, 0, ''),
-(10439, 18, 0, 0, ''),
-(10582, 18, 0, 0, ''),
-(10583, 18, 0, 0, ''),
-(10598, 18, 0, 0, ''),
-(10599, 18, 0, 0, ''),
 (10678, 18, 0, 0, ''),
-(10698, 18, 0, 0, ''),
-(10719, 18, 0, 0, ''),
 (10720, 18, 0, 0, ''),
 (10721, 18, 0, 0, '');
 
@@ -986,8 +956,6 @@ INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry
 -- spell_target_position
 DELETE FROM `spell_target_position` WHERE `id` = 62501 AND `effIndex` = 0;
 INSERT INTO `spell_target_position` (`id`, `effIndex`, `target_map`, `target_position_x`, `target_position_y`, `target_position_z`, `target_orientation`) VALUES (62501, 0, 603, 2036.17, -201.843, 432.687, 3.14159);
-DELETE FROM `spell_target_position` WHERE `id` = 64027 AND `effIndex` = 0;
-INSERT INTO `spell_target_position` (`id`, `effIndex`, `target_map`, `target_position_x`, `target_position_y`, `target_position_z`, `target_orientation`) VALUES (64027, 0, 603, 1854.78, -11.58, 334.975, 5.5);
 
 -- spell_linked_spell
 DELETE FROM `spell_linked_spell` WHERE `spell_trigger` = 64567 AND `spell_effect` = 64563 AND `type` = 1;
@@ -1165,3 +1133,6 @@ INSERT INTO `creature` (`guid`, `id`, `map`, `spawnMask`, `phaseId`, `phaseGroup
 (9688124, 34199, 603, 24, 0, 0, 0, 0, 1675.99, -18.1153, 427.31, 3.91709, 7200, 0, 0, 471835, 0, 0, 0, 0, 0), -- Lightning Charged Iron Dwarf
 (9688125, 34199, 603, 16, 0, 0, 0, 0, 1557.95, -22.6687, 420.965, 3.19845, 7200, 0, 0, 471835, 0, 0, 0, 0, 0), -- Lightning Charged Iron Dwarf
 (9688126, 34269, 603, 16, 0, 0, 0, 0, 815.428, 49.1631, 409.805, 2.69719, 7200, 0, 0, 252000, 0, 0, 0, 0, 0); -- XR-949 Salvagebot
+
+-- spellclick flag on the 25-player entries of Kologarn and the Flame Leviathan (the load check wants it equal to the 10-player entry)
+UPDATE `creature_template` SET `npcflag` = 16777216 WHERE `entry` IN (33909, 34003);
