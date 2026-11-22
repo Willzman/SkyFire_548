@@ -10,6 +10,7 @@
 
 #include "Define.h"
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 class Player;
@@ -36,8 +37,10 @@ public:
     uint32 GetCount() const;
 
     // Nearest same-map hub the player is friendly toward. preferRepair biases
-    // repair-capable vendors when both sell and repair are needed.
-    BotVendorHub const* FindNearest(Player const* player, bool preferRepair) const;
+    // repair-capable vendors when both sell and repair are needed. Hubs whose
+    // spawn guid is in skip are passed over (the bot found nobody there).
+    BotVendorHub const* FindNearest(Player const* player, bool preferRepair,
+        std::unordered_set<uint32> const* skip = nullptr) const;
 
 private:
     BotVendorHubs() = default;
