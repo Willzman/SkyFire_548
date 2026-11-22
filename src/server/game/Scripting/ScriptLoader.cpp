@@ -754,6 +754,7 @@ void AddSC_event_hallows_end();
 void AddSC_event_midsummer_fire_festival();
 void AddSC_event_pilgrims_bounty();
 void AddSC_event_winter_veil();
+void AddSC_event_holiday_events_tc();
 void AddSC_event_darkmoon_faire();
 
 // Pandaria
@@ -1753,6 +1754,7 @@ void AddEventScripts()
     AddSC_event_midsummer_fire_festival();
     AddSC_event_pilgrims_bounty();
     AddSC_event_winter_veil();
+    AddSC_event_holiday_events_tc();
     AddSC_event_darkmoon_faire();
 #endif
 }
