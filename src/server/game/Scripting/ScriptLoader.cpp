@@ -749,6 +749,11 @@ void AddSC_the_stonecore();
 
 // Events
 void AddSC_event_childrens_week();
+void AddSC_event_brewfest();
+void AddSC_event_hallows_end();
+void AddSC_event_midsummer_fire_festival();
+void AddSC_event_pilgrims_bounty();
+void AddSC_event_winter_veil();
 void AddSC_event_darkmoon_faire();
 
 // Pandaria
@@ -1743,6 +1748,11 @@ void AddEventScripts()
 {
 #ifdef SCRIPTS
     AddSC_event_childrens_week();
+    AddSC_event_brewfest();
+    AddSC_event_hallows_end();
+    AddSC_event_midsummer_fire_festival();
+    AddSC_event_pilgrims_bounty();
+    AddSC_event_winter_veil();
     AddSC_event_darkmoon_faire();
 #endif
 }
