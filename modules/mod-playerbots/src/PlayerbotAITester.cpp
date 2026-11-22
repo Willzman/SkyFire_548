@@ -565,6 +565,12 @@ bool PlayerbotAI::TravelToQuestEnder()
 {
     if (!_bot || HasTravelDestination() || _pendingTeleport.active)
         return false;
+    // Combat clears the travel destination every tick, so a trip started now
+    // would end at once and count as a trip: a bot that completed its quest on
+    // its last kill, with more mobs on it, used up every trip in a few seconds
+    // (Shadowglen: Mahep gave up The Balance of Nature that way).
+    if (_bot->IsInCombat() || !_bot->getAttackers().empty())
+        return false;
 
     for (uint8 slot = 0; slot < MAX_QUEST_LOG_SIZE; ++slot)
     {
