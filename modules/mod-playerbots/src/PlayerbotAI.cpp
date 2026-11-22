@@ -333,7 +333,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
@@ -350,7 +352,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
@@ -368,7 +372,9 @@ namespace
 
         bool operator()(Creature* creature) const
         {
-            if (!creature || !creature->IsAlive() || creature->IsInCombat())
+            // Grid searchers only compare phase masks; creature.phaseId needs IsPhased
+            // (Gilneas: Marie Allen and Lieutenant Walden are in phases 169/170).
+            if (!creature || !creature->IsAlive() || creature->IsInCombat() || !_bot->IsPhased(creature))
                 return false;
             if (!_bot->IsWithinDist(creature, _range))
                 return false;
