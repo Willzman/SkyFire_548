@@ -1043,3 +1043,22 @@ UPDATE `gameobject_template` SET `ScriptName` = '' WHERE `ScriptName` IN ('npc_f
 DELETE FROM `spell_script_names` WHERE `ScriptName` IN ('npc_frostwing_vrykul','npc_gas_cloud','npc_volatile_ooze','spell_blood_queen_essence_of_the_blood_queen','spell_cultist_dark_martyrdom','spell_rimefang_icy_blast','spell_sindragosa_frost_breath','spell_the_lich_king_dark_hunger');
 DELETE FROM `areatrigger_scripts` WHERE `ScriptName` IN ('npc_frostwing_vrykul','npc_gas_cloud','npc_volatile_ooze','spell_blood_queen_essence_of_the_blood_queen','spell_cultist_dark_martyrdom','spell_rimefang_icy_blast','spell_sindragosa_frost_breath','spell_the_lich_king_dark_hunger');
 DELETE FROM `achievement_criteria_data` WHERE `ScriptName` IN ('npc_frostwing_vrykul','npc_gas_cloud','npc_volatile_ooze','spell_blood_queen_essence_of_the_blood_queen','spell_cultist_dark_martyrdom','spell_rimefang_icy_blast','spell_sindragosa_frost_breath','spell_the_lich_king_dark_hunger');
+
+-- Alchemist Adrianna: gossip menu from LoA, and the same flag on the 25-player entry
+UPDATE `creature_template` SET `gossip_menu_id` = 11032 WHERE `entry` = 38501 AND `gossip_menu_id` = 0;
+UPDATE `creature_template` SET `npcflag` = 1, `gossip_menu_id` = 11032 WHERE `entry` = 38717;
+-- difficulty entries follow the unit_class their base entry now has
+UPDATE `creature_template` SET `unit_class` = 4 WHERE `entry` IN (38486, 38552);
+-- Nerub'ar Broodkeeper ambush triggers
+DELETE FROM `areatrigger_scripts` WHERE `entry` IN (5611, 5612);
+INSERT INTO `areatrigger_scripts` (`entry`, `ScriptName`) VALUES (5611, 'at_nerubar_trigger_first'), (5612, 'at_nerubar_trigger_second');
+-- Ashen Verdict ring: the "I lost my ring" gossip options only show when the script allows it
+DELETE FROM `conditions` WHERE `SourceTypeOrReferenceId` = 15 AND `SourceGroup` IN (10996, 10998) AND `ScriptName` = 'cond_icc_ashen_verdict_ring_retrieve';
+INSERT INTO `conditions` (`SourceTypeOrReferenceId`, `SourceGroup`, `SourceEntry`, `SourceId`, `ElseGroup`, `ConditionTypeOrReference`, `ConditionTarget`, `ConditionValue1`, `ConditionValue2`, `ConditionValue3`, `NegativeCondition`, `ErrorType`, `ErrorTextId`, `ScriptName`, `Comment`) VALUES
+(15, 10996, 2, 0, 0, 31, 0, 4, 0, 0, 0, 0, 0, 'cond_icc_ashen_verdict_ring_retrieve', 'Show gossip option only if player has no rings and has a flag quest rewarded'),
+(15, 10998, 0, 0, 0, 31, 0, 4, 0, 0, 0, 0, 0, 'cond_icc_ashen_verdict_ring_retrieve', 'Show gossip option only if player has no rings and has a flag quest rewarded');
+-- Ormus the Penitent: the ring recovery options the condition above belongs to
+DELETE FROM `gossip_menu_option` WHERE (`MenuID` = 10996 AND `OptionID` = 2) OR (`MenuID` = 10998 AND `OptionID` = 0);
+INSERT INTO `gossip_menu_option` (`MenuID`, `OptionID`, `OptionIcon`, `OptionText`, `OptionBroadcastTextID`, `OptionType`, `OptionNpcflag`, `ActionMenuID`, `ActionPoiID`, `BoxCoded`, `BoxMoney`, `BoxText`, `BoxBroadcastTextID`, `VerifiedBuild`) VALUES
+(10996, 2, 0, 'I appear to have lost my ring.', 38227, 1, 1, 10998, 0, 0, 0, NULL, 0, 0),
+(10998, 0, 0, 'It won\'t.', 38229, 1, 1, 0, 0, 0, 0, NULL, 0, 0);
