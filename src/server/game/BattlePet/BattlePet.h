@@ -157,6 +157,7 @@ enum BattlePetStates
     BATTLE_PET_STATE_STAT_SPEED = 20,
     BATTLE_PET_STATE_MOD_DAMAGE_DEALT_PERCENT = 23,
     BATTLE_PET_STATE_UNTARGETABLE = 29,
+    BATTLE_PET_STATE_LAST_HIT_DEALT = 32,
     BATTLE_PET_STATE_MECHANIC_IS_UNDERGROUND = 30,
     BATTLE_PET_STATE_MECHANIC_IS_FLYING = 33,
     BATTLE_PET_STATE_WEATHER_RAIN = 60,
@@ -170,12 +171,17 @@ enum BattlePetAbilityEffectProperties
 {
     BATTLE_PET_EFFECT_HEAL = 23,
     BATTLE_PET_EFFECT_DAMAGE = 24,
+    BATTLE_PET_EFFECT_CATCH = 25,                       // BaseChanceToSucceed, IncreasePerToss
     BATTLE_PET_EFFECT_APPLY_AURA = 26,
     BATTLE_PET_EFFECT_RAMPING_DAMAGE = 27,
     BATTLE_PET_EFFECT_APPLY_AURA_DURATION = 28,
     BATTLE_PET_EFFECT_DAMAGE_STATE_CONDITIONAL = 29,
+    BATTLE_PET_EFFECT_SET_STATE = 31,                   // State, Value
+    BATTLE_PET_EFFECT_HEAL_PCT_DEALT = 32,              // Percent, Accuracy, ChainFailure
     BATTLE_PET_EFFECT_REMOVE_AURA = 49,
     BATTLE_PET_EFFECT_APPLY_AURA_TO_TARGET = 50,
+    BATTLE_PET_EFFECT_PERIODIC_TRIGGER = 54,            // ChainFailure, Accuracy, Duration, MaxAllowed
+    BATTLE_PET_EFFECT_PERIODIC_POSITIVE_TRIGGER = 63,   // Unused, Accuracy, Duration
     BATTLE_PET_EFFECT_DAMAGE_TOGGLE_AURA = 76,
     BATTLE_PET_EFFECT_APPLY_WEATHER_AURA = 80,
     BATTLE_PET_EFFECT_DAMAGE_HIT_STATE = 96,
@@ -306,6 +312,11 @@ bool BattlePetAbilityEffectAppliesAura(uint32 propertiesId);
 bool BattlePetAbilityEffectAppliesAuraToTarget(uint32 propertiesId);
 bool BattlePetAbilityEffectAppliesWeather(uint32 propertiesId);
 bool BattlePetAbilityEffectRemovesAura(uint32 propertiesId);
+bool BattlePetAbilityEffectIsPeriodicTrigger(uint32 propertiesId);
+bool BattlePetAbilityEffectIsPeriodicTriggerOnTarget(uint32 propertiesId);
+// Catch chance from the trap ability's own catch effect (BattlePetAbilityEffect.db2).
+// Returns false when the ability has no catch effect.
+bool BattlePetAbilityCatchChance(uint32 abilityId, uint8 failedAttempts, float& chance);
 bool BattlePetAbilityEffectIsKillHeal(uint32 propertiesId, BattlePetAbilityEffectEntry const* effectEntry);
 bool BattlePetAuraMakesUntargetable(uint32 auraAbilityId);
 int32 BattlePetAbilityStateValue(uint32 abilityId, uint32 stateId);

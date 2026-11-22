@@ -76,6 +76,11 @@ namespace
         if (trapAbility == BATTLE_PET_ABILITY_GM_TRAP)
             return 100.0f;
 
+        // The trap's own catch effect says how likely it is and how much each failed toss adds.
+        float dataChance = 0.0f;
+        if (BattlePetAbilityCatchChance(trapAbility, failedAttempts, dataChance))
+            return dataChance;
+
         float chance = 45.0f;
         float const bonus = BattlePetTrapFailedAttemptBonus(trapAbility);
         for (uint8 i = 0; i < failedAttempts; ++i)
@@ -957,6 +962,10 @@ bool BattlePetMgr::ApplyBattlePetAbilityTurnExchangeInput(uint32 roundId,
     uint32 totalDamage = 0;
     uint32 killHealAmount = 0;
     uint32 killHealEffectId = 0;
+    uint32 leechPct = 0;
+    uint32 leechEffectId = 0;
+    uint8 const casterPet = m_activePetBattle.AllyFrontPet;
+    uint32 const enemyHealthBefore = m_activePetBattle.EnemyHealth;
     uint16 auraInstanceSeed = uint16(allyAbilityId ^ (safeTurnIndex << 8));
     bool processedCombatEffect = false;
     std::vector<Skyfire::BattlePetPackets::BattlePetRoundEffect> allyEffects;
@@ -1022,6 +1031,44 @@ bool BattlePetMgr::ApplyBattlePetAbilityTurnExchangeInput(uint32 roundId,
                 killHealAmount += healPoints;
                 killHealEffectId = effectEntry->Id;
             }
+            continue;
+        }
+
+        // Absorb, Consume, Death Coil: heal the caster for a share of the damage this cast dealt.
+        // The amount is only known after the exchange, so it is applied below.
+        if (effectEntry->PropertiesId == BATTLE_PET_EFFECT_HEAL_PCT_DEALT)
+        {
+            if (effectEntry->PropertyValues[0])
+            {
+                leechPct += effectEntry->PropertyValues[0];
+                leechEffectId = effectEntry->Id;
+            }
+            continue;
+        }
+
+        // Poison, Immolate, Sting (on the enemy) and Tranquility, Photosynthesis (on the caster):
+        // the aura ability's effects run at the end of every round, see
+        // TickActivePetBattlePeriodicAuras. Not in PvP: the two players' battle states are only
+        // kept in step for direct damage.
+        if (BattlePetAbilityEffectIsPeriodicTrigger(effectEntry->PropertiesId) && effectEntry->AuraAbilityId)
+        {
+            if (!m_activePetBattle.IsPvP())
+            {
+                uint8 const duration = uint8(std::min<uint32>(effectEntry->PropertyValues[2]
+                    ? effectEntry->PropertyValues[2] : 1, 255));
+                m_activePetBattle.AddPeriodicAura(effectEntry->AuraAbilityId, duration,
+                    BattlePetAbilityEffectIsPeriodicTriggerOnTarget(effectEntry->PropertiesId),
+                    casterPet, power, level);
+            }
+            continue;
+        }
+
+        // Charging, recovering, cleansing flags and the like. No packet: the client sets these
+        // itself from the ability data, and a wrong state effect desyncs the round.
+        if (effectEntry->PropertiesId == BATTLE_PET_EFFECT_SET_STATE)
+        {
+            m_activePetBattle.SetAllyState(casterPet, effectEntry->PropertyValues[0],
+                int32(effectEntry->PropertyValues[1]));
             continue;
         }
 
@@ -1168,9 +1215,29 @@ bool BattlePetMgr::ApplyBattlePetAbilityTurnExchangeInput(uint32 roundId,
             round.InputFlags[0] = Skyfire::BattlePetPackets::BATTLE_PET_ROUND_INPUT_FLAG_SELECT_NEW_FRONT_PET;
     }
 
+    uint32 const damageDealt = enemyHealthBefore > m_activePetBattle.EnemyHealth
+        ? enemyHealthBefore - m_activePetBattle.EnemyHealth
+        : 0;
+    m_activePetBattle.SetAllyState(casterPet, BATTLE_PET_STATE_LAST_HIT_DEALT, int32(damageDealt));
+
+    // Sent after the enemy's reply so the last health value the client reads for the caster is
+    // the one the server holds.
+    if (leechPct && damageDealt && m_activePetBattle.IsAllyPetAlive(casterPet))
+    {
+        uint32 const healAmount = uint32(uint64(damageDealt) * leechPct / 100);
+        if (healAmount)
+        {
+            uint32 const healedHealth = m_activePetBattle.ApplyAllyHealToPet(casterPet, healAmount);
+            round.Effects.push_back(Skyfire::BattlePetPackets::BuildDamageEffect(
+                casterPet, casterPet, int32(healedHealth), leechEffectId, uint16(round.Effects.size() + 1)));
+        }
+    }
+
+    TickActivePetBattlePeriodicAuras(round);
+
     ApplyActivePetBattleRoundState(round);
 
-    if (finalRound && (allyTurn.HasFinalRound || enemyTurn.HasFinalRound))
+    if (finalRound && (allyTurn.HasFinalRound || enemyTurn.HasFinalRound || m_activePetBattle.IsFinished()))
     {
         PersistActivePetBattleHealth();
         BuildActivePetBattleFinalRound(false, *finalRound);
@@ -1239,12 +1306,16 @@ bool BattlePetMgr::ApplyBattlePetTrapInput(uint32 roundId, uint32 trapAbilityEff
             round.InputFlags[0] = Skyfire::BattlePetPackets::BATTLE_PET_ROUND_INPUT_FLAG_SELECT_NEW_FRONT_PET;
     }
 
+    if (!trapTurn.Captured)
+        TickActivePetBattlePeriodicAuras(round);
+
     ApplyActivePetBattleRoundState(round);
 
-    if (!trapTurn.Captured && !enemyTurn.HasFinalRound)
+    bool const finished = m_activePetBattle.IsFinished();
+    if (!trapTurn.Captured && !enemyTurn.HasFinalRound && !finished)
         return true;
 
-    if (!trapTurn.HasFinalRound && !enemyTurn.HasFinalRound)
+    if (!trapTurn.HasFinalRound && !enemyTurn.HasFinalRound && !finished)
         return false;
 
     if (trapTurn.Captured)
@@ -1264,6 +1335,74 @@ bool BattlePetMgr::ApplyBattlePetTrapInput(uint32 roundId, uint32 trapAbilityEff
 
     PersistActivePetBattleHealth();
     return BuildActivePetBattleFinalRound(false, finalRound, trapTurn.Captured);
+}
+
+void BattlePetMgr::TickActivePetBattlePeriodicAuras(
+    Skyfire::BattlePetPackets::BattlePetRoundResult& round)
+{
+    std::vector<ActivePetBattlePeriodicAura>& auras = m_activePetBattle.PeriodicAuras;
+    if (auras.empty() || !m_activePetBattle.IsActive())
+        return;
+
+    for (ActivePetBattlePeriodicAura& aura : auras)
+    {
+        if (m_activePetBattle.IsFinished() || !aura.Rounds)
+            break;
+
+        uint8 const turnCount = BattlePetAbilityTurnCount(aura.AuraAbilityId);
+        uint8 const turnIndex = std::min<uint8>(aura.Turn, turnCount ? turnCount : 1);
+        uint32 lastDamage = 0;
+
+        for (BattlePetAbilityEffectEntry const* effectEntry : BattlePetAbilityEffectsForTurn(aura.AuraAbilityId, turnIndex))
+        {
+            if (!effectEntry || m_activePetBattle.IsFinished())
+                continue;
+
+            uint32 const points = BattlePetScalePointsFromStats(effectEntry->PropertyValues[0], aura.Power, aura.Level);
+
+            if (BattlePetAbilityEffectDealsDamage(effectEntry->PropertiesId))
+            {
+                // Only auras the player's pets put on the enemy deal damage: enemy pets do not
+                // cast through this path.
+                if (!aura.OnEnemy || !points || !m_activePetBattle.EnemyHealth)
+                    continue;
+
+                uint32 const before = m_activePetBattle.EnemyHealth;
+                uint32 const remaining = m_activePetBattle.ApplyEnemyDamage(points);
+                lastDamage = before > remaining ? before - remaining : 0;
+                round.Effects.push_back(Skyfire::BattlePetPackets::BuildDamageEffect(
+                    aura.AllyPet, m_activePetBattle.EnemyFrontPet, int32(remaining),
+                    effectEntry->Id, uint16(round.Effects.size() + 1)));
+
+                if (!remaining)
+                {
+                    round.DeadPets.push_back(m_activePetBattle.EnemyFrontPet);
+                    Skyfire::BattlePetPackets::MarkRoundResultAsCatchOrKill(round);
+                }
+                continue;
+            }
+
+            uint32 healAmount = 0;
+            if (BattlePetAbilityEffectHeals(effectEntry->PropertiesId))
+                healAmount = points;
+            else if (effectEntry->PropertiesId == BATTLE_PET_EFFECT_HEAL_PCT_DEALT)
+                healAmount = uint32(uint64(lastDamage) * effectEntry->PropertyValues[0] / 100);
+
+            if (!healAmount || !m_activePetBattle.IsAllyPetAlive(aura.AllyPet))
+                continue;
+
+            uint32 const healedHealth = m_activePetBattle.ApplyAllyHealToPet(aura.AllyPet, healAmount);
+            round.Effects.push_back(Skyfire::BattlePetPackets::BuildDamageEffect(
+                aura.AllyPet, aura.AllyPet, int32(healedHealth),
+                effectEntry->Id, uint16(round.Effects.size() + 1)));
+        }
+
+        ++aura.Turn;
+        --aura.Rounds;
+    }
+
+    auras.erase(std::remove_if(auras.begin(), auras.end(),
+        [](ActivePetBattlePeriodicAura const& aura) { return !aura.Rounds; }), auras.end());
 }
 
 void BattlePetMgr::ApplyActivePetBattleRoundState(
