@@ -273,6 +273,20 @@ namespace
             if (CanFitLootItem(looter, item.itemid, item.count))
                 return true;
         }
+        // Quest drops are not in loot->items: each looter has its own list of
+        // indexes into loot->quest_items. A Vale Moth that drops only Vial of
+        // Moth Blood looked empty without this, and collect quests stalled.
+        QuestItemMap const& questItems = loot->GetPlayerQuestItems();
+        auto const own = questItems.find(looter->GetGUIDLow());
+        if (own != questItems.end() && own->second)
+            for (QuestItem const& questItem : *own->second)
+            {
+                if (questItem.is_looted || questItem.index >= loot->quest_items.size())
+                    continue;
+                LootItem const& item = loot->quest_items[questItem.index];
+                if (!item.is_looted && CanFitLootItem(looter, item.itemid, item.count))
+                    return true;
+            }
         return false;
     }
 
@@ -5098,7 +5112,9 @@ bool PlayerbotAI::HandleLoot()
         for (uint32 slot = 0; slot < maxSlot; ++slot)
         {
             LootItem* item = loot->LootItemInSlot(slot, _bot);
-            if (!item || item->is_blocked)
+            // A solo looter's quest drops are is_blocked too (reserved for it,
+            // Loot::FillQuestLoot); only normal items are blocked by a pending roll.
+            if (!item || (item->is_blocked && slot < loot->items.size()))
                 continue;
             sawFreeItem = true;
             if (!CanFitLootItem(_bot, item->itemid, item->count))

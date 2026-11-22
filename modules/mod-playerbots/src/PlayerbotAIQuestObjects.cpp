@@ -114,7 +114,8 @@ bool PlayerbotAI::UseQuestObject(GameObject* object)
     for (uint32 slot = 0; slot < maxSlot; ++slot)
     {
         LootItem* item = loot->LootItemInSlot(slot, _bot);
-        if (!item || item->is_blocked)
+        // Quest drops are is_blocked for a solo looter (reserved), not roll-blocked.
+        if (!item || (item->is_blocked && slot < loot->items.size()))
             continue;
         ItemPosCountVec dest;
         if (_bot->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, item->itemid, item->count) != EQUIP_ERR_OK)
