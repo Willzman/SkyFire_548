@@ -1420,7 +1420,7 @@ void Unit::AttackerStateUpdate(Unit* victim, WeaponAttackType attType, bool extr
     if (!victim->IsAlive())
         return;
 
-    if ((attType == WeaponAttackType::BASE_ATTACK || attType == WeaponAttackType::OFF_ATTACK) && !IsWithinLOSInMap(victim))
+    if ((attType == WeaponAttackType::BASE_ATTACK || attType == WeaponAttackType::OFF_ATTACK) && !IsWithinLOSInMap(victim, VMAP::ModelIgnoreFlags::M2))
         return;
 
     CombatStart(victim);

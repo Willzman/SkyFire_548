@@ -703,8 +703,8 @@ public:
     // use only if you will sure about placing both object at same map
     bool IsWithinDist(WorldObject const* obj, float dist2compare, bool is3D = true) const;
     bool IsWithinDistInMap(WorldObject const* obj, float dist2compare, bool is3D = true) const;
-    bool IsWithinLOS(float x, float y, float z) const;
-    bool IsWithinLOSInMap(WorldObject const* obj) const;
+    bool IsWithinLOS(float x, float y, float z, VMAP::ModelIgnoreFlags ignoreFlags = VMAP::ModelIgnoreFlags::Nothing) const;
+    bool IsWithinLOSInMap(WorldObject const* obj, VMAP::ModelIgnoreFlags ignoreFlags = VMAP::ModelIgnoreFlags::Nothing) const;
     bool GetDistanceOrder(WorldObject const* obj1, WorldObject const* obj2, bool is3D = true) const;
     bool IsInRange(WorldObject const* obj, float minRange, float maxRange, bool is3D = true) const;
     bool IsInRange2d(float x, float y, float minRange, float maxRange) const;

@@ -2070,7 +2070,7 @@ void Spell::SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTar
                 if (Unit* unitTarget = (*itr)->ToUnit())
                 {
                     uint32 deficit = unitTarget->GetMaxHealth() - unitTarget->GetHealth();
-                    if ((deficit > maxHPDeficit || foundItr == tempTargets.end()) && target->IsWithinDist(unitTarget, jumpRadius) && target->IsWithinLOSInMap(unitTarget))
+                    if ((deficit > maxHPDeficit || foundItr == tempTargets.end()) && target->IsWithinDist(unitTarget, jumpRadius) && target->IsWithinLOSInMap(unitTarget, VMAP::ModelIgnoreFlags::M2))
                     {
                         foundItr = itr;
                         maxHPDeficit = deficit;
@@ -2085,10 +2085,10 @@ void Spell::SearchChainTargets(std::list<WorldObject*>& targets, uint32 chainTar
             {
                 if (foundItr == tempTargets.end())
                 {
-                    if ((!isBouncingFar || target->IsWithinDist(*itr, jumpRadius)) && target->IsWithinLOSInMap(*itr))
+                    if ((!isBouncingFar || target->IsWithinDist(*itr, jumpRadius)) && target->IsWithinLOSInMap(*itr, VMAP::ModelIgnoreFlags::M2))
                         foundItr = itr;
                 }
-                else if (target->GetDistanceOrder(*itr, *foundItr) && target->IsWithinLOSInMap(*itr))
+                else if (target->GetDistanceOrder(*itr, *foundItr) && target->IsWithinLOSInMap(*itr, VMAP::ModelIgnoreFlags::M2))
                     foundItr = itr;
             }
         }
@@ -5877,7 +5877,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             }
 
             if (m_caster->GetEntry() != WORLD_TRIGGER) // Ignore LOS for gameobjects casts (wrongly casted by a trigger)
-                if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOSInMap(target))
+                if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
                     return SpellCastResult::SPELL_FAILED_LINE_OF_SIGHT;
 
             // Smoke Bomb / similar: interfere targeting between inside and outside cloud
@@ -5893,7 +5893,7 @@ SpellCastResult Spell::CheckCast(bool strict)
         float x, y, z;
         m_targets.GetDstPos()->GetPosition(x, y, z);
 
-        if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOS(x, y, z))
+        if (!(m_spellInfo->AttributesEx2 & SPELL_ATTR2_CAN_TARGET_NOT_IN_LOS) && !DisableMgr::IsDisabledFor(DISABLE_TYPE_SPELL, m_spellInfo->Id, NULL, SPELL_DISABLE_LOS) && !m_caster->IsWithinLOS(x, y, z, VMAP::ModelIgnoreFlags::M2))
             return SpellCastResult::SPELL_FAILED_LINE_OF_SIGHT;
     }
 
@@ -7509,7 +7509,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
     {
         case SPELL_EFFECT_RESURRECT_NEW:
             // player far away, maybe his corpse near?
-            if (target != m_caster && !target->IsWithinLOSInMap(m_caster))
+            if (target != m_caster && !target->IsWithinLOSInMap(m_caster, VMAP::ModelIgnoreFlags::M2))
             {
                 if (!m_targets.GetCorpseTargetGUID())
                     return false;
@@ -7521,7 +7521,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
                 if (target->GetGUID() != corpse->GetOwnerGUID())
                     return false;
 
-                if (!corpse->IsWithinLOSInMap(m_caster))
+                if (!corpse->IsWithinLOSInMap(m_caster, VMAP::ModelIgnoreFlags::M2))
                     return false;
             }
 
@@ -7534,7 +7534,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
                 caster = m_caster->GetMap()->GetGameObject(m_originalCasterGUID);
             if (!caster)
                 caster = m_caster;
-            if (target != m_caster && !target->IsWithinLOSInMap(caster))
+            if (target != m_caster && !target->IsWithinLOSInMap(caster, VMAP::ModelIgnoreFlags::M2))
                 return false;
             break;
     }
@@ -7900,7 +7900,7 @@ void Spell::ApplySmartHeal(Unit const* caster, std::list<WorldObject*>& targets,
     targets.remove_if([=](WorldObject const* target)
     {
         Unit const* unit = target->ToUnit();
-        if (!ignoreLos && !unit->IsWithinLOS(losPos->GetPositionX(), losPos->GetPositionY(), losPos->GetPositionZ()))
+        if (!ignoreLos && !unit->IsWithinLOS(losPos->GetPositionX(), losPos->GetPositionY(), losPos->GetPositionZ(), VMAP::ModelIgnoreFlags::M2))
             return true;
 
         if (unit->GetMap()->IsDungeon())
