@@ -903,3 +903,9 @@ INSERT INTO `creature_addon` (`guid`, `path_id`, `mount`, `bytes1`, `bytes2`, `e
 (9689234, 0, 0, 0, 4097, 69, NULL),
 (9689265, 0, 0, 0, 1, 0, '99201'),
 (9689266, 0, 0, 0, 1, 0, '99201');
+
+-- gossip menus (from LoA) for the chess pieces that now have the gossip flag
+UPDATE `creature_template` SET `gossip_menu_id` = 8346 WHERE `entry` = 21664 AND `gossip_menu_id` = 0; -- Human Charger
+UPDATE `creature_template` SET `gossip_menu_id` = 8355 WHERE `entry` = 21726 AND `gossip_menu_id` = 0;
+UPDATE `creature_template` SET `gossip_menu_id` = 8362 WHERE `entry` = 21747 AND `gossip_menu_id` = 0;
+UPDATE `creature_template` SET `gossip_menu_id` = 8368 WHERE `entry` = 21752 AND `gossip_menu_id` = 0;
