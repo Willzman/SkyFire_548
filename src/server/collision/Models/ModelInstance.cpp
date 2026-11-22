@@ -19,13 +19,16 @@ namespace VMAP
         iInvScale = 1.f/iScale;
     }
 
-    bool ModelInstance::intersectRay(const G3D::Ray& pRay, float& pMaxDist, bool pStopAtFirstHit) const
+    bool ModelInstance::intersectRay(const G3D::Ray& pRay, float& pMaxDist, bool pStopAtFirstHit, ModelIgnoreFlags ignoreFlags) const
     {
         if (!iModel)
         {
             //std::cout << "<object not loaded>\n";
             return false;
         }
+        // M2 doodads (bushes, ferns, trees) are looked through when the caller asks for it (spell and melee LoS)
+        if ((ignoreFlags & ModelIgnoreFlags::M2) != ModelIgnoreFlags::Nothing && (flags & MOD_M2))
+            return false;
         float time = pRay.intersectionTime(iBound);
         if (time == G3D::inf())
         {

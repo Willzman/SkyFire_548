@@ -701,7 +701,7 @@ std::string PlayerbotAI::DescribeState() const
             "; %s %s (entry %u) %.1f yd at %.1f %.1f %.1f, %s, LOS %d, can see %d, same phase %d, attackable %d, evading %d",
             kind, target->GetName().c_str(), creature ? creature->GetEntry() : 0u, _bot->GetDistance(target),
             target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(),
-            target->IsAlive() ? "alive" : "dead", int(_bot->IsWithinLOSInMap(target)),
+            target->IsAlive() ? "alive" : "dead", int(_bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2)),
             int(_bot->CanSeeOrDetect(target)), int(_bot->InSamePhase(target)), int(_bot->IsValidAttackTarget(target)),
             int(creature && creature->IsInEvadeMode()));
         out += buf;
@@ -709,9 +709,9 @@ std::string PlayerbotAI::DescribeState() const
         float const x1 = _bot->GetPositionX(), y1 = _bot->GetPositionY(), z1 = _bot->GetPositionZ() + 2.0f;
         float const x2 = target->GetPositionX(), y2 = target->GetPositionY(), z2 = target->GetPositionZ() + 2.0f;
         VMAP::IVMapManager* vmgr = VMAP::VMapFactory::createOrGetVMapManager();
-        snprintf(buf, sizeof(buf), "; vmap LOS %d (calc %d), map LOS %d, bot phase %u, target phase %u",
-            int(vmgr->isInLineOfSight(_bot->GetMapId(), x1, y1, z1, x2, y2, z2)), int(vmgr->isLineOfSightCalcEnabled()),
-            int(_bot->GetMap()->isInLineOfSight(x1, y1, z1, x2, y2, z2, _bot->GetPhaseMask())),
+        snprintf(buf, sizeof(buf), "; vmap LOS %d (through M2 %d, calc %d), map LOS %d, bot phase %u, target phase %u",
+            int(vmgr->isInLineOfSight(_bot->GetMapId(), x1, y1, z1, x2, y2, z2)), int(vmgr->isInLineOfSight(_bot->GetMapId(), x1, y1, z1, x2, y2, z2, VMAP::ModelIgnoreFlags::M2)), int(vmgr->isLineOfSightCalcEnabled()),
+            int(_bot->GetMap()->isInLineOfSight(x1, y1, z1, x2, y2, z2, _bot->GetPhaseMask(), VMAP::ModelIgnoreFlags::M2)),
             _bot->GetPhaseMask(), target->GetPhaseMask());
         out += buf;
     }
@@ -2194,7 +2194,7 @@ bool PlayerbotAI::HandleCombat()
     // there buys time to cast; at full range it outruns the bot and nobody casts at all.
     float const castDist = (AvoidedMovingHazardRecently() && IsUntankedBoss(target)) ? 10.0f : BOT_CAST_DIST;
     bool const inRange = dist <= castDist;
-    bool const hasLos = _bot->IsWithinLOSInMap(target);
+    bool const hasLos = _bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2);
     // Treat Auto Shot / wand as background fire — still plant/face between GCDs.
     bool const casting = _bot->IsNonMeleeSpellCasted(false, false, true)
         || _bot->HasUnitState(UNIT_STATE_CASTING);
@@ -2367,7 +2367,7 @@ bool PlayerbotAI::HandleCombatCastOnly()
         || (IsRangedClass() && GetCombatRole() != CombatRole::Tank);
     if (ranged)
     {
-        if (_bot->GetDistance(target) > BOT_CAST_DIST || !_bot->IsWithinLOSInMap(target))
+        if (_bot->GetDistance(target) > BOT_CAST_DIST || !_bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
             return true;
         if (_bot->HasUnitState(UNIT_STATE_MELEE_ATTACKING))
         {
@@ -2587,7 +2587,7 @@ bool PlayerbotAI::IsUnreachableTarget(Unit const* target) const
 
 bool PlayerbotAI::NoteTargetLineOfSight(Unit* target)
 {
-    if (!target || _clientControlled || _bot->GetDistance(target) > BOT_NO_LOS_NEAR || _bot->IsWithinLOSInMap(target))
+    if (!target || _clientControlled || _bot->GetDistance(target) > BOT_NO_LOS_NEAR || _bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
     {
         _noLosGuid = 0;
         _noLosMs = 0;
@@ -3385,7 +3385,7 @@ bool PlayerbotAI::HandleHealing(float belowPct)
     }
 
     constexpr float HEAL_RANGE = 40.0f;
-    if (!_bot->IsWithinDistInMap(ally, HEAL_RANGE) || !_bot->IsWithinLOSInMap(ally))
+    if (!_bot->IsWithinDistInMap(ally, HEAL_RANGE) || !_bot->IsWithinLOSInMap(ally, VMAP::ModelIgnoreFlags::M2))
     {
         if (BotMayMove())
             HoldRangedCombatPosition(ally, HEAL_RANGE);
@@ -4055,7 +4055,7 @@ void PlayerbotAI::HoldRangedCombatPosition(Unit* focus, float maxRange)
         return;
 
     float const dist = _bot->GetDistance(focus);
-    bool const hasLos = _bot->IsWithinLOSInMap(focus);
+    bool const hasLos = _bot->IsWithinLOSInMap(focus, VMAP::ModelIgnoreFlags::M2);
 
     // Too close — step out only when dungeon kiting is enabled.
     if (_bot->IsWithinMeleeRange(focus) || dist < maxRange * 0.40f)
@@ -4395,7 +4395,7 @@ bool PlayerbotAI::HandlePullSequence()
 
     if (_pullPhase == PullPhase::Reach)
     {
-        if (dist <= range && _bot->IsWithinLOSInMap(target))
+        if (dist <= range && _bot->IsWithinLOSInMap(target, VMAP::ModelIgnoreFlags::M2))
         {
             _pullPhase = PullPhase::Opener;
         }
