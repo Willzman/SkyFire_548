@@ -5112,7 +5112,9 @@ bool PlayerbotAI::HandleLoot()
         for (uint32 slot = 0; slot < maxSlot; ++slot)
         {
             LootItem* item = loot->LootItemInSlot(slot, _bot);
-            if (!item || item->is_blocked)
+            // A solo looter's quest drops are is_blocked too (reserved for it,
+            // Loot::FillQuestLoot); only normal items are blocked by a pending roll.
+            if (!item || (item->is_blocked && slot < loot->items.size()))
                 continue;
             sawFreeItem = true;
             if (!CanFitLootItem(_bot, item->itemid, item->count))
