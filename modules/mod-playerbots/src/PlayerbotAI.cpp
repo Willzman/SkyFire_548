@@ -91,24 +91,36 @@ namespace
     constexpr uint32 BOT_NO_LOS_GIVE_UP_MS = 10 * IN_MILLISECONDS;
     constexpr uint32 BOT_UNREACHABLE_MS = 10 * MINUTE * IN_MILLISECONDS;
 
-    // NearestAttackableUnitInObjectRangeCheck that passes over units the bot gave up on.
+    // Nearest unit worth grinding. Besides the units the bot gave up on, it passes over
+    // what AC's GrindTargetValue::FindTargetForGrinding skips: no XP (gray, critters,
+    // totems, pets), more than INTERACTION_DISTANCE above or below the bot (rooftops,
+    // ledges), no line of sight, and neutral creatures with no loot. Quest kill
+    // objectives are picked by SelectQuestObjectiveTarget, not here.
     class BotGrindTargetCheck
     {
     public:
-        BotGrindTargetCheck(PlayerbotAI const* ai, Player const* bot, float range) : _ai(ai), _bot(bot), _range(range) { }
+        BotGrindTargetCheck(PlayerbotAI const* ai, Player* bot, float range) : _ai(ai), _bot(bot), _range(range) { }
         bool operator()(Unit* u)
         {
-            if (u->isTargetableForAttack() && _bot->IsWithinDistInMap(u, _range) && !_bot->IsFriendlyTo(u)
-                && _bot->CanSeeOrDetect(u) && !_ai->IsUnreachableTarget(u))
-            {
-                _range = _bot->GetDistance(u);
-                return true;
-            }
-            return false;
+            if (!u->isTargetableForAttack() || !_bot->IsWithinDistInMap(u, _range) || _bot->IsFriendlyTo(u)
+                || !_bot->CanSeeOrDetect(u) || _ai->IsUnreachableTarget(u))
+                return false;
+            if (u->GetCreatureType() == CREATURE_TYPE_CRITTER || !_bot->isHonorOrXPTarget(u))
+                return false;
+            if (std::fabs(_bot->GetPositionZ() - u->GetPositionZ()) > INTERACTION_DISTANCE)
+                return false;
+            if (Creature const* creature = u->ToCreature())
+                if (!creature->GetCreatureTemplate()->lootid && _bot->GetReactionTo(u) >= REP_NEUTRAL)
+                    return false;
+            if (!_bot->IsWithinLOSInMap(u, VMAP::ModelIgnoreFlags::M2))
+                return false;
+
+            _range = _bot->GetDistance(u);
+            return true;
         }
     private:
         PlayerbotAI const* _ai;
-        Player const* _bot;
+        Player* _bot;
         float _range;
     };
 
