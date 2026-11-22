@@ -1,7 +1,25 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/Karazhan/boss_maiden_of_virtue.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
 /* ScriptData
 SDName: Boss_Maiden_of_Virtue
@@ -10,8 +28,33 @@ SDComment:
 SDCategory: Karazhan
 EndScriptData */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
 #include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
+#include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
+
+namespace
+{
 
 enum MaidenOfVirtue
 {
@@ -29,98 +72,100 @@ enum MaidenOfVirtue
 
 class boss_maiden_of_virtue : public CreatureScript
 {
-public:
-    boss_maiden_of_virtue() : CreatureScript("boss_maiden_of_virtue") { }
+    public:
+        boss_maiden_of_virtue() : CreatureScript("boss_maiden_of_virtue") { }
 
-    CreatureAI* GetAI(Creature* creature) const OVERRIDE
-    {
-        return new boss_maiden_of_virtueAI(creature);
-    }
-
-    struct boss_maiden_of_virtueAI : public ScriptedAI
-    {
-        boss_maiden_of_virtueAI(Creature* creature) : ScriptedAI(creature) { }
-
-        uint32 Repentance_Timer;
-        uint32 Holyfire_Timer;
-        uint32 Holywrath_Timer;
-        uint32 Holyground_Timer;
-        uint32 Enrage_Timer;
-
-        bool Enraged;
-
-        void Reset() OVERRIDE
+        struct boss_maiden_of_virtueAI : public ScriptedAI
         {
-            Repentance_Timer    = 25000+(rand()%15000);
-            Holyfire_Timer      = 8000+(rand()%17000);
-            Holywrath_Timer     = 15000+(rand()%10000);
-            Holyground_Timer    = 3000;
-            Enrage_Timer        = 600000;
+            boss_maiden_of_virtueAI(Creature* creature) : ScriptedAI(creature) { }
 
-            Enraged = false;
-        }
+            uint32 Repentance_Timer;
+            uint32 Holyfire_Timer;
+            uint32 Holywrath_Timer;
+            uint32 Holyground_Timer;
+            uint32 Enrage_Timer;
 
-        void KilledUnit(Unit* /*Victim*/) OVERRIDE
+            bool Enraged;
+
+            void Reset() override
+            {
+                Repentance_Timer    = 25000 + (rand() % 15000);
+                Holyfire_Timer      = 8000  + (rand() % 17000);
+                Holywrath_Timer     = 15000 + (rand() % 10000);
+                Holyground_Timer    = 3000;
+                Enrage_Timer        = 600000;
+
+                Enraged = false;
+            }
+
+            void KilledUnit(Unit* /*victim*/) override
+            {
+                if (urand(0, 1) == 0)
+                    Talk(SAY_SLAY);
+            }
+
+            void JustDied(Unit* /*killer*/) override
+            {
+                Talk(SAY_DEATH);
+            }
+
+            void EnterCombat(Unit* /*who*/) override
+            {
+                Talk(SAY_AGGRO);
+            }
+
+            void UpdateAI(uint32 diff) override
+            {
+                if (!UpdateVictim())
+                    return;
+
+                if (Enrage_Timer < diff && !Enraged)
+                {
+                    DoCast(me, SPELL_BERSERK, true);
+                    Enraged = true;
+                } else Enrage_Timer -= diff;
+
+                if (Holyground_Timer <= diff)
+                {
+                    DoCast(me, SPELL_HOLYGROUND, true); // Triggered so it doesn't interrupt her at all
+                    Holyground_Timer = 3000;
+                } else Holyground_Timer -= diff;
+
+                if (Repentance_Timer <= diff)
+                {
+                    DoCast(me->GetVictim(), SPELL_REPENTANCE);
+                    Talk(SAY_REPENTANCE);
+
+                    Repentance_Timer = urand(25000, 35000); // A little randomness on that spell
+                } else Repentance_Timer -= diff;
+
+                if (Holyfire_Timer <= diff)
+                {
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
+                        DoCast(target, SPELL_HOLYFIRE);
+
+                        Holyfire_Timer = urand(8000, 23000); // Anywhere from 8 to 23 seconds, good luck having several of those in a row!
+                } else Holyfire_Timer -= diff;
+
+                if (Holywrath_Timer <= diff)
+                {
+                    if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
+                        DoCast(target, SPELL_HOLYWRATH);
+
+                    Holywrath_Timer = urand(20000, 25000); // 20-30 secs sounds nice
+                } else Holywrath_Timer -= diff;
+
+                DoMeleeAttackIfReady();
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const override
         {
-            if (urand(0, 1) == 0)
-                Talk(SAY_SLAY);
+            return new boss_maiden_of_virtueAI(creature);
         }
-
-        void JustDied(Unit* /*killer*/) OVERRIDE
-        {
-            Talk(SAY_DEATH);
-        }
-
-        void EnterCombat(Unit* /*who*/) OVERRIDE
-        {
-            Talk(SAY_AGGRO);
-        }
-
-        void UpdateAI(uint32 diff) OVERRIDE
-        {
-            if (!UpdateVictim())
-                return;
-
-            if (Enrage_Timer < diff && !Enraged)
-            {
-                DoCast(me, SPELL_BERSERK, true);
-                Enraged = true;
-            } else Enrage_Timer -= diff;
-
-            if (Holyground_Timer <= diff)
-            {
-                DoCast(me, SPELL_HOLYGROUND, true);   //Triggered so it doesn't interrupt her at all
-                Holyground_Timer = 3000;
-            } else Holyground_Timer -= diff;
-
-            if (Repentance_Timer <= diff)
-            {
-                DoCastVictim(SPELL_REPENTANCE);
-                Talk(SAY_REPENTANCE);
-
-                Repentance_Timer = urand(25000, 35000);        //A little randomness on that spell
-            } else Repentance_Timer -= diff;
-
-            if (Holyfire_Timer <= diff)
-            {
-                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
-                    DoCast(target, SPELL_HOLYFIRE);
-
-                Holyfire_Timer = urand(8000, 23000);      //Anywhere from 8 to 23 seconds, good luck having several of those in a row!
-            } else Holyfire_Timer -= diff;
-
-            if (Holywrath_Timer <= diff)
-            {
-                if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100, true))
-                    DoCast(target, SPELL_HOLYWRATH);
-
-                Holywrath_Timer = urand(20000, 25000);        //20-30 secs sounds nice
-            } else Holywrath_Timer -= diff;
-
-            DoMeleeAttackIfReady();
-        }
-    };
 };
+
+} // namespace
 
 void AddSC_boss_maiden_of_virtue()
 {
