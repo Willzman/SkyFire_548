@@ -62,6 +62,23 @@ protected:
     function_type m_function;
 };
 
+class EventProcessor;
+
+// Runs the function every "repeat" milliseconds until it returns true.
+class RepeatableFunctionEvent : public GroupedEvent
+{
+public:
+    typedef std::function<bool()> function_type;
+
+    RepeatableFunctionEvent(EventProcessor* events, function_type const& function, uint32 repeat, group_type group = 0) : GroupedEvent(group), m_events(events), m_function(function), m_repeat(repeat) { }
+    bool Execute(uint64 /*e_time*/, uint32 /*p_time*/) OVERRIDE;
+
+protected:
+    EventProcessor* m_events;
+    function_type m_function;
+    uint32 m_repeat;
+};
+
 typedef std::multimap<uint64, BasicEvent*> EventList;
 
 class EventProcessor
@@ -81,6 +98,8 @@ public:
     void Schedule(uint32 delay, BasicEvent* Event) { AddEvent(Event, CalculateTime(delay)); }
     void Schedule(uint32 delay, FunctionEvent::function_type const& function) { Schedule(delay, new FunctionEvent(function)); }
     void Schedule(uint32 delay, GroupedEvent::group_type group, FunctionEvent::function_type const& function) { Schedule(delay, new FunctionEvent(function, group)); }
+    void Repeated(uint32 delay, uint32 repeat, RepeatableFunctionEvent::function_type const& function) { Schedule(delay, new RepeatableFunctionEvent(this, function, repeat)); }
+    void Repeated(uint32 delay, uint32 repeat, GroupedEvent::group_type group, RepeatableFunctionEvent::function_type const& function) { Schedule(delay, new RepeatableFunctionEvent(this, function, repeat, group)); }
 protected:
     uint64 m_time;
     EventList m_events;

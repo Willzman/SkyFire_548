@@ -1744,7 +1744,8 @@ void ObjectMgr::LoadCreatures()
             continue;
         }
 
-        if (data.spawnMask & ~spawnMasks[data.mapid])
+        // Transport maps have no MapDifficulty rows: their passengers carry the spawn mask of the map the transport is in
+        if ((mapEntry->Instanceable() || spawnMasks[data.mapid] != 0) && (data.spawnMask & ~spawnMasks[data.mapid]))
             SF_LOG_ERROR("sql.sql", "Table `creature` have creature (GUID: %u) that have wrong spawn mask %u including not supported difficulty modes for map (Id: %u) spawnMasks[data.mapid]: %u.", guid, data.spawnMask, data.mapid, spawnMasks[data.mapid]);
 
         bool ok = true;
