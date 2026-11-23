@@ -2094,7 +2094,7 @@ void ObjectMgr::LoadGameobjects()
         }
         data.go_state = GOState(go_state);
 
-        data.spawnMask = fields[14].GetUInt8();
+        data.spawnMask = fields[14].GetUInt32();
 
         if (data.spawnMask & ~spawnMasks[data.mapid])
             SF_LOG_ERROR("sql.sql", "Table `gameobject` has gameobject (GUID: %u Entry: %u) that has wrong spawn mask %u including not supported difficulty modes for map (Id: %u), skip", guid, data.id, data.spawnMask, data.mapid);
@@ -2162,7 +2162,7 @@ void ObjectMgr::LoadGameobjects()
 
 void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint32 mask = data->spawnMask;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
@@ -2176,7 +2176,7 @@ void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 
 void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint32 mask = data->spawnMask;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
