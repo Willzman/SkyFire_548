@@ -223,6 +223,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/Karazhan/boss_midnight.cpp
   EasternKingdoms/Karazhan/boss_prince_malchezaar.cpp
   EasternKingdoms/Karazhan/bosses_opera.cpp
+  EasternKingdoms/Karazhan/chess_event.cpp
   EasternKingdoms/Karazhan/boss_moroes.cpp
   EasternKingdoms/Karazhan/boss_terestian_illhoof.cpp
   EasternKingdoms/Karazhan/karazhan.h
