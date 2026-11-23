@@ -1,7 +1,25 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/SunkenTemple/instance_sunken_temple.cpp, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
 /* ScriptData
 SDName: Instance_Sunken_Temple
@@ -10,191 +28,175 @@ SDComment:Place Holder
 SDCategory: Sunken Temple
 EndScriptData */
 
-#include "ScriptMgr.h"
+#include "ScriptMgr.h"
+#include "../../Pandaria/pandaria_loa_compat.h"
+#include "ScriptedCreature.h"
+#include "ScriptedGossip.h"
 #include "InstanceScript.h"
+#include "SpellScript.h"
+#include "SpellAuraEffects.h"
+#include "SpellInfo.h"
+#include "SpellMgr.h"
+#include "Spell.h"
+#include "Player.h"
+#include "Group.h"
+#include "GridNotifiers.h"
+#include "GridNotifiersImpl.h"
+#include "CellImpl.h"
+#include "ObjectAccessor.h"
+#include "ObjectMgr.h"
+#include "PassiveAI.h"
+#include "CombatAI.h"
+#include "Vehicle.h"
+#include "MoveSplineInit.h"
+#include "TemporarySummon.h"
+#include "Containers.h"
+#include <random>
 #include "sunken_temple.h"
 
-enum Gameobject
+namespace
 {
-    GO_ATALAI_STATUE1           = 148830,
-    GO_ATALAI_STATUE2           = 148831,
-    GO_ATALAI_STATUE3           = 148832,
-    GO_ATALAI_STATUE4           = 148833,
-    GO_ATALAI_STATUE5           = 148834,
-    GO_ATALAI_STATUE6           = 148835,
-    GO_ATALAI_IDOL              = 148836,
-    GO_ATALAI_LIGHT1            = 148883,
-    GO_ATALAI_LIGHT2            = 148937
-
-};
-
-enum CreatureIds
-{
-    NPC_MALFURION_STORMRAGE     = 15362
-};
 
 class instance_sunken_temple : public InstanceMapScript
 {
-public:
-    instance_sunken_temple() : InstanceMapScript("instance_sunken_temple", 109) { }
+    public:
+        instance_sunken_temple() : InstanceMapScript("instance_sunken_temple", 109) { }
 
-    InstanceScript* GetInstanceScript(InstanceMap* map) const OVERRIDE
-    {
-        return new instance_sunken_temple_InstanceMapScript(map);
-    }
-
-    struct instance_sunken_temple_InstanceMapScript : public InstanceScript
-    {
-        instance_sunken_temple_InstanceMapScript(Map* map) : InstanceScript(map)
+        InstanceScript* GetInstanceScript(InstanceMap* map) const override
         {
+            return new instance_sunken_temple_InstanceMapScript(map);
         }
 
-        uint64 GOAtalaiStatue1;
-        uint64 GOAtalaiStatue2;
-        uint64 GOAtalaiStatue3;
-        uint64 GOAtalaiStatue4;
-        uint64 GOAtalaiStatue5;
-        uint64 GOAtalaiStatue6;
-        uint64 GOAtalaiIdol;
-
-        uint32 State;
-
-        bool s1;
-        bool s2;
-        bool s3;
-        bool s4;
-        bool s5;
-        bool s6;
-
-        void Initialize() OVERRIDE
+        struct instance_sunken_temple_InstanceMapScript : public InstanceScript
         {
-            GOAtalaiStatue1 = 0;
-            GOAtalaiStatue2 = 0;
-            GOAtalaiStatue3 = 0;
-            GOAtalaiStatue4 = 0;
-            GOAtalaiStatue5 = 0;
-            GOAtalaiStatue6 = 0;
-            GOAtalaiIdol = 0;
+            instance_sunken_temple_InstanceMapScript(Map* map) : InstanceScript(map) { }
 
-            State = 0;
+            uint32 State, m_wCount;
+            std::map<uint32, uint64> m_SunkenEncounters;
+            uint32 m_auiEncounter[EncounterCount];
 
-            s1 = false;
-            s2 = false;
-            s3 = false;
-            s4 = false;
-            s5 = false;
-            s6 = false;
-        }
-
-        void OnGameObjectCreate(GameObject* go) OVERRIDE
-        {
-            switch (go->GetEntry())
+            void Initialize() override
             {
-                case GO_ATALAI_STATUE1: GOAtalaiStatue1 = go->GetGUID();   break;
-                case GO_ATALAI_STATUE2: GOAtalaiStatue2 = go->GetGUID();   break;
-                case GO_ATALAI_STATUE3: GOAtalaiStatue3 = go->GetGUID();   break;
-                case GO_ATALAI_STATUE4: GOAtalaiStatue4 = go->GetGUID();   break;
-                case GO_ATALAI_STATUE5: GOAtalaiStatue5 = go->GetGUID();   break;
-                case GO_ATALAI_STATUE6: GOAtalaiStatue6 = go->GetGUID();   break;
-                case GO_ATALAI_IDOL:    GOAtalaiIdol = go->GetGUID();      break;
+                SetBossNumber(EncounterCount);
+                memset(&m_auiEncounter, 0, sizeof(m_auiEncounter));
+                State           = 0;
+                m_wCount        = 0;
             }
-        }
 
-         virtual void Update(uint32 /*diff*/) // correct order goes form 1-6
-         {
-             switch (State)
-             {
-             case GO_ATALAI_STATUE1:
-                if (!s1 && !s2 && !s3 && !s4 && !s5 && !s6)
+            void OnCreatureCreate(Creature* creature) override
+            {
+                switch (creature->GetEntry())
                 {
-                    if (GameObject* pAtalaiStatue1 = instance->GetGameObject(GOAtalaiStatue1))
-                        UseStatue(pAtalaiStatue1);
-                    s1 = true;
-                    State = 0;
-                };
-                break;
-             case GO_ATALAI_STATUE2:
-                if (s1 && !s2 && !s3 && !s4 && !s5 && !s6)
-                {
-                    if (GameObject* pAtalaiStatue2 = instance->GetGameObject(GOAtalaiStatue2))
-                        UseStatue(pAtalaiStatue2);
-                    s2 = true;
-                    State = 0;
-                };
-                break;
-             case GO_ATALAI_STATUE3:
-                if (s1 && s2 && !s3 && !s4 && !s5 && !s6)
-                {
-                    if (GameObject* pAtalaiStatue3 = instance->GetGameObject(GOAtalaiStatue3))
-                        UseStatue(pAtalaiStatue3);
-                    s3 = true;
-                    State = 0;
-                };
-                break;
-             case GO_ATALAI_STATUE4:
-                if (s1 && s2 && s3 && !s4 && !s5 && !s6)
-                {
-                    if (GameObject* pAtalaiStatue4 = instance->GetGameObject(GOAtalaiStatue4))
-                        UseStatue(pAtalaiStatue4);
-                    s4 = true;
-                    State = 0;
+                    case NPC_AVATAR_OF_HAKKAR:
+                    case NPC_JAMMALAN_PROPHET: 
+                    case NPC_WEAVER:
+                    case NPC_DREAMSCYTHE:
+                    case NPC_MORPHAZ:
+                    case NPC_HAZZAS:
+                    case NPC_SHADE_OF_ERANIKUS:
+                        m_SunkenEncounters.insert(std::pair<uint32, uint64>(creature->GetEntry(), creature->GetGUID()));
+                        break;
                 }
-                break;
-             case GO_ATALAI_STATUE5:
-                if (s1 && s2 && s3 && s4 && !s5 && !s6)
+            }
+
+            bool SetBossState(uint32 type, EncounterState state) override
+            {
+                if (!InstanceScript::SetBossState(type, state))
+                    return false;
+
+                return true;
+            }
+
+            void SetData(uint32 type, uint32 data) override
+            {
+                if (type == DATA_WARDENS && data == DONE)
                 {
-                    if (GameObject* pAtalaiStatue5 = instance->GetGameObject(GOAtalaiStatue5))
-                        UseStatue(pAtalaiStatue5);
-                    s5 = true;
-                    State = 0;
+                    m_wCount++;
+                    SaveToDB();
+
+                    if (m_wCount >= SPECIAL)
+                    {
+                        SaveToDB();
+                        SetBossState(DATA_WARDENS, DONE);
+                    }
                 }
-                break;
-             case GO_ATALAI_STATUE6:
-                if (s1 && s2 && s3 && s4 && s5 && !s6)
+            }
+
+            uint32 GetData(uint32 type) const override
+            {
+                if (type == DATA_WARDENS)
+                    return m_wCount;
+
+                return 0;
+            }
+
+            std::string GetSaveData() override
+            {
+                OUT_SAVE_INST_DATA;
+
+                std::ostringstream saveStream;
+                saveStream << "S T " << GetBossSaveData() << m_wCount;
+
+                OUT_SAVE_INST_DATA_COMPLETE;
+                return saveStream.str();
+            }
+
+            uint64 GetData64(uint32 type) const override
+            {
+                switch (type)
                 {
-                    if (GameObject* pAtalaiStatue6 = instance->GetGameObject(GOAtalaiStatue6))
-                        UseStatue(pAtalaiStatue6);
-                    s6 = true;
-                    State = 0;
+                    case NPC_AVATAR_OF_HAKKAR:
+                    case NPC_JAMMALAN_PROPHET:
+                    case NPC_WEAVER:
+                    case NPC_DREAMSCYTHE:
+                    case NPC_MORPHAZ:
+                    case NPC_HAZZAS:
+                    case NPC_SHADE_OF_ERANIKUS:
+                        return m_SunkenEncounters.find(type)->second;
                 }
-                break;
-             }
-         };
+                return 0;
+            }
 
-        void UseStatue(GameObject* go)
-        {
-            go->SummonGameObject(GO_ATALAI_LIGHT1, go->GetPositionX(), go->GetPositionY(), go->GetPositionZ(), 0, 0, 0, 0, 0, 0);
-            go->SetUInt32Value(GAMEOBJECT_FIELD_FLAGS, 4);
-        }
+            void Load(const char* in) override
+            {
+                if (!in)
+                {
+                    OUT_LOAD_INST_DATA_FAIL;
+                    return;
+                }
 
-         /*
-         void UseLastStatue(GameObject* go)
-         {
-             AtalaiStatue1->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue1->GetPositionX(), AtalaiStatue1->GetPositionY(), AtalaiStatue1->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             AtalaiStatue2->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue2->GetPositionX(), AtalaiStatue2->GetPositionY(), AtalaiStatue2->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             AtalaiStatue3->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue3->GetPositionX(), AtalaiStatue3->GetPositionY(), AtalaiStatue3->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             AtalaiStatue4->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue4->GetPositionX(), AtalaiStatue4->GetPositionY(), AtalaiStatue4->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             AtalaiStatue5->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue5->GetPositionX(), AtalaiStatue5->GetPositionY(), AtalaiStatue5->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             AtalaiStatue6->SummonGameObject(GO_ATALAI_LIGHT2, AtalaiStatue6->GetPositionX(), AtalaiStatue6->GetPositionY(), AtalaiStatue6->GetPositionZ(), 0, 0, 0, 0, 0, 100000);
-             go->SummonGameObject(148838, -488.997, 96.61, -189.019, -1.52, 0, 0, 0, 0, 100000);
-         }
-         */
+                OUT_LOAD_INST_DATA(in);
 
-         void SetData(uint32 type, uint32 data) OVERRIDE
-         {
-            if (type == EVENT_STATE)
-                State = data;
-         }
+                char dataHead1, dataHead2;
 
-         uint32 GetData(uint32 type) const OVERRIDE
-         {
-            if (type == EVENT_STATE)
-                return State;
-            return 0;
-         }
-    };
+                std::istringstream loadStream(in);
+                loadStream >> dataHead1 >> dataHead2;
 
+                if (dataHead1 == 'S' && dataHead2 == 'T')
+                {
+                    for (uint32 i = 0; i < EncounterCount; ++i)
+                    {
+                        uint32 tmpState;
+                        loadStream >> tmpState;
+                        if (tmpState == IN_PROGRESS || tmpState > SPECIAL)
+                            tmpState = NOT_STARTED;
+                        SetBossState(i, EncounterState(tmpState));
+                    }
+
+                    uint32 temp = 0;
+                    loadStream >> temp; // wardens count complete
+                    m_wCount = temp;
+                    SetData(DATA_WARDENS, m_wCount);
+                }
+                else
+                    OUT_LOAD_INST_DATA_FAIL;
+
+                OUT_LOAD_INST_DATA_COMPLETE;
+            }
+        };
 };
+
+} // namespace
 
 void AddSC_instance_sunken_temple()
 {
