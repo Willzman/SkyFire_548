@@ -141,7 +141,7 @@ class npc_garrosh_hellscream_warchief : public CreatureScript
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, NonTankTargetSelector(me)))
                                 DoCast(target, SPELL_BERSERK_CHARGE, false);
 
-                            events.ScheduleEvent(EVENT_CHARGE_B, urand(12.5 * IN_MILLISECONDS, 31 * IN_MILLISECONDS));
+                            events.ScheduleEvent(EVENT_CHARGE_B, urand(12500, 31000));
                             break;
                         case EVENT_WHIRLWIND:
                             DoCast(me, SPELL_WHIRLWIND);
