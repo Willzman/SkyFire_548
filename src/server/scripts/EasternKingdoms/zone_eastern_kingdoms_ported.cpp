@@ -1863,7 +1863,7 @@ class npc_burning_steppes_chiseled_golem : public CreatureScript
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    ExecuteTargetEvent(SPELL_HEAVE, 10.5 * IN_MILLISECONDS, EVENT_UPPERCUTE, eventId);
+                    ExecuteTargetEvent(SPELL_HEAVE, 10500, EVENT_UPPERCUTE, eventId);
                     ExecuteTargetEvent(SPELL_FLAME_BLAST_TRAIN, urand(12 * IN_MILLISECONDS, 15 * IN_MILLISECONDS), EVENT_FLAME_BLAST, eventId, PRIORITY_CHANNELED);
                     break;
                 }
@@ -2010,7 +2010,7 @@ struct npc_dark_master_gandling_quest : public ScriptedAI
     void EnterCombat(Unit* who) override
     {
         Talk(SAY_INTRO);
-        events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(1.5 * IN_MILLISECONDS, 3 * IN_MILLISECONDS));
+        events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(1500, 3000));
         events.ScheduleEvent(EVENT_SHADOW_ERUPTION, 12 * IN_MILLISECONDS);
     }
 
@@ -2057,7 +2057,7 @@ struct npc_dark_master_gandling_quest : public ScriptedAI
                     if (Unit* target = me->GetVictim())
                         DoCast(target, SPELL_SHADOWBOLT);
 
-                    events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(3.1 * IN_MILLISECONDS, 3.5 * IN_MILLISECONDS));
+                    events.ScheduleEvent(EVENT_SHADOW_BOLT, urand(3100, 3500));
                     break;
                 case EVENT_SHADOW_ERUPTION:
                     if (Unit* target = me->GetVictim())
