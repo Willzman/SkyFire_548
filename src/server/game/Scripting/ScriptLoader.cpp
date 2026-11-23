@@ -302,6 +302,7 @@ void AddSC_silverpine_forest();
 void AddSC_stranglethorn_vale();
 void AddSC_undercity();
 void AddSC_westfall();
+void AddSC_eastern_kingdoms_ported();
 void AddSC_boss_grilek();                   //Zul'Gurub (Cataclysm, map 859)
 void AddSC_boss_hazzarah();
 void AddSC_boss_jindo_the_godbreaker();
@@ -1302,6 +1303,7 @@ void AddEasternKingdomsScripts()
     AddSC_stranglethorn_vale();
     AddSC_elwynn_forest();
     AddSC_westfall();
+    AddSC_eastern_kingdoms_ported();
     AddSC_boss_grilek();                   //Zul'Gurub (Cataclysm, map 859)
     AddSC_boss_hazzarah();
     AddSC_boss_jindo_the_godbreaker();
