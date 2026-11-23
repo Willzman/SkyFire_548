@@ -462,6 +462,7 @@ public:
     void GetRespawnPosition(float& x, float& y, float& z, float* ori = NULL, float* dist = NULL) const;
 
     void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
+    void SetCorpseRemoveTime(time_t removeTime) { m_corpseRemoveTime = removeTime; }
     uint32 GetCorpseDelay() const { return m_corpseDelay; }
     bool IsRacialLeader() const { return GetCreatureTemplate()->RacialLeader; }
     bool IsCivilian() const { return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN; }
