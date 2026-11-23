@@ -466,6 +466,7 @@ void AddSC_teldrassil();
 void AddSC_the_barrens();
 void AddSC_thunder_bluff();
 void AddSC_winterspring();
+void AddSC_kalimdor_ported();
 
 // Northrend
 
@@ -1427,6 +1428,7 @@ void AddKalimdorScripts()
     AddSC_the_barrens();
     AddSC_thunder_bluff();
     AddSC_winterspring();
+    AddSC_kalimdor_ported();
 
     AddSC_instance_halls_of_origination();    //Halls of Origination
     AddSC_boss_altairus();

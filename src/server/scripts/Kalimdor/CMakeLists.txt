@@ -146,6 +146,7 @@ set(scripts_STAT_SRCS
   Kalimdor/zone_tanaris.cpp
   Kalimdor/zone_dustwallow_marsh.cpp
   Kalimdor/zone_winterspring.cpp
+  Kalimdor/zone_kalimdor_ported.cpp
   Kalimdor/zone_ashenvale.cpp
   Kalimdor/zone_darkshore.cpp
   Kalimdor/zone_teldrassil.cpp
