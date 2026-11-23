@@ -155,3 +155,8 @@ UPDATE `gameobject` SET `spawnMask` = 120 WHERE `map` = 724 AND `guid` IN (4, 15
 UPDATE `gameobject` SET `spawnMask` = 120 WHERE `map` = 754 AND `guid` IN (164457, 164458, 164459, 164460, 164461, 164462, 164463, 164464, 164465, 164466, 164467, 164468, 164469, 164470, 164471, 164472, 164473);
 -- Baradin Hold (757) gameobject
 UPDATE `gameobject` SET `spawnMask` = 120 WHERE `map` = 757 AND `guid` IN (7, 8, 9, 10, 11, 12);
+
+-- Trial of the Crusader chests: one entry per difficulty (TDB 3.3.5 masks 1/2/4/8 = 10N/25N/10H/25H). The 25-player
+-- heroic Champions' Cache and the four 25-player heroic Argent Crusade Tribute Chests were 10-player normal only.
+UPDATE `gameobject` SET `spawnMask` = 64 WHERE `map` = 649 AND `guid` = 151182 AND `id` = 195635;   -- Champions' Cache 25H, was 8
+UPDATE `gameobject` SET `spawnMask` = 64 WHERE `map` = 649 AND `guid` IN (151188, 151189, 151190, 151191) AND `id` IN (195669, 195670, 195671, 195672); -- Tribute Chests 25H, were 8
