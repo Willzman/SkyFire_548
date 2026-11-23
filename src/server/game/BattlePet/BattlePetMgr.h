@@ -234,6 +234,7 @@ private:
     bool ApplyAchievementLoadoutReward(uint32 achievementId);
     void SyncAchievementLoadoutRewards();
     void ApplyActivePetBattleRoundState(Skyfire::BattlePetPackets::BattlePetRoundResult& round) const;
+    void TickActivePetBattlePeriodicAuras(Skyfire::BattlePetPackets::BattlePetRoundResult& round);
     void DespawnResolvedWildPetBattleWorldObject();
     void ClearActivePetBattleWorldObjectState();
     void ClearActivePetBattlePlayerState();

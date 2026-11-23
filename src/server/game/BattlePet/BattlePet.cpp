@@ -148,6 +148,38 @@ bool BattlePetAbilityEffectRemovesAura(uint32 propertiesId)
     return propertiesId == BATTLE_PET_EFFECT_REMOVE_AURA;
 }
 
+bool BattlePetAbilityEffectIsPeriodicTrigger(uint32 propertiesId)
+{
+    return propertiesId == BATTLE_PET_EFFECT_PERIODIC_TRIGGER
+        || propertiesId == BATTLE_PET_EFFECT_PERIODIC_POSITIVE_TRIGGER;
+}
+
+bool BattlePetAbilityEffectIsPeriodicTriggerOnTarget(uint32 propertiesId)
+{
+    return propertiesId == BATTLE_PET_EFFECT_PERIODIC_TRIGGER;
+}
+
+bool BattlePetAbilityCatchChance(uint32 abilityId, uint8 failedAttempts, float& chance)
+{
+    uint8 const turnCount = BattlePetAbilityTurnCount(abilityId);
+    for (uint8 turnIndex = 1; turnIndex <= turnCount; ++turnIndex)
+    {
+        for (BattlePetAbilityEffectEntry const* effectEntry : BattlePetAbilityEffectsForTurn(abilityId, turnIndex))
+        {
+            if (!effectEntry || effectEntry->PropertiesId != BATTLE_PET_EFFECT_CATCH)
+                continue;
+
+            // Trap 20 + 20 per failed toss, Strong Trap 25 + 25, Pristine Trap 30 + 30, GM Trap 0 + 100.
+            uint32 const total = effectEntry->PropertyValues[0]
+                + uint32(failedAttempts) * effectEntry->PropertyValues[1];
+            chance = float(std::min<uint32>(total, 100));
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool BattlePetAbilityEffectIsKillHeal(uint32 propertiesId, BattlePetAbilityEffectEntry const* effectEntry)
 {
     if (!effectEntry)

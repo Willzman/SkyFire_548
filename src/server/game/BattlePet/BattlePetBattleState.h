@@ -9,6 +9,7 @@
 #include "BattlePet.h"
 #include "Common.h"
 
+#include <map>
 #include <vector>
 
 enum PetBattleWinner
@@ -81,6 +82,19 @@ struct ActivePetBattleAuraState
     uint8 Rounds = 0;
     uint32 AuraAbilityId = 0;
     bool Untargetable = false;
+};
+
+// Damage or healing over time left behind by an ability (effects 54 and 63). The aura ability's
+// own turn effects run once at the end of every round until the rounds run out.
+struct ActivePetBattlePeriodicAura
+{
+    uint32 AuraAbilityId = 0;
+    uint8 Rounds = 0;       // rounds left, counting the one about to tick
+    uint8 Turn = 1;         // turn of the aura ability to run next (Agony grows each round)
+    bool OnEnemy = false;   // held by the enemy front pet (damage) or by an ally pet (healing)
+    uint8 AllyPet = 0;      // ally pet that cast it; also the holder when it is not on the enemy
+    uint16 Power = 0;       // caster stats when it was applied
+    uint8 Level = 0;
 };
 
 struct ActivePetBattleWeather
@@ -247,6 +261,64 @@ struct ActivePetBattle
     void ClearEnemyCombatAura(uint32 auraAbilityId = 0)
     {
         ClearCombatAura(EnemyAura, auraAbilityId);
+    }
+
+    // Refreshes the duration when the same pet already has the aura on the same side.
+    void AddPeriodicAura(uint32 auraAbilityId, uint8 rounds, bool onEnemy, uint8 allyPet, uint16 power, uint8 level)
+    {
+        if (!auraAbilityId || !rounds || !IsValidAllyPetIndex(allyPet))
+            return;
+
+        for (ActivePetBattlePeriodicAura& aura : PeriodicAuras)
+        {
+            if (aura.AuraAbilityId != auraAbilityId || aura.OnEnemy != onEnemy || aura.AllyPet != allyPet)
+                continue;
+
+            aura.Rounds = rounds;
+            aura.Turn = 1;
+            aura.Power = power;
+            aura.Level = level;
+            return;
+        }
+
+        ActivePetBattlePeriodicAura aura;
+        aura.AuraAbilityId = auraAbilityId;
+        aura.Rounds = rounds;
+        aura.OnEnemy = onEnemy;
+        aura.AllyPet = allyPet;
+        aura.Power = power;
+        aura.Level = level;
+        PeriodicAuras.push_back(aura);
+    }
+
+    bool HasPeriodicAura(uint32 auraAbilityId, bool onEnemy) const
+    {
+        for (ActivePetBattlePeriodicAura const& aura : PeriodicAuras)
+            if (aura.AuraAbilityId == auraAbilityId && aura.OnEnemy == onEnemy)
+                return true;
+
+        return false;
+    }
+
+    // Ability effect 31 (set state). Kept per ally pet for the whole battle.
+    void SetAllyState(uint8 petIndex, uint32 stateId, int32 value)
+    {
+        if (!IsValidAllyPetIndex(petIndex) || !stateId)
+            return;
+
+        if (value)
+            AllyStates[petIndex][stateId] = value;
+        else
+            AllyStates[petIndex].erase(stateId);
+    }
+
+    int32 GetAllyState(uint8 petIndex, uint32 stateId) const
+    {
+        if (!IsValidAllyPetIndex(petIndex))
+            return 0;
+
+        std::map<uint32, int32>::const_iterator itr = AllyStates[petIndex].find(stateId);
+        return itr != AllyStates[petIndex].end() ? itr->second : 0;
     }
 
     bool IsAllyUntargetable() const { return AllyAura.Untargetable; }
@@ -685,6 +757,8 @@ struct ActivePetBattle
     bool WaitingForAllyFrontPet = false;
     ActivePetBattlePetState AllyTeam[BATTLE_PET_MAX_ACTIVE_TEAM_PETS];
     ActivePetBattleWeather Weather;
+    std::vector<ActivePetBattlePeriodicAura> PeriodicAuras;
+    std::map<uint32, int32> AllyStates[BATTLE_PET_MAX_ACTIVE_TEAM_PETS];
 
 private:
     ActivePetBattleCooldown AllyCooldowns[BATTLE_PET_MAX_ACTIVE_TEAM_PETS][BATTLE_PET_ABILITY_SLOT_COUNT];
