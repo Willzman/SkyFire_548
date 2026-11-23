@@ -1062,3 +1062,9 @@ DELETE FROM `gossip_menu_option` WHERE (`MenuID` = 10996 AND `OptionID` = 2) OR 
 INSERT INTO `gossip_menu_option` (`MenuID`, `OptionID`, `OptionIcon`, `OptionText`, `OptionBroadcastTextID`, `OptionType`, `OptionNpcflag`, `ActionMenuID`, `ActionPoiID`, `BoxCoded`, `BoxMoney`, `BoxText`, `BoxBroadcastTextID`, `VerifiedBuild`) VALUES
 (10996, 2, 0, 'I appear to have lost my ring.', 38227, 1, 1, 10998, 0, 0, 0, NULL, 0, 0),
 (10998, 0, 0, 'It won\'t.', 38229, 1, 1, 0, 0, 0, 0, NULL, 0, 0);
+
+-- Deathbringer's Cache: one entry per difficulty, all four were 10-player normal only (LoA's spawns are 5.3 yards off,
+-- outside the 5-yard match above). Masks from LoA and TDB 3.3.5: 10N 202239, 25N 202240, 10H 202238, 25H 202241.
+UPDATE `gameobject` SET `spawnMask` = 16 WHERE `map` = 631 AND `guid` = 151166 AND `id` = 202240; -- 25N, was 8
+UPDATE `gameobject` SET `spawnMask` = 32 WHERE `map` = 631 AND `guid` = 151167 AND `id` = 202238; -- 10H, was 8
+UPDATE `gameobject` SET `spawnMask` = 64 WHERE `map` = 631 AND `guid` = 151168 AND `id` = 202241; -- 25H, was 8
