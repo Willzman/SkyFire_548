@@ -529,6 +529,8 @@ void AddSC_boss_magus_telestra();        //The Nexus Nexus
 void AddSC_boss_anomalus();
 void AddSC_boss_ormorok();
 void AddSC_boss_keristrasza();
+void AddSC_boss_commander_kolurg();
+void AddSC_boss_commander_stoutbeard();
 void AddSC_instance_nexus();
 void AddSC_boss_drakos();                //The Nexus The Oculus
 void AddSC_boss_urom();
@@ -1646,6 +1648,8 @@ void AddNorthrendScripts()
     AddSC_boss_anomalus();
     AddSC_boss_ormorok();
     AddSC_boss_keristrasza();
+    AddSC_boss_commander_kolurg();
+    AddSC_boss_commander_stoutbeard();
     AddSC_instance_nexus();
     AddSC_boss_drakos();                //The Nexus The Oculus
     AddSC_boss_urom();
