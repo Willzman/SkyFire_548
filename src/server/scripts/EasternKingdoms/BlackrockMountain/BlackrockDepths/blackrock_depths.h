@@ -1,10 +1,34 @@
 /*
-* This file is part of Project SkyFire https://www.projectskyfire.org. 
-* See LICENSE.md file for Copyright information
+* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+*
+* This program is free software; you can redistribute it and/or modify it
+* under the terms of the GNU General Public License as published by the
+* Free Software Foundation; either version 2 of the License, or (at your
+* option) any later version.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+* more details.
+*
+* You should have received a copy of the GNU General Public License along
+* with this program. If not, see <http://www.gnu.org/licenses/>.
 */
+
+/*
+ * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
+ * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/EasternKingdoms/BlackrockMountain/BlackrockDepths/blackrock_depths.h, GPL v2 or later).
+ * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ */
 
 #ifndef DEF_BRD_H
 #define DEF_BRD_H
+
+#include "ScriptMgr.h"
+#include "../../../Pandaria/pandaria_loa_compat.h"
+#include "ScriptedCreature.h"
+#include "InstanceScript.h"
+#include "ObjectMgr.h"
 
 enum FactionIds
 {
