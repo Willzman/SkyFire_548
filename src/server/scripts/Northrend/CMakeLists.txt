@@ -187,6 +187,7 @@ set(scripts_STAT_SRCS
   Northrend/zone_borean_tundra.cpp
   Northrend/zone_howling_fjord.cpp
   Northrend/zone_dalaran.cpp
+  Northrend/zone_northrend_ported.cpp
   Northrend/DraktharonKeep/boss_trollgore.cpp
   Northrend/DraktharonKeep/instance_drak_tharon_keep.cpp
   Northrend/DraktharonKeep/boss_novos.cpp
