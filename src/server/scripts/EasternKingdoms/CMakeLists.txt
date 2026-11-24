@@ -246,6 +246,7 @@ set(scripts_STAT_SRCS
   EasternKingdoms/zone_stranglethorn_vale.cpp
   EasternKingdoms/zone_undercity.cpp
   EasternKingdoms/zone_westfall.cpp
+  EasternKingdoms/zone_eastern_kingdoms_ported.cpp
   EasternKingdoms/ZulGurub/boss_grilek.cpp
   EasternKingdoms/ZulGurub/boss_hazzarah.cpp
   EasternKingdoms/ZulGurub/boss_jindo_the_godbreaker.cpp
