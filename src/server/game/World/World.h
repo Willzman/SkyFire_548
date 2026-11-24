@@ -516,6 +516,7 @@ enum WorldStates
     WS_MONTHLY_QUEST_RESET_TIME = 20007,                     // Next monthly reset time
     // Cata specific custom worldstates
     WS_GUILD_WEEKLY_RESET_TIME = 20050,                     // Next guild week reset time
+    WS_ARENA_SEASON_ID = 20051,                     // Arena season the season-end rewards were last given for (RatedPvpMgr)
 };
 
 /// Storage class for commands issued for delayed execution

@@ -17,9 +17,19 @@
 #include "World.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
+#include "Config.h"
+#include "DBCStores.h"
+#include "Item.h"
+#include "Mail.h"
+#include "ObjectMgr.h"
+#include "Util.h"
 
 #include <algorithm>
 #include <cmath>
+#include <map>
+#include <set>
+#include <sstream>
+#include <string>
 
 // ---------------------------------------------------------------- store
 
@@ -184,6 +194,313 @@ void RatedPvpMgr::RecalculateRank(RatedPvpSlot slot)
             SaveToDB(sorted[i]);
         }
     }
+}
+
+// ---------------------------------------------------------------- season end
+// Ported from LoA's RatedPvpMgr::CheckSeasonEnd / RewardSeason / SeasonCleanup (RatedPvp.cpp). Config (worldserver.conf):
+//   Arena.SeasonReward.RatingThreshold.2x2 / 3x3 / 5x5   rating a player needs (above it) to be ranked; -1 = no rewards
+//   Arena.SeasonReward.Rank1..Rank6.Titles / .Achievements / .Items
+//       ids separated by spaces, or "2v2 ids; 3v3 ids; 5v5 ids". Ranks 1-3 are places (1-2, 3-4, 5-6; 5v5: 1, 2, 3),
+//       ranks 4-6 the top 10 %, 15 % and 20 % of the ranked players.
+//   Arena.SeasonReward.Cleanup.Enabled (1), .Titles ("44 43 45"), .Achievements ("2093 2092 2090"),
+//       .KeepWithAchievements ("2091"): the seasonal titles and achievements taken away, except from players with these.
+// Differences from LoA: nothing happens on the first start (no season stored yet: the current one is only recorded, so a
+// new realm doesn't run the cleanup); the reward log goes to the server log; refundable PvP items are left alone.
+
+namespace
+{
+    struct SeasonReward
+    {
+        uint32 UpperPlace = 0;
+        float Percent = 0.0f;
+        std::vector<uint32> Titles;
+        std::vector<uint32> Achievs;
+        std::vector<uint32> Items;
+    };
+
+    std::vector<uint32> ConfigIds(std::string const& name, uint32 arenaType, std::string const& def = "")
+    {
+        std::string config = sConfigMgr->GetStringDefault(name.c_str(), def.c_str());
+        if (config.find(';') != std::string::npos)
+        {
+            Tokenizer tok(config, ';');
+            uint32 index = arenaType == ARENA_TYPE_2v2 ? 0 : (arenaType == ARENA_TYPE_3v3 ? 1 : 2);
+            config = index < tok.size() ? tok[index] : "";
+        }
+
+        std::vector<uint32> ids;
+        Tokenizer tok(config, ' ');
+        for (Tokenizer::const_iterator itr = tok.begin(); itr != tok.end(); ++itr)
+            if (uint32 id = uint32(strtoul(*itr, NULL, 10)))
+                ids.push_back(id);
+        return ids;
+    }
+
+    void CheckIds(std::vector<uint32>& ids, std::string const& name, uint8 kind)
+    {
+        for (std::vector<uint32>::iterator itr = ids.begin(); itr != ids.end();)
+        {
+            bool ok = kind == 0 ? sCharTitlesStore.LookupEntry(*itr) != NULL
+                : (kind == 1 ? sAchievementStore.LookupEntry(*itr) != NULL : sObjectMgr->GetItemTemplate(*itr) != NULL);
+            if (ok)
+                ++itr;
+            else
+            {
+                SF_LOG_ERROR("server.loading", "%s: id %u not found, skipped", name.c_str(), *itr);
+                itr = ids.erase(itr);
+            }
+        }
+    }
+
+    std::vector<SeasonReward> GetSeasonRewards(uint32 arenaType)
+    {
+        std::vector<SeasonReward> rewards(6);
+        for (uint32 i = 0; i < 6; ++i)
+        {
+            std::string base = "Arena.SeasonReward.Rank" + std::to_string(i + 1);
+            rewards[i].Titles = ConfigIds(base + ".Titles", arenaType);
+            rewards[i].Achievs = ConfigIds(base + ".Achievements", arenaType);
+            rewards[i].Items = ConfigIds(base + ".Items", arenaType);
+            CheckIds(rewards[i].Titles, base + ".Titles", 0);
+            CheckIds(rewards[i].Achievs, base + ".Achievements", 1);
+            CheckIds(rewards[i].Items, base + ".Items", 2);
+        }
+        bool five = arenaType == ARENA_TYPE_5v5;
+        rewards[0].UpperPlace = five ? 1 : 2;
+        rewards[1].UpperPlace = five ? 2 : 4;
+        rewards[2].UpperPlace = five ? 3 : 6;
+        rewards[3].Percent = 10.0f;
+        rewards[4].Percent = 15.0f;
+        rewards[5].Percent = 20.0f;
+        return rewards;
+    }
+
+    // last rank of each reward group (LoA's CalculateRanks); 0 = nobody left for that group
+    std::vector<uint32> CalculateRankLimits(uint32 size, std::vector<SeasonReward> const& rewards)
+    {
+        std::vector<uint32> groups(rewards.size());
+        for (uint32 i = 0; i < 3; ++i)
+            groups[i] = rewards[i].UpperPlace;
+        for (uint32 i = 3; i < rewards.size(); ++i)
+        {
+            uint32 n = uint32(std::ceil(size * rewards[i].Percent / 100.0f));
+            n = std::max(groups[i - 1] + 1, n);
+            groups[i] = n < size ? n : 0;
+        }
+        return groups;
+    }
+
+    struct PlayerSeasonRewards
+    {
+        std::set<uint32> Titles;
+        std::set<uint32> Achievs;
+        std::vector<uint32> Items;
+    };
+
+    bool ReadTitles(std::string const& str, std::vector<uint32>& out)
+    {
+        Tokenizer t(str, ' ');
+        if (t.size() != KNOWN_TITLES_SIZE * 2)
+            return false;
+        out.resize(KNOWN_TITLES_SIZE * 2);
+        for (uint32 i = 0; i < KNOWN_TITLES_SIZE * 2; ++i)
+            out[i] = uint32(strtoul(t[i], NULL, 10));
+        return true;
+    }
+
+    std::string WriteTitles(std::vector<uint32> const& titles)
+    {
+        std::ostringstream ss;
+        for (uint32 i = 0; i < titles.size(); ++i)
+            ss << titles[i] << ' ';
+        return ss.str();
+    }
+
+    void SeasonCleanup(SQLTransaction& trans)
+    {
+        if (!sConfigMgr->GetBoolDefault("Arena.SeasonReward.Cleanup.Enabled", true))
+            return;
+
+        std::set<uint32> keep;
+        std::vector<uint32> keepAchievs = ConfigIds("Arena.SeasonReward.Cleanup.KeepWithAchievements", ARENA_TYPE_2v2, "2091");
+        for (uint32 i = 0; i < keepAchievs.size(); ++i)
+            if (QueryResult result = CharacterDatabase.PQuery("SELECT guid FROM character_achievement WHERE achievement = %u", keepAchievs[i]))
+            {
+                do
+                    keep.insert((*result)[0].GetUInt32());
+                while (result->NextRow());
+            }
+
+        std::vector<uint32> achievs = ConfigIds("Arena.SeasonReward.Cleanup.Achievements", ARENA_TYPE_2v2, "2093 2092 2090");
+        for (uint32 i = 0; i < achievs.size(); ++i)
+        {
+            if (!sAchievementStore.LookupEntry(achievs[i]))
+                continue;
+            std::ostringstream ss;
+            ss << "DELETE FROM character_achievement WHERE achievement = " << achievs[i];
+            if (!keep.empty())
+            {
+                ss << " AND guid NOT IN (";
+                for (std::set<uint32>::const_iterator itr = keep.begin(); itr != keep.end(); ++itr)
+                    ss << (itr == keep.begin() ? "" : ",") << *itr;
+                ss << ")";
+            }
+            trans->Append(ss.str().c_str());
+        }
+
+        std::vector<CharTitlesEntry const*> titles;
+        std::vector<uint32> titleIds = ConfigIds("Arena.SeasonReward.Cleanup.Titles", ARENA_TYPE_2v2, "44 43 45");
+        for (uint32 i = 0; i < titleIds.size(); ++i)
+            if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(titleIds[i]))
+                titles.push_back(title);
+        if (titles.empty())
+            return;
+
+        uint32 count = 0;
+        if (QueryResult result = CharacterDatabase.Query("SELECT guid, knownTitles FROM characters"))
+        {
+            do
+            {
+                uint32 guid = (*result)[0].GetUInt32();
+                std::vector<uint32> known;
+                if (keep.count(guid) || !ReadTitles((*result)[1].GetString(), known))
+                    continue;
+
+                bool changed = false;
+                for (uint32 i = 0; i < titles.size(); ++i)
+                {
+                    uint32 pos = titles[i]->bit_index / 32;
+                    uint32 flag = 1 << (titles[i]->bit_index % 32);
+                    if (pos < known.size() && (known[pos] & flag))
+                    {
+                        known[pos] &= ~flag;
+                        changed = true;
+                        ++count;
+                    }
+                }
+                if (changed)
+                    trans->PAppend("UPDATE characters SET knownTitles = '%s' WHERE guid = %u", WriteTitles(known).c_str(), guid);
+            }
+            while (result->NextRow());
+        }
+        SF_LOG_INFO("server.loading", "Arena season end: %u seasonal titles removed", count);
+    }
+}
+
+void RatedPvpMgr::CheckSeasonEnd()
+{
+    uint32 current = sWorld->getIntConfig(WorldIntConfigs::CONFIG_ARENA_SEASON_ID);
+    if (!current)
+        return;
+
+    uint32 stored = uint32(sWorld->getWorldState(WS_ARENA_SEASON_ID));
+    if (stored >= current)
+        return;
+
+    if (!stored)
+    {
+        // first start with this code: record the season, reward nothing
+        sWorld->setWorldState(WS_ARENA_SEASON_ID, current);
+        SF_LOG_INFO("server.loading", ">> Arena season %u recorded (no earlier season to reward)", current);
+        return;
+    }
+
+    RewardSeason(stored, current);
+}
+
+void RatedPvpMgr::RewardSeason(uint32 oldSeason, uint32 newSeason)
+{
+    SF_LOG_INFO("server.loading", ">> Arena season %u has ended (now %u): giving the season rewards", oldSeason, newSeason);
+    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+
+    SeasonCleanup(trans);
+
+    std::map<uint32, PlayerSeasonRewards> rewardMap;
+    uint32 const types[3] = { ARENA_TYPE_2v2, ARENA_TYPE_3v3, ARENA_TYPE_5v5 };
+    for (uint32 t = 0; t < 3; ++t)
+    {
+        uint32 type = types[t];
+        std::string name = "Arena.SeasonReward.RatingThreshold." + std::to_string(type) + "x" + std::to_string(type);
+        int32 threshold = sConfigMgr->GetIntDefault(name.c_str(), -1);
+        if (threshold < 0)
+        {
+            SF_LOG_INFO("server.loading", "   %ux%u: season rewards disabled", type, type);
+            continue;
+        }
+
+        // the old season's ranked players above the threshold, best rank first
+        std::vector<std::pair<uint32, uint32> > ranked; // rank, guid
+        if (QueryResult result = CharacterDatabase.PQuery("SELECT r.rank, r.guid FROM rated_pvp_info r JOIN characters c ON c.guid = r.guid "
+            "WHERE r.season = %u AND r.slot = %u AND r.rating > %u AND c.deleteDate IS NULL ORDER BY r.rank", oldSeason, uint32(RatedPvpTeam::GetSlotByType(type)), uint32(threshold)))
+        {
+            do
+                ranked.push_back(std::make_pair((*result)[0].GetUInt32(), (*result)[1].GetUInt32()));
+            while (result->NextRow());
+        }
+        if (ranked.empty())
+        {
+            SF_LOG_INFO("server.loading", "   %ux%u: nobody above %d rating", type, type, threshold);
+            continue;
+        }
+
+        std::vector<SeasonReward> rewards = GetSeasonRewards(type);
+        std::vector<uint32> limits = CalculateRankLimits(uint32(ranked.size()), rewards);
+        uint32 k = 0;
+        for (uint32 i = 0; i < rewards.size(); ++i)
+        {
+            while (k < ranked.size() && ranked[k].first <= limits[i])
+            {
+                PlayerSeasonRewards& pr = rewardMap[ranked[k].second];
+                pr.Titles.insert(rewards[i].Titles.begin(), rewards[i].Titles.end());
+                pr.Achievs.insert(rewards[i].Achievs.begin(), rewards[i].Achievs.end());
+                pr.Items.insert(pr.Items.end(), rewards[i].Items.begin(), rewards[i].Items.end());
+                SF_LOG_INFO("server.loading", "   %ux%u rank %u: player %u gets reward group %u", type, type, ranked[k].first, ranked[k].second, i + 1);
+                ++k;
+            }
+        }
+    }
+
+    for (std::map<uint32, PlayerSeasonRewards>::const_iterator itr = rewardMap.begin(); itr != rewardMap.end(); ++itr)
+    {
+        uint32 guid = itr->first;
+        QueryResult result = CharacterDatabase.PQuery("SELECT knownTitles, name FROM characters WHERE guid = %u", guid);
+        if (!result)
+            continue;
+
+        std::vector<uint32> known;
+        if (!itr->second.Titles.empty() && ReadTitles((*result)[0].GetString(), known))
+        {
+            for (std::set<uint32>::const_iterator t = itr->second.Titles.begin(); t != itr->second.Titles.end(); ++t)
+                if (CharTitlesEntry const* title = sCharTitlesStore.LookupEntry(*t))
+                    if (title->bit_index / 32 < known.size())
+                        known[title->bit_index / 32] |= 1 << (title->bit_index % 32);
+            trans->PAppend("UPDATE characters SET knownTitles = '%s' WHERE guid = %u", WriteTitles(known).c_str(), guid);
+        }
+
+        for (std::set<uint32>::const_iterator a = itr->second.Achievs.begin(); a != itr->second.Achievs.end(); ++a)
+            trans->PAppend("INSERT IGNORE INTO character_achievement (guid, achievement, date) VALUES (%u, %u, %u)", guid, *a, uint32(time(NULL)));
+
+        if (!itr->second.Items.empty())
+        {
+            std::string playerName = (*result)[1].GetString();
+            MailDraft draft("Arena season reward", "Dear " + playerName + ", congratulations on the end of the arena season. Here is your reward.");
+            for (uint32 i = 0; i < itr->second.Items.size(); ++i)
+                if (Item* item = Item::CreateItem(itr->second.Items[i], 1))
+                {
+                    item->SaveToDB(trans);
+                    draft.AddItem(item);
+                }
+            draft.SendMailTo(trans, MailReceiver(guid), MailSender(MAIL_NORMAL, 0, MAIL_STATIONERY_GM));
+        }
+    }
+
+    // the new season starts from zero honor / conquest totals (LoA resets the season and week counts of the same currencies)
+    trans->PAppend("UPDATE character_currency SET tracked_quantity = 0, weekly_quantity = 0 WHERE currency IN (%u, %u, %u, %u)",
+        uint32(CURRENCY_TYPE_HONOR_POINTS), uint32(CURRENCY_TYPE_CONQUEST_POINTS), uint32(CURRENCY_TYPE_CONQUEST_META_ARENA), uint32(CURRENCY_TYPE_CONQUEST_META_RBG));
+
+    CharacterDatabase.CommitTransaction(trans);
+    sWorld->setWorldState(WS_ARENA_SEASON_ID, newSeason);
+    SF_LOG_INFO("server.loading", ">> Arena season %u rewards given to %u players", oldSeason, uint32(rewardMap.size()));
 }
 
 // ---------------------------------------------------------------- match teams

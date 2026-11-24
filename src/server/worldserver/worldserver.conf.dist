@@ -2510,6 +2510,60 @@ Arena.ArenaSeason.ID = 15
 Arena.ArenaSeason.InProgress = 1
 
 #
+#    Arena.SeasonReward.RatingThreshold.2x2
+#    Arena.SeasonReward.RatingThreshold.3x3
+#    Arena.SeasonReward.RatingThreshold.5x5
+#        Description: Season-end rewards (ported from LoA). They are given once, at the first start after
+#                     Arena.ArenaSeason.ID has been raised, to the old season's players above this rating, by rank.
+#                     The first start with this code only records the current season.
+#        Default:     -1 - (No season rewards for that bracket)
+
+Arena.SeasonReward.RatingThreshold.2x2 = -1
+Arena.SeasonReward.RatingThreshold.3x3 = -1
+Arena.SeasonReward.RatingThreshold.5x5 = -1
+
+#
+#    Arena.SeasonReward.Rank1.Titles ... Arena.SeasonReward.Rank6.Titles
+#    Arena.SeasonReward.Rank1.Achievements ... Arena.SeasonReward.Rank6.Achievements
+#    Arena.SeasonReward.Rank1.Items ... Arena.SeasonReward.Rank6.Items
+#        Description: What each reward group gets: title ids (CharTitles.dbc), achievement ids and item ids,
+#                     separated by spaces, or "2v2 ids; 3v3 ids; 5v5 ids" for one list per bracket.
+#                     Rank1-3: places 1-2, 3-4, 5-6 (5v5: places 1, 2, 3). Rank4-6: the top 10 %, 15 %, 20 %.
+#        Default:     "" - (Nothing)
+#        Example:     Arena.SeasonReward.Rank4.Titles = 42
+
+Arena.SeasonReward.Rank1.Titles = ""
+Arena.SeasonReward.Rank1.Achievements = ""
+Arena.SeasonReward.Rank1.Items = ""
+Arena.SeasonReward.Rank2.Titles = ""
+Arena.SeasonReward.Rank2.Achievements = ""
+Arena.SeasonReward.Rank2.Items = ""
+Arena.SeasonReward.Rank3.Titles = ""
+Arena.SeasonReward.Rank3.Achievements = ""
+Arena.SeasonReward.Rank3.Items = ""
+Arena.SeasonReward.Rank4.Titles = ""
+Arena.SeasonReward.Rank4.Achievements = ""
+Arena.SeasonReward.Rank4.Items = ""
+Arena.SeasonReward.Rank5.Titles = ""
+Arena.SeasonReward.Rank5.Achievements = ""
+Arena.SeasonReward.Rank5.Items = ""
+Arena.SeasonReward.Rank6.Titles = ""
+Arena.SeasonReward.Rank6.Achievements = ""
+Arena.SeasonReward.Rank6.Items = ""
+
+#
+#    Arena.SeasonReward.Cleanup.Enabled
+#        Description: At a season end, take away last season's seasonal titles and achievements
+#                     (Arena.SeasonReward.Cleanup.Titles / .Achievements) from everyone without one of
+#                     Arena.SeasonReward.Cleanup.KeepWithAchievements.
+#        Default:     1 - (Enabled)
+
+Arena.SeasonReward.Cleanup.Enabled = 1
+Arena.SeasonReward.Cleanup.Titles = "44 43 45"
+Arena.SeasonReward.Cleanup.Achievements = "2093 2092 2090"
+Arena.SeasonReward.Cleanup.KeepWithAchievements = "2091"
+
+#
 #    Arena.ArenaStartRating
 #        Description: Start rating for new arena teams.
 #        Default:     0
