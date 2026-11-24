@@ -1296,7 +1296,7 @@ public:
 
         void Register() OVERRIDE
         {
-            AfterEffectRemove += AuraEffectRemoveFn(spell_q12641_the_eye_of_acherus_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_PHASE, AURA_EFFECT_HANDLE_REAL);
+            AfterEffectRemove += AuraEffectRemoveFn(spell_q12641_the_eye_of_acherus_AuraScript::HandleRemove, EFFECT_0, SPELL_AURA_PHASE_GROUP, AURA_EFFECT_HANDLE_REAL);
         }
     };
 
