@@ -6560,6 +6560,9 @@ bool Player::UpdateSkillPro(uint16 skillId, int32 chance, uint32 step)
     if (!max || !value || value >= max)
         return false;
 
+    // Working Overtime (guild perk, 83949 / 118021): SPELL_AURA_INCREASE_SKILL_GAIN_CHANCE raises the chance by its percent (as in LoA)
+    AddPct(chance, GetMaxPositiveAuraModifier(SPELL_AURA_INCREASE_SKILL_GAIN_CHANCE));
+
     if (irand(1, 1000) > chance)
     {
         SF_LOG_DEBUG("entities.player.skills", "Player::UpdateSkillPro Chance=%3.1f%% missed", chance / 10.0f);
