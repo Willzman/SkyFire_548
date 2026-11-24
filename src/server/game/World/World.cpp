@@ -1821,6 +1821,9 @@ void World::SetInitialWorldSettings()
     SF_LOG_INFO("server.loading", "Loading World States...");              // must be loaded before battleground, outdoor PvP and conditions
     LoadWorldStates();
 
+    SF_LOG_INFO("server.loading", "Checking for the end of the arena season...");
+    sRatedPvpMgr->CheckSeasonEnd();
+
     SF_LOG_INFO("server.loading", "Loading Terrain Phase definitions...");
     sObjectMgr->LoadTerrainPhaseInfo();
 

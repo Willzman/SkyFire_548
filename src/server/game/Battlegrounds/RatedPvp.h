@@ -76,6 +76,14 @@ public:
 
     static void SaveToDB(RatedPvpInfo const* info);
 
+    // season end (LoA RatedPvpMgr::CheckSeasonEnd / RewardSeason): called once at startup after the world states load.
+    // When Arena.ArenaSeason.ID has moved past the season stored in world state WS_ARENA_SEASON_ID, the old season's
+    // arena ranks get the titles / achievements / items set in Arena.SeasonReward.*, the seasonal titles are cleaned up
+    // and the season's honor / conquest totals are reset.
+    void CheckSeasonEnd();
+
+private:
+    void RewardSeason(uint32 oldSeason, uint32 newSeason);
 private:
     RatedPvpInfoMap m_store[PVP_SLOT_MAX];
 };
