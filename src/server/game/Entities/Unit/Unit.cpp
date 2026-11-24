@@ -6802,7 +6802,7 @@ void Unit::SendDurabilityLoss(Player* receiver, uint32 percent)
 
 void Unit::PlayOneShotAnimKit(uint32 id)
 {
-    ObjectGuid Guid;
+    ObjectGuid Guid = GetGUID();
     WorldPacket data(SMSG_PLAY_ONE_SHOT_ANIM_KIT, 7 + 2);
 
     data.WriteGuidMask(Guid, 3, 1, 7, 6, 0, 4, 5, 2);
