@@ -1478,6 +1478,49 @@ class AreaTrigger_at_shadowfang_keep_godfrey : public AreaTriggerScript
         }
 };
 
+// 7057 - Haunting Spirits
+// Ported from TrinityCore cata_classic (src/server/scripts/EasternKingdoms/ShadowfangKeep/shadowfang_keep.cpp, GPL v2):
+// the dummy aura ticks every 30 to 90 s (random each time) and casts the spell in its amount.
+class spell_shadowfang_keep_haunting_spirits : public SpellScriptLoader
+{
+    public:
+        spell_shadowfang_keep_haunting_spirits() : SpellScriptLoader("spell_shadowfang_keep_haunting_spirits") { }
+
+        class spell_shadowfang_keep_haunting_spirits_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_shadowfang_keep_haunting_spirits_AuraScript);
+
+            void CalcPeriodic(AuraEffect const* /*aurEff*/, bool& isPeriodic, int32& amplitude)
+            {
+                isPeriodic = true;
+                amplitude = (irand(0, 60) + 30) * IN_MILLISECONDS;
+            }
+
+            void HandleDummyTick(AuraEffect const* aurEff)
+            {
+                if (aurEff->GetAmount() > 0)
+                    GetTarget()->CastSpell((Unit*)NULL, uint32(aurEff->GetAmount()), true);
+            }
+
+            void HandleUpdatePeriodic(AuraEffect* aurEff)
+            {
+                aurEff->CalculatePeriodic(GetCaster());
+            }
+
+            void Register() OVERRIDE
+            {
+                DoEffectCalcPeriodic += AuraEffectCalcPeriodicFn(spell_shadowfang_keep_haunting_spirits_AuraScript::CalcPeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_shadowfang_keep_haunting_spirits_AuraScript::HandleDummyTick, EFFECT_0, SPELL_AURA_DUMMY);
+                OnEffectUpdatePeriodic += AuraEffectUpdatePeriodicFn(spell_shadowfang_keep_haunting_spirits_AuraScript::HandleUpdatePeriodic, EFFECT_0, SPELL_AURA_DUMMY);
+            }
+        };
+
+        AuraScript* GetAuraScript() const OVERRIDE
+        {
+            return new spell_shadowfang_keep_haunting_spirits_AuraScript();
+        }
+};
+
 void AddSC_shadowfang_keep()
 {
     new npc_apothecary_hummel();
@@ -1493,4 +1536,5 @@ void AddSC_shadowfang_keep()
     new npc_haunted_stable_hand_portal();
     new AreaTrigger_at_shadowfang_keep();
     new AreaTrigger_at_shadowfang_keep_godfrey();
+    new spell_shadowfang_keep_haunting_spirits();
 }
