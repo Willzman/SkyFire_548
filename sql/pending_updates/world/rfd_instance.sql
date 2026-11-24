@@ -9,6 +9,10 @@ UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'boss_glutton'     
 UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_belnistrasz'         WHERE `entry` = 8516;
 UPDATE `creature_template` SET `AIName` = '', `ScriptName` = 'npc_idol_room_spawner'   WHERE `entry` = 8611;
 
+-- Quest 27022 "Extinguishing the Idol" (Belnistrasz gives 27022; 3525 is the pre-Cataclysm id):
+-- the script completes it with GroupEventHappens, which needs the event flag, else it is complete on accept.
+UPDATE `quest_template` SET `SpecialFlags` = `SpecialFlags` | 2 WHERE `Id` = 27022;
+
 -- Texts (SkyFire's creature_text has no BroadcastTextId/TextRange/SoundPlayType columns)
 DELETE FROM `creature_text` WHERE `entry` IN (7357, 7358, 8516, 8567);
 INSERT INTO `creature_text` (`entry`, `groupid`, `id`, `text`, `type`, `language`, `probability`, `emote`, `duration`, `sound`, `comment`) VALUES

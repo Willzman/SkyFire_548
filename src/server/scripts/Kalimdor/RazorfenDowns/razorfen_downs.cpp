@@ -6,7 +6,7 @@
 /* ScriptData
 SDName: Razorfen_Downs
 SD%Complete: 100
-SDComment: Support for Henry Stern(2 recipes), quest 3525 "Extinguishing the Idol", Tuten'kash's gong
+SDComment: Support for Henry Stern(2 recipes), quest 27022 "Extinguishing the Idol", Tuten'kash's gong
 SDCategory: Razorfen Downs
 EndScriptData */
 
@@ -105,7 +105,7 @@ namespace
 {
 
 /*###
-## npc_belnistrasz for Quest 3525 "Extinguishing the Idol"
+## npc_belnistrasz for Quest 27022 "Extinguishing the Idol"
 ######*/
 
 Position const PosSummonSpawner[3] =
@@ -127,7 +127,7 @@ enum Belnistrasz
     PATH_ESCORT                  = 6973680,
     POINT_REACH_IDOL             = 17,   // 0-based index of the path's last node
 
-    QUEST_EXTINGUISHING_THE_IDOL = 3525,
+    QUEST_EXTINGUISHING_THE_IDOL = 27022, // TrinityCore has 3525, the pre-Cataclysm id he no longer gives
 
     SAY_QUEST_ACCEPTED           = 0,
     SAY_EVENT_START              = 1,

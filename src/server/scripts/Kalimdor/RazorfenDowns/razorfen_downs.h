@@ -38,7 +38,7 @@ enum RFDCreatureIds
     NPC_TOMB_FIEND                         = 7349,
     NPC_TOMB_REAVER                        = 7351,
     NPC_TUTEN_KASH                         = 7355,
-    // Used for quest 3525 "Extinguishing the Idol"
+    // Used for quest 27022 "Extinguishing the Idol"
     NPC_IDOL_ROOM_SPAWNER                  = 8611,
     NPC_WITHERED_BATTLE_BOAR               = 7333,
     NPC_DEATHS_HEAD_GEOMANCER              = 7335,
@@ -50,7 +50,7 @@ enum RFDGameObjectIds
 {
     // Used for Tuten Kash summon event
     GO_GONG                                = 148917,
-    // Used for quest 3525 "Extinguishing the Idol"
+    // Used for quest 27022 "Extinguishing the Idol"
     GO_IDOL_OVEN_FIRE                      = 151951,
     GO_IDOL_CUP_FIRE                       = 151952,
     GO_IDOL_MOUTH_FIRE                     = 151973,
