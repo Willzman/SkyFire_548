@@ -34,6 +34,7 @@
 #include "Player.h"
 #include "PoolMgr.h"
 #include "QuestDef.h"
+#include "SmartScriptMgr.h"
 #include "SpellAuraEffects.h"
 #include "SpellMgr.h"
 #include "TemporarySummon.h"
@@ -669,6 +670,8 @@ void Creature::Update(uint32 diff)
 
             if (!IsInCombat() && !IsInEvadeMode())
                 EngageNearestStandingHostile(this);
+            else if (IsInCombat())
+                DropIdleBystanders();
             break;
         }
         default:
@@ -1854,6 +1857,78 @@ SpellInfo const* Creature::reachWithSpellCure(Unit* victim)
         return spellInfo;
     }
     return NULL;
+}
+
+// Whether the creature can hit a target out of melee reach (template spells or SmartAI casts).
+// C++ scripted creatures are assumed to have one, since their spells are not known here.
+bool Creature::HasRangedAttack() const
+{
+    if (m_hasRangedAttack >= 0)
+        return m_hasRangedAttack != 0;
+
+    auto isRangedSpell = [](uint32 spellId)
+    {
+        SpellInfo const* spellInfo = spellId ? sSpellMgr->GetSpellInfo(spellId) : nullptr;
+        return spellInfo && !spellInfo->IsPositive() && spellInfo->GetMaxRange(false) > NOMINAL_MELEE_RANGE;
+    };
+
+    bool ranged = false;
+    for (uint32 i = 0; i < CREATURE_MAX_SPELLS && !ranged; ++i)
+        ranged = isRangedSpell(m_spells[i]);
+
+    if (!ranged)
+    {
+        if (GetAIName() == "SmartAI")
+        {
+            for (int32 id : { -int32(m_DBTableGuid), int32(GetEntry()) })
+            {
+                if (!id)
+                    continue;
+                for (SmartScriptHolder const& e : sSmartScriptMgr->GetScript(id, SMART_SCRIPT_TYPE_CREATURE))
+                {
+                    if (e.GetActionType() == SMART_ACTION_CAST && isRangedSpell(e.action.cast.spell))
+                    {
+                        ranged = true;
+                        break;
+                    }
+                }
+                if (ranged)
+                    break;
+            }
+        }
+        else if (!GetScriptName().empty())
+            ranged = true;
+    }
+
+    m_hasRangedAttack = ranged ? 1 : 0;
+    return ranged;
+}
+
+// While fighting another NPC, forget players and pets that only got pulled in (an area spell, healing or buffing
+// a unit in the fight) and have not hurt this creature for a while, so they can leave combat.
+void Creature::DropIdleBystanders()
+{
+    Unit* victim = GetVictim();
+    if (!victim || victim->IsControlledByPlayer() || !CanHaveThreatList())
+        return;
+
+    std::vector<HostileReference*> idle;
+    for (ThreatContainer::StorageType const* list : { &getThreatManager().getThreatList(), &getThreatManager().getOfflineThreatList() })
+    {
+        for (HostileReference* ref : *list)
+        {
+            Unit* target = ref->getTarget();
+            if (target && target != victim && target->IsControlledByPlayer()
+                && GetMSTimeDiffToNow(ref->getLastDirectThreatTime()) > CREATURE_BYSTANDER_THREAT_TIMEOUT)
+                idle.push_back(ref);
+        }
+    }
+
+    for (HostileReference* ref : idle)
+    {
+        ref->removeReference();
+        delete ref;
+    }
 }
 
 // select nearest hostile unit within the given distance (regardless of threat list).

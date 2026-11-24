@@ -611,6 +611,7 @@ Player::Player(WorldSession* session) : Unit(true), m_sceneMgr(this)
     m_MirrorTimerFlags = UNDERWATER_NONE;
     m_MirrorTimerFlagsLast = UNDERWATER_NONE;
     m_isInWater = false;
+    m_isFlyingInCombat = false;
     m_drunkTimer = 0;
     m_restTime = 0;
     m_deathTimer = 0;
@@ -1637,6 +1638,13 @@ void Player::Update(uint32 p_time)
             }
 
             UpdateRestAreaState();
+
+            // Creatures recheck whether they can still reach the player while it flies, and once after it lands
+            bool flyingInCombat = IsFlying() && IsInCombat();
+            if (flyingInCombat || m_isFlyingInCombat)
+                getHostileRefManager().updateThreatTables();
+            m_isFlyingInCombat = flyingInCombat;
+
             m_zoneUpdateTimer = ZONE_UPDATE_INTERVAL;
         }
         else
@@ -4946,6 +4954,21 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
     if (!trainer_spell)
         return TRAINER_SPELL_RED;
 
+    // battle pet trainers list starter pets by their summon spell, buying one adds the pet to the journal
+    if (uint16 speciesId = BattlePetGetSpeciesBySummonSpell(trainer_spell->spell))
+    {
+        if (!HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_BATTLE_PET_ENABLED))
+            return TRAINER_SPELL_RED;
+
+        if (m_battlePetMgr->GetBattlePetCount(speciesId))
+            return TRAINER_SPELL_GRAY;
+
+        if (getLevel() < trainer_spell->reqLevel || !m_battlePetMgr->CanCreateBattlePet(speciesId))
+            return TRAINER_SPELL_RED;
+
+        return TRAINER_SPELL_GREEN;
+    }
+
     bool hasSpell = true;
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
     {
@@ -5517,6 +5540,8 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
             bg->HandlePlayerResurrect(this);
     }
 
+    sScriptMgr->OnResurrect(this);
+
     // update visibility
     UpdateObjectVisibility();
 
@@ -5933,7 +5958,7 @@ void Player::CleanupChannels()
         Channel* ch = *m_channels.begin();
         m_channels.erase(m_channels.begin());               // remove from player's channel list
         ch->LeaveChannel(this, false);                     // not send to client, not remove from player's channel list
-        if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetTeam()))
+        if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetNativeTeam()))
             cMgr->LeftChannel(ch->GetName());               // deleted channel if empty
     }
     SF_LOG_DEBUG("chat.system", "Player %s: channels cleaned up!", GetName().c_str());
@@ -5948,7 +5973,7 @@ void Player::UpdateLocalChannels(uint32 newZone)
     if (!current_zone)
         return;
 
-    ChannelMgr* cMgr = ChannelMgr::forTeam(GetTeam());
+    ChannelMgr* cMgr = ChannelMgr::forTeam(GetNativeTeam());
     if (!cMgr)
         return;
 
@@ -7392,12 +7417,27 @@ uint32 Player::TeamForRace(uint8 race)
     return ALLIANCE;
 }
 
+void Player::SetTemporaryTeam(TeamId team)
+{
+    if (team != TEAM_ALLIANCE && team != TEAM_HORDE)
+        return;
+    m_temporaryTeam = team == TEAM_ALLIANCE ? ALLIANCE : HORDE;
+    sScriptMgr->OnFactionUpdate(this);
+}
+
+void Player::ClearTemporaryTeam()
+{
+    m_temporaryTeam = 0;
+    setFactionForRace(getRace());
+}
+
 void Player::setFactionForRace(uint8 race)
 {
     m_team = TeamForRace(race);
 
     ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(race);
     setFaction(rEntry ? rEntry->FactionID : 0);
+    sScriptMgr->OnFactionUpdate(this);
 }
 
 ReputationRank Player::GetReputationRank(uint32 faction) const
@@ -11569,7 +11609,9 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
         return;
 
-    if ((pEnchant->requiredMinLevel > getLevel()) || (pEnchant->requiredMaxLevel < getLevel()))
+    // requiredMaxLevel is where the enchant's scaling stops, not a limit on who can use it, and most weapon and proc
+    // enchants leave it at 0
+    if (pEnchant->requiredMinLevel > getLevel())
         return;
 
     if (pEnchant->requiredSkill > 0 && pEnchant->requiredSkillValue > GetSkillValue(pEnchant->requiredSkill))
@@ -12139,11 +12181,19 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                     canTalk = false;
                     break;
                 case GOSSIP_OPTION_TRAINER:
-                    if (getClass() != creature->GetCreatureTemplate()->trainer_class && creature->GetCreatureTemplate()->trainer_type == TRAINER_TYPE_CLASS)
-                        SF_LOG_ERROR("sql.sql", "GOSSIP_OPTION_TRAINER:: Player %s (GUID: %u) request wrong gossip menu: %u with wrong class: %u at Creature: %s (Entry: %u, Trainer Class: %u)",
-                            GetName().c_str(), GetGUIDLow(), menu->GetGossipMenu().GetMenuId(), getClass(), creature->GetName().c_str(), creature->GetEntry(), creature->GetCreatureTemplate()->trainer_class);
-                    // no break;
+                    if (creature->GetCreatureTemplate()->trainer_type == TRAINER_TYPE_CLASS
+                        && creature->GetCreatureTemplate()->trainer_class != 0
+                        && getClass() != creature->GetCreatureTemplate()->trainer_class)
+                        canTalk = false;
+                    break;
                 case GOSSIP_OPTION_GOSSIP:
+                    // Class-service explanations use plain gossip: dual
+                    // specialization and the death knight talent-reset prompt.
+                    if ((itr->second.ActionMenuID == 10371 || itr->second.ActionMenuID == 9791)
+                        && (creature->GetCreatureTemplate()->trainer_type != TRAINER_TYPE_CLASS
+                            || getClass() != creature->GetCreatureTemplate()->trainer_class))
+                        canTalk = false;
+                    break;
                 case GOSSIP_OPTION_SPIRITGUIDE:
                 case GOSSIP_OPTION_INNKEEPER:
                 case GOSSIP_OPTION_BANKER:
@@ -24970,4 +25020,10 @@ void Player::_LoadCompletedChallenges(PreparedQueryResult result)
         m_CompletedChallenges[fields[0].GetUInt32()] = challenge;
     }
     while (result->NextRow());
+}
+bool Player::IsShieldedByPetBattleFrom(Unit const* attacker) const
+{
+    // Creatures leave a player in a pet battle alone; other players may still attack.
+    return attacker && attacker != this && !attacker->IsControlledByPlayer()
+        && m_battlePetMgr && m_battlePetMgr->HasActivePetBattle();
 }

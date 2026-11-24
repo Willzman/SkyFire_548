@@ -7,6 +7,7 @@
 #include "ArenaTeamMgr.h"
 #include "RatedPvp.h"
 #include "Battleground.h"
+#include "ScriptMgr.h"
 #include "BattlegroundMgr.h"
 #include "BattlePetMgr.h"
 #include "Chat.h"
@@ -488,6 +489,7 @@ inline void Battleground::_ProcessJoin(uint32 diff)
     {
         m_Events |= BG_STARTING_EVENT_4;
 
+        sScriptMgr->BeforeBGStart(this);
         StartingEventOpenDoors();
 
         SendWarningToAll(StartMessageIds[BG_STARTING_EVENT_FOURTH]);
@@ -1092,6 +1094,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
     if (player)
     {
         // Do next only if found in battleground
+        sScriptMgr->AfterBGRemovePlayer(this, player);
         player->SetBattlegroundId(0, BattlegroundTypeId::BATTLEGROUND_TYPE_NONE);  // We're not in BG.
         // reset destination bg team
         player->SetBGTeam(0);
@@ -1136,6 +1139,30 @@ void Battleground::Reset()
     ResetBGSubclass();
 }
 
+// Used only before combat starts; preserve score and invitation reservations.
+bool Battleground::ChangePlayerTeam(Player* player, uint32 team)
+{
+    if (!player || isArena() || GetStatus() != STATUS_WAIT_JOIN || (team != ALLIANCE && team != HORDE))
+        return false;
+    auto itr = m_Players.find(player->GetGUID());
+    if (itr == m_Players.end() || itr->second.Team == team || !GetFreeSlotsForTeam(team))
+        return false;
+    uint32 oldTeam = itr->second.Team;
+    RemovePlayerFromResurrectQueue(player->GetGUID());
+    if (Group* group = GetBgRaid(oldTeam))
+        if (!group->RemoveMember(player->GetGUID()))
+            SetBgRaid(oldTeam, nullptr);
+    UpdatePlayersCountByTeam(oldTeam, true);
+    UpdatePlayersCountByTeam(team, false);
+    if (GetInvitedCount(oldTeam))
+        DecreaseInvitedCount(oldTeam);
+    IncreaseInvitedCount(team);
+    itr->second.Team = team;
+    player->SetBGTeam(team);
+    AddOrSetPlayerToCorrectBgGroup(player, team);
+    return true;
+}
+
 void Battleground::StartBattleground()
 {
     SetElapsedTime(0);
@@ -1154,6 +1181,7 @@ void Battleground::StartBattleground()
 
 void Battleground::AddPlayer(Player* player)
 {
+    sScriptMgr->BeforeBGAddPlayer(this, player);
     // remove afk from player
     if (player->HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_AFK))
         player->ToggleAFK();
@@ -1245,6 +1273,7 @@ void Battleground::AddPlayer(Player* player)
     // setup BG group membership
     PlayerAddedToBGCheckIfBGIsRunning(player);
     AddOrSetPlayerToCorrectBgGroup(player, team);
+    sScriptMgr->AfterBGAddPlayer(this, player);
 }
 
 // this method adds player to his team's bg group, or sets his correct group if player is already in bg group
