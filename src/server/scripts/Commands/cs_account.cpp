@@ -959,7 +959,6 @@ public:
             handler->SetSentErrorMessage(true);
             return false;
         }
-
         int32 gmRealmID = (isAccountNameGiven) ? atoi(arg3) : atoi(arg2);
         AccountTypes playerSecurity;
         if (handler->GetSession())

@@ -1234,11 +1234,11 @@ MapDifficulty const* GetDefaultMapDifficulty(uint32 mapId, DifficultyID* difficu
 
     for (auto& p : itr->second)
     {
-        DifficultyEntry const* difficulty = sDifficultyStore.LookupEntry(p.first);
-        if (!difficulty)
+        DifficultyEntry const* difficultyEntry = sDifficultyStore.LookupEntry(p.first);
+        if (!difficultyEntry)
             continue;
 
-        if (difficulty->flags & 0x02)
+        if (difficultyEntry->flags & 0x02)
         {
             if (difficultyOut)
                 *difficultyOut = DifficultyID(p.first);

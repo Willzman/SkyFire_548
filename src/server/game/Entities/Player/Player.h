@@ -2609,12 +2609,17 @@ public:
     static uint32 TeamForRace(uint8 race);
     uint32 GetTeam() const
     {
-        return m_team;
+        return m_temporaryTeam ? m_temporaryTeam : m_team;
     }
     TeamId GetTeamId() const
     {
-        return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE;
+        return GetTeam() == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE;
     }
+    uint32 GetNativeTeam() const { return m_team; }
+    TeamId GetNativeTeamId() const { return m_team == ALLIANCE ? TEAM_ALLIANCE : TEAM_HORDE; }
+    bool HasTemporaryTeam() const { return m_temporaryTeam != 0; }
+    void SetTemporaryTeam(TeamId team);
+    void ClearTemporaryTeam();
     void setFactionForRace(uint8 race);
 
     void InitDisplayIds();
@@ -2659,6 +2664,8 @@ public:
     }
 
     SceneMgr& GetSceneMgr() { return m_sceneMgr; }
+    // True while this player is in a pet battle and the attacker is a creature no player controls.
+    bool IsShieldedByPetBattleFrom(Unit const* attacker) const;
 
     /*********************************************************/
     /***                  PVP SYSTEM                       ***/
@@ -3468,6 +3475,7 @@ protected:
     std::map<uint64 /*lootObjectGuid*/, uint64 /*objectGuid*/> m_lootObjects;
 
     uint32 m_team;
+    uint32 m_temporaryTeam = 0; // Runtime only; never serialized to characters.
     uint32 m_nextSave;
     time_t m_speakTime;
     uint32 m_speakCount;
@@ -3686,6 +3694,7 @@ private:
     uint8 m_MirrorTimerFlags;
     uint8 m_MirrorTimerFlagsLast;
     bool m_isInWater;
+    bool m_isFlyingInCombat;
 
     // Guid of player who invited player to guild as last
     uint64 m_lastGuildInviterGUID;
