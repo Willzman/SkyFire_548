@@ -1,257 +1,284 @@
 /*
-* This file is part of the Legends of Azeroth Pandaria Project. See THANKS file for Copyright information
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the
-* Free Software Foundation; either version 2 of the License, or (at your
-* option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/*
- * Ported to Project SkyFire from Legends-of-Azeroth-Pandaria-5.4.8
- * (Legends-of-Azeroth-Pandaria-5.4.8 src/server/scripts/Northrend/Ulduar/Ulduar/boss_thorim.cpp, GPL v2 or later).
- * Mechanical API changes by skyfire_port_plan/tools/loa2sf.ps1, the rest by hand.
+ * This file is part of the TrinityCore Project. See AUTHORS file for Copyright information
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ScriptMgr.h"
-#include "../../../Pandaria/pandaria_loa_compat.h"
-#include "ScriptedCreature.h"
-#include "ScriptedGossip.h"
+#include "ScriptMgr.h"
+#include "CellImpl.h"
+#include "GridNotifiersImpl.h"
 #include "InstanceScript.h"
-#include "SpellScript.h"
+#include "Map.h"
+#include "MotionMaster.h"
+#include "MoveSplineInit.h"
+#include "Player.h"
+#include "ScriptedCreature.h"
 #include "SpellAuraEffects.h"
 #include "SpellInfo.h"
 #include "SpellMgr.h"
-#include "Spell.h"
-#include "Player.h"
-#include "Group.h"
-#include "GridNotifiers.h"
-#include "GridNotifiersImpl.h"
-#include "CellImpl.h"
-#include "ObjectAccessor.h"
-#include "ObjectMgr.h"
-#include "PassiveAI.h"
-#include "CombatAI.h"
-#include "Vehicle.h"
-#include "MoveSplineInit.h"
+#include "SpellScript.h"
 #include "TemporarySummon.h"
-#include "Containers.h"
-#include <random>
 #include "ulduar.h"
-#include <limits>
-
-namespace
-{
 
 enum Spells
 {
-    // Thorim Spells
-    SPELL_SHEAT_OF_LIGHTNING      = 62276,
-    SPELL_STORMHAMMER             = 62042,
-    SPELL_DEAFENING_THUNDER       = 62470,
-    SPELL_CHARGE_ORB              = 62016,
-    SPELL_SUMMON_LIGHTNING_ORB    = 62391,
-    SPELL_TOUCH_OF_DOMINION       = 62507,
-    SPELL_TOUCH_OF_DOMINION_AURA  = 62565,
-    SPELL_CHAIN_LIGHTNING         = 62131,
-    SPELL_LIGHTNING_CHARGE        = 62279,
-    SPELL_LIGHTNING_DESTRUCTION   = 62393,
-    SPELL_LIGHTNING_RELEASE       = 62466,
-    SPELL_LIGHTNING_PILLAR        = 62976,
-    SPELL_UNBALANCING_STRIKE      = 62130,
-    SPELL_BERSERK_PHASE_1         = 62560,
-    SPELL_LIGHTING_BOLT_DUMMY     = 64098,
-    SPELL_BERSERK_PHASE_2         = 62555,
-    SPELL_SIF_TRANSFORM           = 64778,
-    SPELL_STORMHAMMER_TARGETING   = 64767,
-    SPELL_STORMHAMMER_SIF         = 64909,
+    // Thorim
+    SPELL_SHEATH_OF_LIGHTNING                   = 62276,
+    SPELL_STORMHAMMER                           = 62042,
+    SPELL_STORMHAMMER_SIF                       = 64767,
+    SPELL_STORMHAMMER_BOOMERANG                 = 64909,
+    SPELL_DEAFENING_THUNDER                     = 62470,
+    SPELL_CHARGE_ORB                            = 62016,
+    SPELL_SUMMON_LIGHTNING_ORB                  = 62391,
+    SPELL_LIGHTNING_DESTRUCTION                 = 62393,
+    SPELL_TOUCH_OF_DOMINION                     = 62507,
+    SPELL_TOUCH_OF_DOMINION_TRIGGERED           = 62565,
+    SPELL_CHAIN_LIGHTNING                       = 62131,
+    SPELL_LIGHTNING_ORB_CHARGED                 = 62186, // wrong duration, triggered spell should handle lightning release
+    SPELL_LIGHTNING_CHARGE                      = 62279,
+    SPELL_LIGHTNING_RELEASE                     = 62466,
+    SPELL_LIGHTNING_PILLAR_2                    = 62976, // caster high position, target low position
+    SPELL_LIGHTNING_PILLAR_1                    = 63238, // caster high position, target low position
+    SPELL_UNBALANCING_STRIKE                    = 62130,
+    SPELL_BERSERK_PHASE_1                       = 62560,
+    SPELL_BERSERK_PHASE_2                       = 62555,
+    SPELL_ACTIVATE_LIGHTNING_ORB_PERIODIC       = 62184,
+    SPELL_TELEPORT_KEEPER_VISUAL                = 62940,
 
-    SPELL_AURA_OF_CELERITY        = 62320,
-    SPELL_AURA_OF_CELERITY_VIS    = 62398,
-    SPELL_CHARGE                  = 32323,
+    // Lightning Field
+    SPELL_LIGHTNING_FIELD                       = 64972,
+    SPELL_LIGHTNING_BEAM_CHANNEL                = 45537,
 
-    SPELL_THORIM_SIFFED_CREDIT    = 64980,
-    SPELL_THORIM_KILL_CREDIT      = 64985,
+    // Sif
+    SPELL_BLIZZARD                              = 62577,
+    SPELL_BLINK                                 = 62578,
+    SPELL_FROSTBOLT_VOLLEY                      = 62580,
+    SPELL_FROSTBOLT                             = 62583,
+    SPELL_FROSTNOVA                             = 62597,
+    SPELL_SIF_TRANSFORM                         = 64778,
 
-    // Runic Colossus (Mini Boss) Spells
-    SPELL_SMASH                   = 62339,
-    SPELL_RUNIC_BARRIER           = 62338,
-    SPELL_RUNIC_CHARGE            = 62613,
-    SPELL_RUNIC_SMASH             = 62465,
-    SPELL_RUNIC_SMASH_LEFT        = 62057,
-    SPELL_RUNIC_SMASH_RIGHT       = 62058,
+    // Runic Colossus
+    SPELL_SMASH                                 = 62339,
+    SPELL_RUNIC_BARRIER                         = 62338,
+    SPELL_RUNIC_CHARGE                          = 62613,
+    SPELL_RUNIC_SMASH                           = 62465,
+    SPELL_RUNIC_SMASH_RIGHT                     = 62057,
+    SPELL_RUNIC_SMASH_LEFT                      = 62058,
 
-    // Ancient Rune Giant (Mini Boss) Spells
-    SPELL_RUNIC_FORTIFICATION     = 62942,
-    SPELL_RUNE_DETONATION         = 62526,
-    SPELL_STOMP                   = 62411,
+    // Ancient Rune Giant
+    SPELL_RUNIC_FORTIFICATION                   = 62942,
+    SPELL_RUNE_DETONATION                       = 62526,
+    SPELL_STOMP                                 = 62411
+};
 
-    // Sif Spells
-    SPELL_FROSTBOLT_VOLLEY        = 62580,
-    SPELL_FROSTNOVA               = 62597,
-    SPELL_BLIZZARD                = 62576,
-    SPELL_FROSTBOLT               = 69274,
+// The achievements of this encounter are driven by "be the target of spell" criteria. These two spells
+// (Credit: Siffed and Credit: Thorim) do not exist in 5.4.8, so the script updates the criteria directly.
+enum CriteriaSpells
+{
+    CRITERIA_SPELL_SIFFED                       = 64980,
+    CRITERIA_SPELL_KILL                         = 64985
+};
 
-    // Thorim Trap Bunny Spells
-    SPELL_PARALYTIC_FIELD_1       = 62241,
-    SPELL_PARALYTIC_FIELD_2       = 63540,
-
-    // Thorim event Bunny Spells
-    SPELL_COSMETIC_LIGHTNING_BEAM = 45537,
-    SPELL_LIGHTNING_FIELD         = 64972,
+enum Phases
+{
+    PHASE_NULL,
+    PHASE_1,
+    PHASE_2
 };
 
 enum Events
 {
-    // Thorim Events
-    EVENT_SAY_AGGRO_2               = 1,
-    EVENT_SAY_AGGRO_3               = 17,
-    EVENT_STORMHAMMER               = 2,
-    EVENT_CHARGE_ORB                = 3,
-    EVENT_SUMMON_WARBRINGER         = 4,
-    EVENT_SUMMON_EVOKER             = 5,
-    EVENT_SUMMON_COMMONER           = 6,
-    EVENT_BERSERK_PHASE_1           = 7,
-    EVENT_BERSERK_PHASE_2           = 8,
-    EVENT_UNBALANCING_STRIKE        = 9,
-    EVENT_CHAIN_LIGHTNING           = 10,
-    EVENT_TRANSFER_ENERGY           = 11,
-    EVENT_RELEASE_LIGHTNING_CHARGE  = 12,
-    EVENT_LIGHTING_BOLT_TRIGGER     = 13,
-    EVENT_START_EVENT_BUNNY         = 14,
-    EVENT_JUMPDOWN                  = 15,
-    EVENT_TOUCH_OF_DOMINON          = 16,
-
-    // Thorim controller Events
-    EVENT_CHECK_PLAYER_IN_RANGE     = 1,
-    EVENT_CHECK_WIPE                = 2,
-
-    // Sif Events
-    EVENT_FROSTBOLT                 = 1,
-    EVENT_FROSTBOLT_VOLLEY          = 2,
-    EVENT_BLIZZARD                  = 3,
-    EVENT_FROST_NOVA                = 4,
-    EVENT_TELEPORT                  = 5,
+    // Thorim
+    EVENT_SAY_AGGRO_2 = 1,
+    EVENT_SAY_SIF_START,
+    EVENT_START_SIF_CHANNEL,
+    EVENT_STORMHAMMER,
+    EVENT_CHARGE_ORB,
+    EVENT_SUMMON_ADDS,
+    EVENT_BERSERK,
+    EVENT_JUMPDOWN,
+    EVENT_UNBALANCING_STRIKE,
+    EVENT_CHAIN_LIGHTNING,
+    EVENT_START_PERIODIC_CHARGE,
+    EVENT_LIGHTNING_CHARGE,
+    EVENT_ACTIVATE_LIGHTNING_FIELD,
+    EVENT_OUTRO_1,
+    EVENT_OUTRO_2,
+    EVENT_OUTRO_3,
+    EVENT_OUTRO_TELEPORT,
 
     // Runic Colossus
-    EVENT_BARRIER                   = 1,
-    EVENT_SMASH                     = 2,
-    EVENT_SMASH_WAVE                = 3,
-    EVENT_COLOSSUS_CHARGE           = 4,
-    EVENT_RUNIC_SMASH               = 5,
+    EVENT_RUNIC_BARRIER,
+    EVENT_SMASH,
+    EVENT_RUNIC_CHARGE,
+    EVENT_RUNIC_SMASH,
 
     // Ancient Rune Giant
-    EVENT_STOMP                     = 1,
-    EVENT_DETONATION                = 2,
+    EVENT_RUNIC_FORTIFICATION,
+    EVENT_STOMP,
+    EVENT_RUNE_DETONATION,
+
+    // Arena NPC
+    EVENT_PRIMARY_ABILITY,
+    EVENT_SECONDARY_ABILITY,
+    EVENT_THIRD_ABILITY,
+    EVENT_ABILITY_CHARGE,
+
+    // Sif
+    EVENT_BLINK,
+    EVENT_FROST_NOVA,
+    EVENT_FROSTBOLT,
+    EVENT_FROSTBOLT_VOLLEY,
+    EVENT_BLIZZARD
 };
 
 enum Yells
 {
     // Thorim
-    SAY_AGGRO_1     = 0,
-    SAY_AGGRO_2     = 1,
-    SAY_SPECIAL     = 2,
-    SAY_JUMPDOWN    = 3,
-    SAY_SLAY        = 4,
-    SAY_BERSERK     = 5,
-    SAY_WIPE        = 6,
-    SAY_DEATH       = 7,
-    SAY_END_NORMAL_1= 8,
-    SAY_END_NORMAL_2= 9,
-    SAY_END_NORMAL_3= 10,
-    SAY_END_HARD_1  = 11,
-    SAY_END_HARD_2  = 12,
-    SAY_END_HARD_3  = 13,
-
-    // Sif
-    SAY_AGGRO_3     = 0,
-    SAY_DESPAWN     = 1,
-    SAY_HARDMODE    = 2,
+    SAY_AGGRO_1                                 = 0,
+    SAY_AGGRO_2                                 = 1,
+    SAY_SPECIAL                                 = 2,
+    SAY_JUMPDOWN                                = 3,
+    SAY_SLAY                                    = 4,
+    SAY_BERSERK                                 = 5,
+    SAY_WIPE                                    = 6,
+    SAY_DEATH                                   = 7,
+    SAY_END_NORMAL_1                            = 8,
+    SAY_END_NORMAL_2                            = 9,
+    SAY_END_NORMAL_3                            = 10,
+    SAY_END_HARD_1                              = 11,
+    SAY_END_HARD_2                              = 12,
+    SAY_END_HARD_3                              = 13,
 
     // Runic Colossus
-    EMOTE_BARRIER   = 0,
+    EMOTE_RUNIC_BARRIER                         = 0,
+
+    // Ancient Rune Giant
+    EMOTE_RUNIC_MIGHT                           = 0,
+
+    // Sif
+    SAY_SIF_START                               = 0,
+    SAY_SIF_DESPAWN                             = 1,
+    SAY_SIF_EVENT                               = 2
+};
+
+enum PreAddSpells
+{
+    SPELL_ACID_BREATH               = 62315,
+    SPELL_SWEEP                     = 62316,
+
+    SPELL_DEVASTATE                 = 62317,
+    SPELL_HEROIC_SWIPE              = 62444,
+    SPELL_SUNDER_ARMOR              = 57807,
+
+    SPELL_BARBED_SHOT               = 62318,
+    SPELL_SHOOT                     = 16496,
+
+    SPELL_RENEW                     = 62333,
+    SPELL_GREATER_HEAL              = 62334, /// 61965
+    SPELL_CIRCLE_OF_HEALING         = 61964,
+
+    SPELL_HOLY_SMITE                = 62335,
+
+    SPELL_LEAP                      = 61934,
+
+    SPELL_CHARGE                    = 32323,
+    SPELL_MORTAL_STRIKE             = 35054,
+    SPELL_WHIRLWIND                 = 33500,
+
+    SPELL_LOW_BLOW                  = 62326,
+    SPELL_PUMMEL                    = 38313,
+
+    SPELL_RUNIC_LIGHTNING           = 62327,
+    SPELL_RUNIC_MENDING             = 62328,
+    SPELL_RUNIC_SHIELD              = 62321,
+
+    SPELL_RUNIC_STRIKE              = 62322,
+    SPELL_AURA_OF_CELERITY          = 62320,
+    SPELL_AURA_OF_CELERITY_VISUAL   = 62398,
+
+    SPELL_IMPALE                    = 62331,
+    SPELL_WHIRLING_TRIP             = 64151,
+
+    SPELL_CLEAVE                    = 42724,
+    SPELL_HAMSTRING                 = 48639,
+    SPELL_SHIELD_SMASH              = 62332,
+};
+
+enum TrashTypes
+{
+    // Pre Phase Trash
+    BEHEMOTH,
+    MERCENARY_CAPTAIN,
+    MERCENARY_SOLDIER,
+
+    // Arena Phase Trash
+    DARK_RUNE_CHAMPION,
+    DARK_RUNE_WARBRINGER,
+    DARK_RUNE_COMMONER,
+    DARK_RUNE_EVOKER,
+
+    // Hall Way Trash
+    IRON_RING_GUARD,
+    IRON_HONOR_GUARD,
+
+    // Shared
+    DARK_RUNE_ACOLYTE
+};
+
+struct ThorimTrashInfo
+{
+    uint32 Type;
+    uint32 Entry;
+    uint32 PrimaryAbility;
+    uint32 SecondaryAbility;
+    uint32 ThirdAbility;
+};
+
+uint8 const ThorimTrashCount = 13;
+ThorimTrashInfo const StaticThorimTrashInfo[ThorimTrashCount] =
+{
+    // Pre Phase
+    { BEHEMOTH,             NPC_JORMUNGAR_BEHEMOTH,    SPELL_ACID_BREATH,     SPELL_SWEEP,        0                       },
+    { MERCENARY_CAPTAIN,    NPC_MERCENARY_CAPTAIN_A,   SPELL_DEVASTATE,       SPELL_HEROIC_SWIPE, SPELL_SUNDER_ARMOR      },
+    { MERCENARY_SOLDIER,    NPC_MERCENARY_SOLDIER_A,   SPELL_BARBED_SHOT,     SPELL_SHOOT,        0                       },
+    { DARK_RUNE_ACOLYTE,    NPC_DARK_RUNE_ACOLYTE_PRE, SPELL_RENEW,           SPELL_GREATER_HEAL, SPELL_CIRCLE_OF_HEALING },
+    { MERCENARY_CAPTAIN,    NPC_MERCENARY_CAPTAIN_H,   SPELL_DEVASTATE,       SPELL_HEROIC_SWIPE, SPELL_SUNDER_ARMOR      },
+    { MERCENARY_SOLDIER,    NPC_MERCENARY_SOLDIER_H,   SPELL_BARBED_SHOT,     SPELL_SHOOT,        0                       },
+
+    // Arena Phase
+    { DARK_RUNE_CHAMPION,   NPC_DARK_RUNE_CHAMPION,    SPELL_MORTAL_STRIKE,   SPELL_WHIRLWIND,    0                       },
+    { DARK_RUNE_WARBRINGER, NPC_DARK_RUNE_WARBRINGER,  SPELL_RUNIC_STRIKE,    0,                  0                       },
+    { DARK_RUNE_EVOKER,     NPC_DARK_RUNE_EVOKER,      SPELL_RUNIC_LIGHTNING, SPELL_RUNIC_SHIELD, SPELL_RUNIC_MENDING     },
+    { DARK_RUNE_COMMONER,   NPC_DARK_RUNE_COMMONER,    SPELL_LOW_BLOW,        SPELL_PUMMEL,       0                       },
+
+    // Hall Way
+    { IRON_RING_GUARD,      NPC_IRON_RING_GUARD,       SPELL_WHIRLING_TRIP,   SPELL_IMPALE,       0                       },
+    { IRON_HONOR_GUARD,     NPC_IRON_HONOR_GUARD,      SPELL_CLEAVE,          SPELL_SHIELD_SMASH, 0                       },
+    { DARK_RUNE_ACOLYTE,    NPC_DARK_RUNE_ACOLYTE,     SPELL_RENEW,           SPELL_GREATER_HEAL, 0                       }
 };
 
 enum Actions
 {
-    ACTION_PREPHASE_ADDS_DIED       = 1,
-    ACTION_DOSCHEDULE_RUNIC_SMASH   = 2,
-    ACTION_BERSERK                  = 3,
-    ACTION_UPDATE_PHASE             = 4,
-    ACTION_ENCOUNTER_COMPLETE       = 5,
-    ACTION_JUMPDOWN,
-    ACTION_START_EVENT_BUNNY_START,
-    ACTION_START_EVENT_BUNNY_STOP,
+    ACTION_INCREASE_PREADDS_COUNT,
+    ACTION_ACTIVATE_RUNIC_SMASH,
+    ACTION_ACTIVATE_ADDS,
+    ACTION_PILLAR_CHARGED,
+    ACTION_START_HARD_MODE,
+    ACTION_BERSERK,
+    ACTION_ENABLE_BOUNDARY
 };
-
-enum ThorimData
-{
-    DATA_LOSE_ILLUSION                  = 1,
-    DATA_DO_NOT_STAND_IN_THE_LIGHTING   = 2,
-};
-
-enum Phases
-{
-    // Thorim
-    PHASE_IDLE              = 0,
-    PHASE_PRE_ARENA_ADDS    = 1,
-    PHASE_ARENA_ADDS        = 2,
-    PHASE_ARENA             = 3,
-
-    // Runic Colossus
-    PHASE_COLOSSUS_IDLE     = 1,
-    PHASE_RUNIC_SMASH       = 2,
-    PHASE_MELEE             = 3,
-};
-
-enum Points
-{
-    POINT_JUMPDOWN = 1,
-};
-
-const Position Pos[7] =
-{
-    {2095.53f, -279.48f, 419.84f, 0.504f},
-    {2092.93f, -252.96f, 419.84f, 6.024f},
-    {2097.86f, -240.97f, 419.84f, 5.643f},
-    {2113.14f, -225.94f, 419.84f, 5.259f},
-    {2156.87f, -226.12f, 419.84f, 4.202f},
-    {2172.42f, -242.70f, 419.84f, 3.583f},
-    {2171.92f, -284.59f, 419.84f, 2.691f}
-};
-
-const Position PosOrbs[7] =
-{
-    {2104.99f, -233.484f, 433.576f, 5.49779f},
-    {2092.64f, -262.594f, 433.576f, 6.26573f},
-    {2104.76f, -292.719f, 433.576f, 0.78539f},
-    {2164.97f, -293.375f, 433.576f, 2.35619f},
-    {2164.58f, -233.333f, 433.576f, 3.90954f},
-    {2145.81f, -222.196f, 433.576f, 4.45059f},
-    {2123.91f, -222.443f, 433.576f, 4.97419f}
-};
-
-const Position PosCharge[7] =
-{
-    {2108.95f, -289.241f, 420.149f, 5.49779f},
-    {2097.93f, -262.782f, 420.149f, 6.26573f},
-    {2108.66f, -237.102f, 420.149f, 0.78539f},
-    {2160.56f, -289.292f, 420.149f, 2.35619f},
-    {2161.02f, -237.258f, 420.149f, 3.90954f},
-    {2143.87f, -227.415f, 420.149f, 4.45059f},
-    {2125.84f, -227.439f, 420.149f, 4.97419f}
-};
-
-#define POS_X_ARENA  2181.19f
-#define POS_Y_ARENA  -299.12f
 
 struct SummonLocation
 {
@@ -259,223 +286,234 @@ struct SummonLocation
     uint32 entry;
 };
 
-SummonLocation preAddLocations[]=
+SummonLocation const PreAddLocations[] =
 {
-    {{2149.68f, -263.477f, 419.679f, 3.120f}, NPC_JORMUNGAR_BEHEMOTH},
-    {{2131.31f, -271.640f, 419.840f, 2.188f}, NPC_MERCENARY_CAPTAIN_A},
-    {{2127.24f, -259.182f, 419.974f, 5.917f}, NPC_MERCENARY_SOLDIER_A},
-    {{2123.32f, -254.770f, 419.840f, 6.170f}, NPC_MERCENARY_SOLDIER_A},
-    {{2120.10f, -258.990f, 419.840f, 6.250f}, NPC_MERCENARY_SOLDIER_A},
-    {{2129.09f, -277.142f, 419.756f, 1.222f}, NPC_DARK_RUNE_ACOLYTE}
+    { { 2149.68f, -263.477f, 419.679f, 3.120f }, NPC_JORMUNGAR_BEHEMOTH    },
+    { { 2131.31f, -271.640f, 419.840f, 2.188f }, NPC_MERCENARY_CAPTAIN_A   },
+    { { 2127.24f, -259.182f, 419.974f, 5.917f }, NPC_MERCENARY_SOLDIER_A   },
+    { { 2123.32f, -254.770f, 419.840f, 6.170f }, NPC_MERCENARY_SOLDIER_A   },
+    { { 2120.10f, -258.990f, 419.840f, 6.250f }, NPC_MERCENARY_SOLDIER_A   },
+    { { 2129.09f, -277.142f, 419.756f, 1.222f }, NPC_DARK_RUNE_ACOLYTE_PRE }
 };
 
-const uint32 ArenaAddEntries[] = {NPC_DARK_RUNE_CHAMPION, NPC_DARK_RUNE_COMMONER, NPC_DARK_RUNE_EVOKER, NPC_DARK_RUNE_WARBRINGER,
-                                    NPC_IRON_RING_GUARD, NPC_IRON_HONOR_GUARD, NPC_DARK_RUNE_ACOLYTE, NPC_DARK_RUNE_ACOLYTE_TUNNEL};
-
-class HealerCheck
+SummonLocation const ColossusAddLocations[] =
 {
-    public:
-        HealerCheck(bool shouldBe): __shouldBe(shouldBe) { }
-        bool operator() (const Unit* unit)
-        {
-            return __shouldBe ? __IsHealer(unit) : !__IsHealer(unit);
-        }
-
-    private:
-        bool __shouldBe;
-        bool __IsHealer(const Unit* who)
-        {
-            return (who->GetEntry() == NPC_DARK_RUNE_ACOLYTE || who->GetEntry() == NPC_DARK_RUNE_EVOKER || who->GetEntry() == NPC_DARK_RUNE_ACOLYTE_TUNNEL);
-        }
+    { { 2218.38f, -297.50f, 412.18f, 1.030f }, NPC_IRON_RING_GUARD   },
+    { { 2235.07f, -297.98f, 412.18f, 1.613f }, NPC_IRON_RING_GUARD   },
+    { { 2235.26f, -338.34f, 412.18f, 1.589f }, NPC_IRON_RING_GUARD   },
+    { { 2217.69f, -337.39f, 412.18f, 1.241f }, NPC_IRON_RING_GUARD   },
+    { { 2227.58f, -308.30f, 412.18f, 1.591f }, NPC_DARK_RUNE_ACOLYTE },
+    { { 2227.47f, -345.37f, 412.18f, 1.566f }, NPC_DARK_RUNE_ACOLYTE }
 };
 
-class ArenaAreaCheck
+SummonLocation const GiantAddLocations[] =
 {
-    public:
-        ArenaAreaCheck(bool shouldBeIn): __shouldBeIn(shouldBeIn) { }
-        bool operator() (const WorldObject* unit)
-        {
-            return __shouldBeIn ? __IsInArena(unit) : !__IsInArena(unit);
-        }
-
-    private:
-        bool __shouldBeIn;
-        bool __IsInArena(const WorldObject* who)
-        {
-            return (who->GetPositionX() < POS_X_ARENA && who->GetPositionY() > POS_Y_ARENA);    // TODO: Check if this is ok, end positions ?
-        }
+    { { 2198.05f, -428.77f, 419.95f, 6.056f }, NPC_IRON_HONOR_GUARD  },
+    { { 2220.31f, -436.22f, 412.26f, 1.064f }, NPC_IRON_HONOR_GUARD  },
+    { { 2158.88f, -441.73f, 438.25f, 0.127f }, NPC_IRON_HONOR_GUARD  },
+    { { 2198.29f, -436.92f, 419.95f, 0.261f }, NPC_DARK_RUNE_ACOLYTE },
+    { { 2230.93f, -434.27f, 412.26f, 1.931f }, NPC_DARK_RUNE_ACOLYTE }
 };
 
-struct BerserkSelector
+Position const SifSpawnPosition = { 2148.301f, -297.8453f, 438.3308f, 2.687807f };
+
+enum Data
 {
-    bool operator() (WorldObject* unit)
+    ACHIEVEMENT_DONT_STAND_IN_THE_LIGHTNING = 29712972,
+    ACHIEVEMENT_SIFFED                      = 29772978,
+    ACHIEVEMENT_LOSE_YOUR_ILLUSION          = 31763183,
+    DATA_CHARGED_PILLAR                     = 1
+};
+
+enum Misc
+{
+    // Item entry of the mace Thorim wields while he holds the Stormhammer
+    THORIM_WEAPON_ITEM_ID                   = 45900,
+
+    // The event bunny the Leap spell must never pick (static spawn of the 10 player arena)
+    LEAP_EXCLUDED_BUNNY_GUID                = 136515,
+
+    PRE_PHASE_ADD_COUNT                     = 6
+};
+
+Position const LightningOrbPath[] =
+{
+    { 2134.889893f, -298.632996f, 438.247467f },
+    { 2134.570068f, -440.317993f, 438.247467f },
+    { 2167.820312f, -440.330261f, 438.247589f },
+    { 2213.394287f, -433.318298f, 412.665863f },
+    { 2227.766113f, -433.275818f, 412.177032f },
+    { 2227.551270f, -263.081085f, 412.176880f },
+    { 2202.208008f, -262.939270f, 412.168976f },
+    { 2182.310059f, -263.233093f, 414.739410f }
+};
+
+// used for trash jump calculation
+Position const ArenaCenter = { 2134.77f, -262.307f };
+
+// used for lightning field calculation
+Position const LightningFieldCenter = { 2135.178f, -321.122f };
+
+float const ArenaFloorRadius = 45.4f;
+float const BalconyRadius = 32.0f;
+
+// Everything above this height is on Thorim's balcony
+float const BalconyZ = 428.0f;
+
+// The arena is the floor circle without the balcony circle on top of it.
+bool IsInsideArena(Position const* pos)
+{
+    return ArenaCenter.GetExactDist2dSq(pos) <= ArenaFloorRadius * ArenaFloorRadius
+        && LightningFieldCenter.GetExactDist2dSq(pos) > BalconyRadius * BalconyRadius;
+}
+
+// SkyFire has no per creature boundary, so each AI keeps its own copy of what TrinityCore's SetBoundary does.
+struct ArenaBoundary
+{
+    ArenaBoundary() : Active(false), Negate(false) { }
+
+    void Set(bool active, bool negate = false)
     {
-        if (unit->GetTypeId() != TypeID::TYPEID_PLAYER)
-        {
-            for (uint8 i = 0; i < 8; i++)
-                if (unit->GetEntry() == ArenaAddEntries[i])
-                    return false;
+        Active = active;
+        Negate = negate;
+    }
 
-            if (unit->GetEntry() == NPC_THORIM || unit->GetEntry() == NPC_RUNIC_COLOSSUS || unit->GetEntry() == NPC_RUNE_GIANT)
-                return false;
+    bool IsInBoundary(Position const* pos) const
+    {
+        return !Active || (IsInsideArena(pos) != Negate);
+    }
+
+    bool Active;
+    bool Negate;
+};
+
+class HeightPositionCheck
+{
+    public:
+        HeightPositionCheck(bool ret) : _ret(ret) { }
+
+        bool operator()(Position const* pos) const
+        {
+            return (pos->GetPositionZ() > BalconyZ) == _ret;
         }
 
-        return true;
+    private:
+        bool _ret;
+};
+
+struct OutOfArenaCheck
+{
+    bool operator()(Position const* who) const
+    {
+        return !IsInsideArena(who);
     }
 };
 
-class npc_thorim_controller : public CreatureScript
+// A player (not a pet) within the given range of the referer, used for charges
+class PlayerInRangePredicate
 {
     public:
-        npc_thorim_controller() : CreatureScript("npc_thorim_controller") { }
+        PlayerInRangePredicate(Unit const* referer, float minRange, float maxRange) : _referer(referer), _minRange(minRange), _maxRange(maxRange) { }
 
-        struct npc_thorim_controllerAI : public ScriptedAI
+        bool operator()(Unit* unit) const
         {
-            npc_thorim_controllerAI(Creature* creature) : ScriptedAI(creature), _summons(me)
-            {
-                me->SetFlying(true);
-                me->SetVisible(false);
-                instance = creature->GetInstanceScript();
-                me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NON_ATTACKABLE);
-                _gotActivated = false;
-                me->SetDisplayFromModel(1);
-            }
-
-            void Reset() override
-            {
-                _gotActivated = false;
-                _events.Reset();
-                _events.ScheduleEvent(EVENT_CHECK_PLAYER_IN_RANGE, 10*IN_MILLISECONDS);
-
-                // despawn pre-arena adds
-                std::list<Creature*> spawnList;
-                for (uint8 i = 0; i < 6; i++)
-                    me->GetCreatureListWithEntryInGrid(spawnList, preAddLocations[i].entry, 100.0f);
-                for (auto&& spawn : spawnList)
-                    if (spawn)
-                        spawn->DespawnOrUnsummon();
-
-                if (!_summons.empty())
-                    _summons.DespawnAll();
-
-                std::list<Creature*> addList;
-                me->GetCreatureListWithEntryInGrid(addList, NPC_THORIM, 200.0f);
-                me->GetCreatureListWithEntryInGrid(addList, NPC_IRON_RING_GUARD, 200.0f);
-                me->GetCreatureListWithEntryInGrid(addList, NPC_DARK_RUNE_ACOLYTE_TUNNEL, 200.0f);
-                me->GetCreatureListWithEntryInGrid(addList, NPC_IRON_HONOR_GUARD, 200.0f);
-
-                for (auto&& add : addList)
-                    add->RemoveAurasDueToSpell(SPELL_BERSERK_PHASE_1);
-
-                if (Creature* colossus = me->FindNearestCreature(NPC_RUNIC_COLOSSUS, 200.0f))
-                    colossus->AI()->Reset();
-
-                if (Creature* giant = me->FindNearestCreature(NPC_RUNE_GIANT, 200.0f))
-                    giant->AI()->Reset();
-
-                std::list<Creature*> bunnies;
-                GetCreatureListWithEntryInGrid(bunnies, me, NPC_THORIM_EVENT_BUNNY, 200.0f);
-                for (auto&& bunny : bunnies)
-                    bunny->AI()->DoAction(ACTION_START_EVENT_BUNNY_STOP);
-            }
-
-            void JustSummoned(Creature* summon) override
-            {
-                _summons.Summon(summon);
-                summon->AI()->AttackStart(SelectTarget(SELECT_TARGET_RANDOM));
-            }
-
-            void SummonedCreatureDies(Creature* summon, Unit* killer) override
-            {
-                _summons.Despawn(summon);
-                if (_summons.empty())
-                {
-                    uint64 attackTarget = 0;
-                    if (killer != 0)
-                        if (Player* player = killer->ToPlayer())
-                            attackTarget = player->GetGUID();
-
-                    if (attackTarget == 0)
-                        if (Player* target = me->SelectNearestPlayer(30.0f))
-                            attackTarget = target->GetGUID();
-
-                    if (Creature* thorim = ObjectAccessor::GetCreature(*me, instance->GetData64(BOSS_THORIM)))
-                        thorim->AI()->SetGUID(attackTarget, ACTION_PREPHASE_ADDS_DIED);
-                }
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (instance && instance->GetBossState(BOSS_THORIM) == DONE)
-                    return;
-
-                _events.Update(diff);
-                // MoveInLineOfSight does not seem to work here, so...
-                while (uint32 eventId = _events.ExecuteEvent())
-                {
-                    switch (eventId)
-                    {
-                        case EVENT_CHECK_PLAYER_IN_RANGE:
-                            if (!_gotActivated)
-                            {
-                                Player* player = nullptr;
-                                Skyfire::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                Skyfire::PlayerSearcher<Skyfire::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
-                                me->VisitNearbyObject(50.0f, searcher);
-                                if (player)
-                                    if (!player->IsGameMaster())
-                                    {
-                                        for (uint8 i = 0; i < 6; i++)   // Spawn Pre-Phase Adds
-                                            me->SummonCreature(preAddLocations[i].entry, preAddLocations[i].pos, TempSummonType::TEMPSUMMON_CORPSE_DESPAWN);
-
-                                        if (Creature* thorim = me->GetCreature(*me, instance->GetData64(BOSS_THORIM)))
-                                            thorim->AI()->DoAction(ACTION_UPDATE_PHASE);
-
-                                        _gotActivated = true;
-                                        _events.ScheduleEvent(EVENT_CHECK_WIPE, 3*IN_MILLISECONDS);
-                                    }
-                                if (!_gotActivated)
-                                    _events.ScheduleEvent(EVENT_CHECK_PLAYER_IN_RANGE, 1*IN_MILLISECONDS);
-                            }
-                            break;
-                        case EVENT_CHECK_WIPE:
-                            {
-                                Player* player = nullptr;
-                                Skyfire::AnyPlayerInObjectRangeCheck u_check(me, 50.0f, true);
-                                Skyfire::PlayerSearcher<Skyfire::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
-                                me->VisitNearbyObject(50.0f, searcher);
-                                if (player)
-                                    _events.ScheduleEvent(EVENT_CHECK_WIPE, 3*IN_MILLISECONDS);
-                                // if we wiped
-                                else
-                                {
-                                    if (Creature* thorim = me->GetCreature(*me, instance->GetData64(BOSS_THORIM)))
-                                        thorim->AI()->EnterEvadeMode();
-
-                                    // In case for some reason Thorim didn't reset us
-                                    if (_gotActivated)
-                                        Reset();
-                                }
-                                break;
-                            }
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            private:
-                bool _gotActivated;
-                EventMap _events;
-                InstanceScript* instance;
-                SummonList _summons;
-        };
-
-        CreatureAI* GetAI(Creature* c) const
-        {
-            return GetInstanceAI<npc_thorim_controllerAI>(c);
+            return unit->GetTypeId() == TypeID::TYPEID_PLAYER && unit->IsInRange(_referer, _minRange, _maxRange);
         }
+
+    private:
+        Unit const* _referer;
+        float _minRange;
+        float _maxRange;
+};
+
+void SetImmuneToPC(Creature* creature, bool apply)
+{
+    if (apply)
+        creature->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+    else
+        creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
+}
+
+Creature* GetThorimCreature(InstanceScript* instance, uint32 data)
+{
+    return instance->instance->GetCreature(instance->GetData64(data));
+}
+
+GameObject* GetThorimObject(InstanceScript* instance, uint32 data)
+{
+    return instance->instance->GetGameObject(instance->GetData64(data));
+}
+
+class RunicSmashExplosionEvent : public BasicEvent
+{
+    public:
+        RunicSmashExplosionEvent(Creature* owner) : _owner(owner) { }
+
+        bool Execute(uint64 /*eventTime*/, uint32 /*updateTime*/) OVERRIDE
+        {
+            _owner->CastSpell((Unit*)NULL, SPELL_RUNIC_SMASH, false);
+            return true;
+        }
+
+    private:
+        Creature* _owner;
+};
+
+class TrashJumpEvent : public BasicEvent
+{
+    public:
+        TrashJumpEvent(Creature* owner) : _owner(owner), _stage(0) { }
+
+        bool Execute(uint64 eventTime, uint32 /*updateTime*/) OVERRIDE
+        {
+            switch (_stage)
+            {
+                case 0:
+                    _owner->CastSpell((Unit*)NULL, SPELL_LEAP, false);
+                    ++_stage;
+                    _owner->m_Events.AddEvent(this, eventTime + 2000);
+                    return false;
+                case 1:
+                    _owner->SetReactState(REACT_AGGRESSIVE);
+                    _owner->AI()->DoZoneInCombat(_owner);
+                    _owner->AI()->DoAction(ACTION_ENABLE_BOUNDARY);
+                    return true;
+                default:
+                    break;
+            }
+
+            return true;
+        }
+
+    private:
+        Creature* _owner;
+        uint8 _stage;
+};
+
+class LightningFieldEvent : public BasicEvent
+{
+    public:
+        LightningFieldEvent(Creature* owner) : _owner(owner) { }
+
+        bool Execute(uint64 eventTime, uint32 /*updateTime*/) OVERRIDE
+        {
+            if (InstanceScript* instance = _owner->GetInstanceScript())
+            {
+                if (instance->GetBossState(BOSS_THORIM) == IN_PROGRESS)
+                {
+                    _owner->CastSpell((Unit*)NULL, SPELL_LIGHTNING_FIELD, false);
+                    _owner->m_Events.AddEvent(this, eventTime + 1000);
+                    return false;
+                }
+            }
+
+            _owner->InterruptNonMeleeSpells(false);
+            _owner->AI()->EnterEvadeMode();
+            return true;
+        }
+
+    private:
+        Creature* _owner;
 };
 
 class boss_thorim : public CreatureScript
@@ -487,255 +525,274 @@ class boss_thorim : public CreatureScript
         {
             boss_thorimAI(Creature* creature) : BossAI(creature, BOSS_THORIM)
             {
-                gotAddsWiped = false;
-                gotEncounterFinished = false;
-                gotBerserkedAndOrbSummoned = false;
-                homePosition = creature->GetHomePosition();
+                _encounterFinished = false;
+                _activePillarGUID = 0;
+                Initialize();
             }
 
-            void Reset() override
+            void Initialize()
             {
-                _Reset();
-                gotEncounterFinished = gotEncounterFinished || (instance->GetBossState(BOSS_THORIM) == DONE);
-                if (gotEncounterFinished) // May be called during fight if Thorim gets outfight... hm, should _not_ happen regularly
-                {
-                    me->setFaction(35);
-                    return;
-                }
+                _killedCount = 0;
+                _waveType = 0;
+                _hardMode = true;
+                _orbSummoned = false;
+                _dontStandInTheLightning = true;
+            }
 
-                if (gotAddsWiped)
-                {
-                    Talk(SAY_WIPE);
-                    if (!gotBerserkedAndOrbSummoned)
-                        DoCast(me, SPELL_SUMMON_LIGHTNING_ORB, true);
-                }
+            void Reset() OVERRIDE
+            {
+                if (_encounterFinished)
+                    return;
+
+                _boundary.Set(false);
+                _Reset();
+                Initialize();
 
                 me->SetReactState(REACT_PASSIVE);
-                me->RemoveAurasDueToSpell(SPELL_BERSERK_PHASE_1);
+                me->SetDisableGravity(true);
+                me->SetControlled(true, UNIT_STATE_ROOT);
+                SetImmuneToPC(me, true);
 
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE | UNIT_FLAG_NON_ATTACKABLE);
-
-                phase = PHASE_IDLE;
-                gotAddsWiped = false;
-                HardMode = false;
-                me->GetMap()->SetWorldState(WORLDSTATE_LOSE_YOUR_ILLUSION, 0); // also for Siffed
-                gotBerserkedAndOrbSummoned = false;
-                summonChampion = false;
-                doNotStandInTheLighting = true;
-                checkTargetTimer = 7*IN_MILLISECONDS;
-                if (Creature* ctrl = ObjectAccessor::GetCreature(*me, instance->GetData64(NPC_THORIM_CTRL)))
-                    ctrl->AI()->Reset();
+                events.SetPhase(PHASE_NULL);
 
                 // Respawn Mini Bosses
-                for (uint8 i = DATA_RUNIC_COLOSSUS; i <= DATA_RUNE_GIANT; i++)  // TODO: Check if we can move this, it's a little bit crazy.
-                    if (Creature* MiniBoss = ObjectAccessor::GetCreature(*me, instance->GetData64(i)))
-                        MiniBoss->Respawn(true);
+                for (uint8 i = DATA_RUNIC_COLOSSUS; i <= DATA_RUNE_GIANT; ++i)
+                    if (Creature* miniBoss = GetThorimCreature(instance, i))
+                        miniBoss->Respawn(true);
 
-                if (GameObject* go = me->FindNearestGameObject(GO_LEVER, 500.0f))
-                {
-                    go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE | GO_FLAG_IN_USE);
-                    go->SetGoState(GOState::GO_STATE_READY);
-                }
+                // Spawn Pre Phase Adds
+                for (SummonLocation const& s : PreAddLocations)
+                    me->SummonCreature(s.entry, s.pos, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
 
-                if (Creature* sif = me->FindNearestCreature(NPC_SIF, 100.0f))
-                    sif->DespawnOrUnsummon();
+                if (GameObject* lever = GetThorimObject(instance, DATA_THORIM_LEVER))
+                    lever->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
 
-                me->GetMap()->SetWorldState(WORLDSTATE_DONT_STAND_IN_LIGHTNING, 1);
+                // Remove trigger auras
+                if (Creature* pillar = Unit::GetCreature(*me, _activePillarGUID))
+                    pillar->RemoveAllAuras();
+
+                if (Creature* controller = GetThorimCreature(instance, DATA_THORIM_CONTROLLER))
+                    controller->RemoveAllAuras();
+
+                _activePillarGUID = 0;
             }
 
-            void KilledUnit(Unit* who) override
+            void EnterEvadeMode() OVERRIDE
+            {
+                summons.DespawnAll();
+                instance->SetBossState(BOSS_THORIM, FAIL);
+                _DespawnAtEvade();
+            }
+
+            void SetGUID(uint64 guid, int32 id) OVERRIDE
+            {
+                if (id == DATA_CHARGED_PILLAR)
+                {
+                    _activePillarGUID = guid;
+
+                    if (Creature* pillar = Unit::GetCreature(*me, _activePillarGUID))
+                    {
+                        pillar->CastSpell(pillar, SPELL_LIGHTNING_ORB_CHARGED, true);
+                        pillar->CastSpell((Unit*)NULL, SPELL_LIGHTNING_PILLAR_2, false);
+                        events.ScheduleEvent(EVENT_LIGHTNING_CHARGE, 8000, 0, PHASE_2);
+                    }
+                }
+            }
+
+            uint32 GetData(uint32 type) const OVERRIDE
+            {
+                switch (type)
+                {
+                    case ACHIEVEMENT_DONT_STAND_IN_THE_LIGHTNING:
+                        return _dontStandInTheLightning ? 1 : 0;
+                    case ACHIEVEMENT_LOSE_YOUR_ILLUSION:
+                    case DATA_THORIM_HARDMODE:
+                        return _hardMode ? 1 : 0;
+                    default:
+                        break;
+                }
+
+                return 0;
+            }
+
+            void KilledUnit(Unit* who) OVERRIDE
             {
                 if (who->GetTypeId() == TypeID::TYPEID_PLAYER)
                     Talk(SAY_SLAY);
             }
 
-            void EncounterPostProgress()
+            void SpellHit(Unit* /*caster*/, SpellInfo const* spellInfo) OVERRIDE
             {
-                if (gotEncounterFinished)  // lock, function should not be called twice
+                if (spellInfo->Id == SPELL_TOUCH_OF_DOMINION_TRIGGERED)
+                {
+                    if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                    {
+                        sif->AI()->Talk(SAY_SIF_DESPAWN);
+                        sif->DespawnOrUnsummon(6000);
+                        _hardMode = false;
+                    }
+                }
+            }
+
+            void SpellHitTarget(Unit* target, SpellInfo const* spellInfo) OVERRIDE
+            {
+                if (target->GetTypeId() == TypeID::TYPEID_PLAYER && spellInfo->Id == SPELL_LIGHTNING_RELEASE)
+                    _dontStandInTheLightning = false;
+            }
+
+            // Spells 64980 and 64985 are unknown to 5.4.8: give the achievement criteria they
+            // would have triggered to every living player, with Thorim as the spell caster.
+            void GrantCriteriaCredit(uint32 spellId)
+            {
+                Map::PlayerList const& players = instance->instance->GetPlayers();
+                for (Map::PlayerList::const_iterator itr = players.begin(); itr != players.end(); ++itr)
+                {
+                    Player* player = itr->GetSource();
+                    if (!player || player->IsGameMaster() || !player->IsAlive())
+                        continue;
+
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, spellId, 0, 0, me);
+                    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET2, spellId);
+                }
+            }
+
+            void FinishEncounter()
+            {
+                if (_encounterFinished)
                     return;
 
-                gotEncounterFinished = true;
+                _encounterFinished = true;
 
-                // Kill credit
-                DoCastAOE(SPELL_THORIM_KILL_CREDIT, true);
+                // before the faction changes
+                GrantCriteriaCredit(CRITERIA_SPELL_KILL);
+                instance->UpdateEncounterState(EncounterCreditType::ENCOUNTER_CREDIT_KILL_CREATURE, me->GetEntry(), me);
 
-                Talk(SAY_DEATH);
-                me->setFaction(35);
-                me->DespawnOrUnsummon(40 * IN_MILLISECONDS);
-                me->RemoveAllAuras();
+                me->SetReactState(REACT_PASSIVE);
+                me->InterruptNonMeleeSpells(true);
                 me->RemoveAllAttackers();
                 me->AttackStop();
-                me->CombatStop(true);
-                summons.DespawnEntry(NPC_THUNDER_ORB); // despawn charged orbs
+                me->setFaction(35);
+                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
-                if (Creature* ctrl = ObjectAccessor::GetCreature(*me, instance->GetData64(NPC_THORIM_CTRL)))
+                if (Creature* controller = GetThorimCreature(instance, DATA_THORIM_CONTROLLER))
+                    controller->RemoveAllAuras();
+                if (Creature* pillar = Unit::GetCreature(*me, _activePillarGUID))
+                    pillar->RemoveAllAuras();
+
+                if (_hardMode)
                 {
-                    ctrl->AI()->Reset();
-                    ctrl->DespawnOrUnsummon();
-                }
-
-                if (HardMode)
-                {
-                    if (Creature* sif = me->FindNearestCreature(NPC_SIF, 60.0f))
-                        sif->AI()->DoAction(ACTION_ENCOUNTER_COMPLETE);
-
-                    instance->SetData(DATA_THORIM_HARDMODE, true);
-
-                    uint32 delay = 0;
-                    me->m_Events.Schedule(delay +=  3500, [this]()
+                    if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
                     {
-                        Talk(SAY_END_HARD_1);
-                        if (Creature* sif = me->FindNearestCreature(NPC_SIF, 60.0f))
-                        {
-                            sif->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            me->SetFacingToObject(sif);
-                            DoCast(sif, SPELL_STORMHAMMER_SIF);
-                        }
-                    });
-                    me->m_Events.Schedule(delay +=  6000, [this]() { Talk(SAY_END_HARD_2); });
-                    me->m_Events.Schedule(delay += 14000, [this]() { Talk(SAY_END_HARD_3); });
-                }
-                else
-                {
-                    uint32 delay = 0;
-                    me->m_Events.Schedule(delay +=  3000, [this]() { Talk(SAY_END_NORMAL_1); });
-                    me->m_Events.Schedule(delay +=  9500, [this]() { Talk(SAY_END_NORMAL_2); });
-                    me->m_Events.Schedule(delay += 12000, [this]() { Talk(SAY_END_NORMAL_3); });
+                        summons.Despawn(sif);
+                        sif->DespawnOrUnsummon(10000);
+                    }
                 }
 
-
-                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_AURA_OF_CELERITY);
-                instance->DoRemoveAurasDueToSpellOnPlayers(SPELL_AURA_OF_CELERITY_VIS);
+                // Thorim never dies, so nothing else locks the raid to this instance
+                if (Player* looter = me->GetLootRecipient())
+                    if (InstanceMap* instanceMap = instance->instance->ToInstanceMap())
+                        if (instanceMap->IsRaidOrHeroicDungeon() && (me->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_INSTANCE_BIND))
+                            instanceMap->PermBindAllPlayers(looter);
 
                 _JustDied();
 
+                Talk(SAY_DEATH);
+                events.ScheduleEvent(EVENT_OUTRO_1, 4000);
+                events.ScheduleEvent(EVENT_OUTRO_2, _hardMode ? 8000 : 11000);
+                events.ScheduleEvent(EVENT_OUTRO_3, _hardMode ? 19000 : 21000);
+                events.ScheduleEvent(EVENT_OUTRO_TELEPORT, 35000);
             }
 
-            void EnterCombat(Unit* who) override
+            void MovementInform(uint32 type, uint32 id) OVERRIDE
             {
-                if (!instance->CheckRequiredBosses(BOSS_THORIM, who->ToPlayer()))
-                {
-                    EnterEvadeMode();
-                    instance->DoCastSpellOnPlayers(SPELL_BASE_CAMP_TELEPORT);
+                if (type != EFFECT_MOTION_TYPE || id != EVENT_JUMP)
                     return;
-                }
 
+                DoResetThreat();
+                _boundary.Set(true);
+            }
+
+            void EnterCombat(Unit* /*who*/) OVERRIDE
+            {
                 _EnterCombat();
                 Talk(SAY_AGGRO_1);
 
-                // Spawn Sif
-                me->SummonCreature(NPC_SIF, 2148.3f, -297.845f, 438.331f, M_PI / 2, TempSummonType::TEMPSUMMON_CORPSE_DESPAWN);
+                events.SetPhase(PHASE_1);
 
-                // Spawn Thunder Orbs
-                for (uint8 n = 0; n < 7; n++)
-                    if (Creature* thunderOrb = me->SummonCreature(NPC_THUNDER_ORB, PosOrbs[n], TempSummonType::TEMPSUMMON_CORPSE_DESPAWN))
+                events.ScheduleEvent(EVENT_SAY_AGGRO_2, 9000, 0, PHASE_1);
+                events.ScheduleEvent(EVENT_SAY_SIF_START, 16500, 0, PHASE_1);
+                events.ScheduleEvent(EVENT_START_SIF_CHANNEL, 22500, 0, PHASE_1);
+
+                events.ScheduleEvent(EVENT_STORMHAMMER, 40000, 0, PHASE_1);
+                events.ScheduleEvent(EVENT_CHARGE_ORB, 30000, 0, PHASE_1);
+                events.ScheduleEvent(EVENT_SUMMON_ADDS, 15000, 0, PHASE_1);
+                events.ScheduleEvent(EVENT_BERSERK, 369000);
+
+                DoCast(me, SPELL_SHEATH_OF_LIGHTNING);
+
+                if (Creature* runicColossus = GetThorimCreature(instance, DATA_RUNIC_COLOSSUS))
+                {
+                    SetImmuneToPC(runicColossus, false);
+                    runicColossus->AI()->DoAction(ACTION_ACTIVATE_ADDS);
+                }
+
+                if (GameObject* lever = GetThorimObject(instance, DATA_THORIM_LEVER))
+                    lever->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE);
+
+                // Summon Sif
+                me->SummonCreature(NPC_SIF, SifSpawnPosition);
+            }
+
+            void JustSummoned(Creature* summon) OVERRIDE
+            {
+                switch (summon->GetEntry())
+                {
+                    case NPC_LIGHTNING_ORB:
                     {
-                        thunderOrb->SetDisplayFromModel(1);
-                        thunderOrb->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
+                        summon->SetReactState(REACT_PASSIVE);
+                        summon->CastSpell(summon, SPELL_LIGHTNING_DESTRUCTION, true);
+
+                        Movement::PointsArray path;
+                        path.reserve(sizeof(LightningOrbPath) / sizeof(LightningOrbPath[0]));
+                        for (Position const& pos : LightningOrbPath)
+                            path.push_back(G3D::Vector3(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ()));
+
+                        Movement::MoveSplineInit init(summon);
+                        init.MovebyPath(path);
+                        init.Launch();
+                        break;
                     }
-
-                phase = PHASE_ARENA_ADDS;
-                events.SetPhase(phase);
-                DoCast(me, SPELL_SHEAT_OF_LIGHTNING);
-                events.ScheduleEvent(EVENT_STORMHAMMER, 40*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_CHARGE_ORB, 30*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_SUMMON_WARBRINGER, 25*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_SUMMON_EVOKER, 30*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_SUMMON_COMMONER, 35*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_BERSERK_PHASE_1, 5*MINUTE*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_SAY_AGGRO_2, 10*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_SAY_AGGRO_3, 18*IN_MILLISECONDS, 0, phase);
-                events.ScheduleEvent(EVENT_TOUCH_OF_DOMINON, 25 * IN_MILLISECONDS, 0, phase);
-
-                if (Creature* runic = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_RUNIC_COLOSSUS)))
-                {
-                    runic->setActive(true);
-                    runic->AI()->DoAction(ACTION_DOSCHEDULE_RUNIC_SMASH);  // Signals runic smash rotation
+                    case NPC_DARK_RUNE_CHAMPION:
+                    case NPC_DARK_RUNE_WARBRINGER:
+                    case NPC_DARK_RUNE_EVOKER:
+                    case NPC_DARK_RUNE_COMMONER:
+                        summon->SetReactState(REACT_PASSIVE);
+                        summon->m_Events.AddEvent(new TrashJumpEvent(summon), summon->m_Events.CalculateTime(3000));
+                        break;
+                    case NPC_SIF:
+                        summon->SetReactState(REACT_PASSIVE);
+                        break;
+                    default:
+                        break;
                 }
 
-                if (GameObject* go = me->FindNearestGameObject(GO_LEVER, 500.0f))
-                    go->RemoveFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE | GO_FLAG_IN_USE);
-
-                me->SetFacingToObject(who);
+                BossAI::JustSummoned(summon);
             }
 
-            void EnterEvadeMode() override
+            void UpdateAI(uint32 diff) OVERRIDE
             {
-                if (!_EnterEvadeMode())
-                    return;
-
-                me->SetHomePosition(homePosition);
-                me->GetMotionMaster()->MoveTargetedHome();
-                Reset();
-            }
-
-            void SpellHit(Unit* caster, SpellInfo const* spell) override
-            {
-                if (spell->Id == SPELL_TOUCH_OF_DOMINION_AURA)
+                // after the fight only the outro is left to run
+                if (!_encounterFinished)
                 {
-                    if (Creature* sif = me->FindNearestCreature(NPC_SIF, 60.0f))
-                    {
-                        sif->AI()->Talk(SAY_DESPAWN);
-                        sif->DespawnOrUnsummon(5000);
-                    }
-                }
-            }
+                    if (!UpdateVictim())
+                        return;
 
-            void SpellHitTarget(Unit* target, SpellInfo const* spell) override
-            {
-                if (spell->Id == 62466)
-                    if (target->GetTypeId() == TypeID::TYPEID_PLAYER)
-                    {
-                        me->GetMap()->SetWorldState(WORLDSTATE_DONT_STAND_IN_LIGHTNING, 0);
-                        doNotStandInTheLighting = false;
-                    }
-            }
-
-            void MovementInform(uint32 type, uint32 point) override
-            {
-                if (type == EFFECT_MOTION_TYPE && point == POINT_JUMPDOWN)
-                {
-                    me->RemoveAurasDueToSpell(SPELL_SHEAT_OF_LIGHTNING);
-                    me->SetReactState(REACT_AGGRESSIVE);
-                    if (Unit* target = me->SelectNearestTarget(50.0f))
-                        AttackStart(target);
-                }
-            }
-
-            bool CanAIAttack(Unit const* who) const override
-            {
-                return who->GetPositionZ() < 430.0f;
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (!UpdateVictim())
-                    return;
-
-                if (phase == PHASE_ARENA_ADDS && me->GetVictim() && ArenaAreaCheck(false)(me->GetVictim()))
-                {
-                    me->getThreatManager().modifyThreatPercent(me->GetVictim(), -100);
-                    return;
-                }
-
-                if (checkTargetTimer < diff)
-                {
-                    if (!SelectTarget(SELECT_TARGET_RANDOM, 0, 200.0f, true))
+                    if (!_boundary.IsInBoundary(me))
                     {
                         EnterEvadeMode();
                         return;
                     }
-                    checkTargetTimer = 7*IN_MILLISECONDS;
                 }
-                else
-                    checkTargetTimer -= diff;
-
-                // Thorim should be inside the arena during phase 3
-                /*if (phase == PHASE_ARENA && ArenaAreaCheck(false)(me))
-                {
-                    EnterEvadeMode();
-                    return;
-                }*/
 
                 events.Update(diff);
 
@@ -749,161 +806,155 @@ class boss_thorim : public CreatureScript
                         case EVENT_SAY_AGGRO_2:
                             Talk(SAY_AGGRO_2);
                             break;
-                        case EVENT_SAY_AGGRO_3:
-                            if (Creature* sif = me->FindNearestCreature(NPC_SIF, 100.0f))
-                                sif->AI()->Talk(SAY_AGGRO_3);
+                        case EVENT_SAY_SIF_START:
+                            if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                                sif->AI()->Talk(SAY_SIF_START);
+                            break;
+                        case EVENT_START_SIF_CHANNEL:
+                            if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                                sif->CastSpell(me, SPELL_TOUCH_OF_DOMINION, false);
                             break;
                         case EVENT_STORMHAMMER:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 150.0f, true))
-                                DoCast(target, SPELL_STORMHAMMER, true);
-                            events.ScheduleEvent(EVENT_STORMHAMMER, urand(15*IN_MILLISECONDS, 20*IN_MILLISECONDS), 0, PHASE_ARENA_ADDS);
+                            DoCastAOE(SPELL_STORMHAMMER);
+                            events.ScheduleEvent(EVENT_STORMHAMMER, urand(15000, 20000), 0, PHASE_1);
                             break;
                         case EVENT_CHARGE_ORB:
                             DoCastAOE(SPELL_CHARGE_ORB);
-                            events.ScheduleEvent(EVENT_CHARGE_ORB, urand(15*IN_MILLISECONDS, 20*IN_MILLISECONDS), 0, PHASE_ARENA_ADDS);
+                            events.ScheduleEvent(EVENT_CHARGE_ORB, urand(15000, 20000), 0, PHASE_1);
                             break;
-                        case EVENT_SUMMON_WARBRINGER:
-                            me->SummonCreature(ArenaAddEntries[3], Pos[rand()%7], TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
-                            if (summonChampion)
-                            {
-                                me->SummonCreature(ArenaAddEntries[0], Pos[rand()%7], TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
-                                summonChampion = false;
-                            }
-                            else
-                                summonChampion = true;
-                            events.ScheduleEvent(EVENT_SUMMON_WARBRINGER, 20*IN_MILLISECONDS, 0, PHASE_ARENA_ADDS);
+                        case EVENT_SUMMON_ADDS:
+                            SummonWave();
+                            events.ScheduleEvent(EVENT_SUMMON_ADDS, _orbSummoned ? 3000 : 10000, 0, PHASE_1);
                             break;
-                        case EVENT_SUMMON_EVOKER:
-                            me->SummonCreature(ArenaAddEntries[2], Pos[rand() % 7], TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
-                            events.ScheduleEvent(EVENT_SUMMON_EVOKER, urand(23*IN_MILLISECONDS, 27*IN_MILLISECONDS), 0, PHASE_ARENA_ADDS);
+                        case EVENT_JUMPDOWN:
+                            if (_hardMode)
+                                if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                                    sif->AI()->DoAction(ACTION_START_HARD_MODE);
+                            me->RemoveAurasDueToSpell(SPELL_SHEATH_OF_LIGHTNING);
+                            me->SetReactState(REACT_AGGRESSIVE);
+                            me->SetDisableGravity(false);
+                            me->SetControlled(false, UNIT_STATE_ROOT);
+                            me->GetMotionMaster()->MoveJump(2134.8f, -263.056f, 419.983f, 30.0f, 20.0f);
+                            events.ScheduleEvent(EVENT_START_PERIODIC_CHARGE, 2000, 0, PHASE_2);
+                            events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 15000, 0, PHASE_2);
+                            events.ScheduleEvent(EVENT_CHAIN_LIGHTNING, 20000, 0, PHASE_2);
                             break;
-                        case EVENT_SUMMON_COMMONER:
-                            for (uint8 n = 0; n < urand(5, 7); ++n)
-                                me->SummonCreature(ArenaAddEntries[1], Pos[rand()%7], TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
-                            events.ScheduleEvent(EVENT_SUMMON_COMMONER, 30*IN_MILLISECONDS, 0, PHASE_ARENA_ADDS);
-                            break;
-                        case EVENT_BERSERK_PHASE_1:
-                            DoCast(me, SPELL_BERSERK_PHASE_1);
-                            DoCast(me, SPELL_SUMMON_LIGHTNING_ORB, true);
-                            Talk(SAY_BERSERK);
-                            break;
-                        // Phase 3 stuff
                         case EVENT_UNBALANCING_STRIKE:
                             DoCastVictim(SPELL_UNBALANCING_STRIKE);
-                            events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 26*IN_MILLISECONDS, 0, PHASE_ARENA);
+                            events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, urand(15000, 20000), 0, PHASE_2);
                             break;
                         case EVENT_CHAIN_LIGHTNING:
                             if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
                                 DoCast(target, SPELL_CHAIN_LIGHTNING);
-                            events.ScheduleEvent(EVENT_CHAIN_LIGHTNING, urand(7*IN_MILLISECONDS, 15*IN_MILLISECONDS), 0, PHASE_ARENA);
+                            events.ScheduleEvent(EVENT_CHAIN_LIGHTNING, urand(7000, 15000), 0, PHASE_2);
                             break;
-                        case EVENT_TRANSFER_ENERGY:
-                            if (Creature* source = me->SummonCreature(NPC_THORIM_COMBAT_TRIGGER, PosCharge[urand(0, 6)], TempSummonType::TEMPSUMMON_TIMED_DESPAWN, (9*IN_MILLISECONDS)))
-                                source->CastSpell(source, SPELL_LIGHTNING_PILLAR, true);
-                            events.ScheduleEvent(EVENT_RELEASE_LIGHTNING_CHARGE, 8*IN_MILLISECONDS, 0, PHASE_ARENA);
+                        case EVENT_START_PERIODIC_CHARGE:
+                            if (Creature* controller = GetThorimCreature(instance, DATA_THORIM_CONTROLLER))
+                                controller->CastSpell(controller, SPELL_ACTIVATE_LIGHTNING_ORB_PERIODIC, true);
                             break;
-                        case EVENT_RELEASE_LIGHTNING_CHARGE:
-                            if (Creature* source = me->FindNearestCreature(NPC_THORIM_COMBAT_TRIGGER, 100.0f))
-                                DoCast(source, SPELL_LIGHTNING_RELEASE);
-                            DoCast(me, SPELL_LIGHTNING_CHARGE, true);
-                            events.ScheduleEvent(EVENT_TRANSFER_ENERGY, 8*IN_MILLISECONDS, 0, PHASE_ARENA);
+                        case EVENT_LIGHTNING_CHARGE:
+                            if (Creature* pillar = Unit::GetCreature(*me, _activePillarGUID))
+                                DoCast(pillar, SPELL_LIGHTNING_RELEASE);
                             break;
-                        case EVENT_BERSERK_PHASE_2:
-                            DoCast(me, SPELL_BERSERK_PHASE_2);
-                            me->SummonCreature(NPC_LIGHTNING_ORB, 2134.8f, -303.4f, 438.5f, 0.0f, TempSummonType::TEMPSUMMON_TIMED_DESPAWN, (30*IN_MILLISECONDS));
-                            Talk(SAY_BERSERK);
+                        case EVENT_BERSERK:
+                            if (events.IsInPhase(PHASE_1))
+                            {
+                                Talk(SAY_WIPE);
+                                DoCastAOE(SPELL_BERSERK_PHASE_1, true);
+                                DoCast(me, SPELL_SUMMON_LIGHTNING_ORB, true);
+                            }
+                            else
+                            {
+                                Talk(SAY_BERSERK);
+                                DoCast(me, SPELL_BERSERK_PHASE_2, true);
+                            }
                             break;
-                        case EVENT_START_EVENT_BUNNY:
+                        case EVENT_ACTIVATE_LIGHTNING_FIELD:
                         {
-                            std::list<Creature*> bunnies;
-                            GetCreatureListWithEntryInGrid(bunnies, me, NPC_THORIM_EVENT_BUNNY, 200.0f);
-                            for (auto&& bunny : bunnies)
-                                bunny->AI()->DoAction(ACTION_START_EVENT_BUNNY_START);
+                            std::list<Creature*> triggers;
+                            me->GetCreatureListWithEntryInGrid(triggers, NPC_THORIM_EVENT_BUNNY, 100.0f);
+                            triggers.remove_if([](Creature* bunny)
+                            {
+                                if (HeightPositionCheck(false)(bunny))
+                                    return true;
+                                return LightningFieldCenter.GetExactDist2dSq(bunny) > 1296.0f;
+                            });
+
+                            uint32 timer = 1000;
+                            for (Creature* bunny : triggers)
+                            {
+                                timer += 100;
+                                bunny->m_Events.AddEvent(new LightningFieldEvent(bunny), bunny->m_Events.CalculateTime(timer));
+                            }
+
+                            triggers.remove_if([](Creature* bunny)
+                            {
+                                return LightningFieldCenter.GetExactDist2dSq(bunny) < 576.0f;
+                            });
+
+                            triggers.sort([](Creature* a, Creature* b)
+                            {
+                                return a->GetPositionX() < b->GetPositionX();
+                            });
+
+                            for (std::list<Creature*>::const_iterator itr = triggers.begin(); itr != triggers.end();)
+                            {
+                                std::list<Creature*>::const_iterator prev = itr++;
+                                if (itr != triggers.end())
+                                    (*prev)->CastSpell(*itr, SPELL_LIGHTNING_BEAM_CHANNEL, false);
+                            }
                             break;
                         }
-                        case EVENT_JUMPDOWN:
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
-                            me->GetMotionMaster()->MoveJump(2134.79f, -263.03f, 419.84f, 20.0f, 10.0f, POINT_JUMPDOWN);
+                        case EVENT_OUTRO_1:
+                            Talk(_hardMode ? SAY_END_HARD_1 : SAY_END_NORMAL_1);
+                            if (_hardMode)
+                                DoCast(me, SPELL_STORMHAMMER_SIF);
                             break;
-                        case EVENT_TOUCH_OF_DOMINON:
-                            if (Creature* sif = me->FindNearestCreature(NPC_SIF, 60.0f))
-                                sif->CastSpell(me, SPELL_TOUCH_OF_DOMINION, true);
+                        case EVENT_OUTRO_2:
+                            Talk(_hardMode ? SAY_END_HARD_2 : SAY_END_NORMAL_2);
+                            if (_hardMode)
+                                if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                                    sif->SetStandState(UNIT_STAND_STATE_DEAD);
+                            break;
+                        case EVENT_OUTRO_3:
+                            Talk(_hardMode ? SAY_END_HARD_3 : SAY_END_NORMAL_3);
+                            break;
+                        case EVENT_OUTRO_TELEPORT:
+                            DoCast(me, SPELL_TELEPORT_KEEPER_VISUAL, true);
+                            me->DespawnOrUnsummon(1500);
                             break;
                         default:
                             break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
-                DoMeleeAttackIfReady();
-                // EnterEvadeIfOutOfCombatArea(diff);
+                if (!_encounterFinished)
+                    DoMeleeAttackIfReady();
             }
 
-            uint32 GetData(uint32 type) const override
-            {
-                switch (type)
-                {
-                    case DATA_LOSE_ILLUSION:
-                        return HardMode;
-                    case DATA_DO_NOT_STAND_IN_THE_LIGHTING:
-                        return doNotStandInTheLighting;
-                    default:
-                        break;
-                }
-
-                return 0;
-            }
-
-            void DoAction(int32 action) override
+            void DoAction(int32 action) OVERRIDE
             {
                 switch (action)
                 {
                     case ACTION_BERSERK:
-                        if (!gotBerserkedAndOrbSummoned)
-                        {
-                            if (phase == PHASE_ARENA)
-                                return;
+                        if (events.IsInPhase(PHASE_2))
+                            return;
 
-                            DoCast(me, SPELL_BERSERK_PHASE_1);
-                            DoCast(me, SPELL_SUMMON_LIGHTNING_ORB, true);
-                            Talk(SAY_BERSERK);
-                            gotBerserkedAndOrbSummoned = true;
-                        }
-                        break;
-                    case ACTION_UPDATE_PHASE:
-                        phase = PHASE_PRE_ARENA_ADDS;
-                        break;
-                    case ACTION_JUMPDOWN:
-                        if (me->IsInCombat() && !gotEncounterFinished && phase == PHASE_ARENA_ADDS)
+                        if (!_orbSummoned)
                         {
-                            Creature* colossus = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_RUNIC_COLOSSUS));
-                            Creature* giant = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_RUNE_GIANT));
-                            if (colossus && colossus->isDead() && giant && giant->isDead())
-                            {
-                                Talk(SAY_JUMPDOWN);
-                                phase = PHASE_ARENA;
-                                events.SetPhase(PHASE_ARENA);
-                                summons.DespawnEntry(NPC_THUNDER_ORB); // despawn charged orbs
-                                events.ScheduleEvent(EVENT_JUMPDOWN, 10 * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                events.ScheduleEvent(EVENT_UNBALANCING_STRIKE, 25 * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                events.ScheduleEvent(EVENT_CHAIN_LIGHTNING, 30 * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                events.ScheduleEvent(EVENT_TRANSFER_ENERGY, 30 * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                events.ScheduleEvent(EVENT_START_EVENT_BUNNY, 30 * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                events.ScheduleEvent(EVENT_BERSERK_PHASE_2, 5 * MINUTE * IN_MILLISECONDS, 0, PHASE_ARENA);
-                                // Check for Hard Mode
-                                if (!me->HasAura(SPELL_TOUCH_OF_DOMINION_AURA))
-                                {
-                                    HardMode = true;
-                                    me->GetMap()->SetWorldState(WORLDSTATE_LOSE_YOUR_ILLUSION, 1);
-                                    // Achievement
-                                    instance->DoUpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, SPELL_THORIM_SIFFED_CREDIT);
-                                    // Summon Sif
-                                    if (Creature* sif = me->FindNearestCreature(NPC_SIF, 60.0f))
-                                    {
-                                        sif->InterruptSpell(CURRENT_CHANNELED_SPELL);
-                                        DoZoneInCombat(sif, 100.0f);
-                                    }
-                                }
-                            }
+                            _orbSummoned = true;
+                            events.RescheduleEvent(EVENT_BERSERK, 1000);
+                        }
+                        return;
+                    case ACTION_INCREASE_PREADDS_COUNT:
+                        if (++_killedCount >= PRE_PHASE_ADD_COUNT)
+                        {
+                            // Event starts
+                            SetImmuneToPC(me, false);
+                            DoZoneInCombat(me);
                         }
                         break;
                     default:
@@ -911,535 +962,555 @@ class boss_thorim : public CreatureScript
                 }
             }
 
-            void SetGUID(uint64 /*guid*/, int32 data) override
+            void GetTrashSpawnTriggers(std::list<Creature*>& triggerList, uint32 count = 1)
             {
-                switch (data)
+                me->GetCreatureListWithEntryInGrid(triggerList, NPC_THORIM_EVENT_BUNNY, 100.0f);
+                triggerList.remove_if([](Creature* bunny)
                 {
-                    case ACTION_PREPHASE_ADDS_DIED:
-                        if (!gotAddsWiped)
+                    if (HeightPositionCheck(false)(bunny))
+                        return true;
+                    return ArenaCenter.GetExactDist2dSq(bunny) < 3025.0f;
+                });
+
+                if (triggerList.empty())
+                    return;
+
+                if (count == 1)
+                {
+                    Creature* bunny = Skyfire::Containers::SelectRandomContainerElement(triggerList);
+                    triggerList.clear();
+                    triggerList.push_back(bunny);
+                }
+                else
+                    Skyfire::Containers::RandomResizeList(triggerList, count);
+            }
+
+            void SummonWave()
+            {
+                switch (_waveType)
+                {
+                    case 0:
+                    {
+                        // Dark Rune Commoner
+                        std::list<Creature*> triggers;
+                        GetTrashSpawnTriggers(triggers, urand(5, 6));
+
+                        for (Creature* bunny : triggers)
+                            me->SummonCreature(StaticThorimTrashInfo[6 + 3].Entry, *bunny, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
+
+                        ++_waveType;
+                        break;
+                    }
+                    case 1:
+                        if (urand(0, 1))
                         {
-                            gotAddsWiped = true;
-                            me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                            events.Reset();
-                            DoZoneInCombat();
+                            // Dark Rune Champion or Dark Rune Evoker
+                            std::list<Creature*> triggers;
+                            GetTrashSpawnTriggers(triggers, urand(2, 4));
+
+                            for (Creature* bunny : triggers)
+                                me->SummonCreature(StaticThorimTrashInfo[6 + RAND(0, 2)].Entry, *bunny, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
                         }
-                        break;
-                    default:
+                        else
+                        {
+                            // Dark Rune Warbringer
+                            std::list<Creature*> triggers;
+                            GetTrashSpawnTriggers(triggers);
+
+                            for (Creature* bunny : triggers)
+                                me->SummonCreature(StaticThorimTrashInfo[6 + 1].Entry, *bunny, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
+                        }
+                        --_waveType;
                         break;
                 }
             }
 
-            void JustSummoned(Creature* summon) override
+            bool CanStartPhase2(Unit* actor) const
             {
-                if (summon->GetEntry() != NPC_SIF && summon->GetEntry() != NPC_LIGHTNING_ORB)
-                    summons.Summon(summon);
+                if (!actor || actor->GetTypeId() != TypeID::TYPEID_PLAYER || !me->IsWithinDistInMap(actor, 10.0f))
+                    return false;
 
-                if (me->IsInCombat() && summon->GetEntry() != NPC_SIF && summon->GetEntry() != NPC_THORIM_COMBAT_TRIGGER && summon->GetEntry() != NPC_LIGHTNING_ORB)
-                    DoZoneInCombat(summon);
-
-                if (summon->GetEntry() == NPC_LIGHTNING_ORB)
-                    summon->CastSpell(summon, SPELL_LIGHTNING_DESTRUCTION, true);
+                Creature* runicColossus = GetThorimCreature(instance, DATA_RUNIC_COLOSSUS);
+                Creature* runeGiant = GetThorimCreature(instance, DATA_RUNE_GIANT);
+                return runicColossus && !runicColossus->IsAlive() && runeGiant && !runeGiant->IsAlive();
             }
 
-            void SummonedCreatureDies(Creature* summon, Unit* /*killer*/) override
+            void DamageTaken(Unit* attacker, uint32& damage) OVERRIDE
             {
-                summons.Despawn(summon);
-                summon->RemoveCorpse(false);
-            }
-
-            void DamageTaken(Unit* who, uint32& damage) override
-            {
-                if (damage >= me->GetHealth())
+                if (_encounterFinished)
                 {
                     damage = 0;
-                    EncounterPostProgress();
+                    return;
                 }
-            }
 
-            private:
-                Phases phase;
-                uint8 PreAddsCount;
-                uint32 checkTargetTimer;
-                bool gotAddsWiped;
-                bool HardMode;
-                bool gotBerserkedAndOrbSummoned;
-                bool gotEncounterFinished;
-                bool summonChampion;
-                bool doNotStandInTheLighting;
-                Position homePosition;
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return GetInstanceAI<boss_thorimAI>(creature);
-        }
-};
-
-/************************************************************************/
-/* Pre-Phase adds                                                       */
-/* Note: The behavior script below will be registered for all pre-phase */
-/* indices, so we need some helpers for managing their spells and       */
-/* entries.                                                             */
-/************************************************************************/
-enum PreAddSpells
-{
-    SPELL_ACID_BREATH_10            = 62315,
-    SPELL_ACID_BREATH_25            = 62415,
-    SPELL_SWEEP_10                  = 62316,
-    SPELL_SWEEP_25                  = 62417,
-
-    SPELL_DEVASTATE                 = 62317,
-    SPELL_HEROIC_SWIPE              = 62444,
-
-    SPELL_BARBED_SHOT               = 62318,
-    SPELL_SHOOT                     = 16496,
-
-    SPELL_RENEW_10                  = 62333,
-    SPELL_RENEW_25                  = 62441,
-    SPELL_GREATER_HEAL_10           = 62334,
-    SPELL_GREATER_HEAL_25           = 62442
-};
-
-#define SPELL_HOLY_SMITE    RAID_MODE(62335, 62443)
-
-enum PrePhaseAddIndex
-{
-    INDEX_BEHEMOTH                = 0,
-    INDEX_MERCENARY_CAPTAIN_A,
-    INDEX_MERCENARY_SOLDIER_A,
-    INDEX_DARK_RUNE_ACOLYTE,
-    INDEX_MERCENARY_CAPTAIN_H,
-    INDEX_MERCENARY_SOLDIER_H,
-    INDEX_PRE_ADD_NONE
-};
-const uint32 PrePhaseAddList[] = {NPC_JORMUNGAR_BEHEMOTH, NPC_MERCENARY_CAPTAIN_A, NPC_MERCENARY_SOLDIER_A, NPC_DARK_RUNE_ACOLYTE, NPC_MERCENARY_CAPTAIN_H, NPC_MERCENARY_SOLDIER_H};
-const uint32 PrePhaseAddSpells_Primary[2][6] =
-{
-    {SPELL_ACID_BREATH_10, SPELL_DEVASTATE, SPELL_BARBED_SHOT, SPELL_RENEW_10, SPELL_DEVASTATE, SPELL_BARBED_SHOT},
-    {SPELL_ACID_BREATH_25, SPELL_DEVASTATE, SPELL_BARBED_SHOT, SPELL_RENEW_25, SPELL_DEVASTATE, SPELL_BARBED_SHOT}
-};
-const uint32 PrePhaseAddSpells_Secondary[2][6] =
-{
-    {SPELL_SWEEP_10, SPELL_HEROIC_SWIPE, SPELL_SHOOT, SPELL_GREATER_HEAL_10, SPELL_HEROIC_SWIPE, SPELL_SHOOT},
-    {SPELL_SWEEP_25, SPELL_HEROIC_SWIPE, SPELL_SHOOT, SPELL_GREATER_HEAL_25, SPELL_HEROIC_SWIPE, SPELL_SHOOT}
-};
-
-class PrePhaseAddHelper
-{
-    private:
-        enum ManCnt
-        {
-            In10Man = 0,
-            In25Man
-        };
-
-    public:
-        enum Index
-        {
-            INDEX_PRIMARY,
-            INDEX_SECONDARY
-        };
-
-        PrePhaseAddHelper(DifficultyID raidDifficulty)
-        {
-            if (raidDifficulty == DIFFICULTY_25MAN_NORMAL || raidDifficulty == DIFFICULTY_25MAN_HEROIC) // should not be heroic, just for the case
-                diffi = In10Man;
-            else
-                diffi = In25Man;
-        }
-
-        PrePhaseAddIndex operator[](uint32 creatureEntry)
-        {
-            for (uint8 i = 0; i < 6; i++)
-                if (PrePhaseAddList[i] == creatureEntry)
-                    return PrePhaseAddIndex(i);
-            return INDEX_PRE_ADD_NONE;
-        }
-
-        uint32 operator()(PrePhaseAddIndex myId, Index idx)
-        {
-            if (myId < INDEX_PRE_ADD_NONE)
-            {
-                if (idx == INDEX_PRIMARY)
-                    return PrePhaseAddSpells_Primary[diffi][myId];
-                else
-                    return PrePhaseAddSpells_Secondary[diffi][myId];
-            }
-            return 0;
-        }
-
-    private:
-        ManCnt diffi;
-};
-
-class npc_thorim_pre_phase_add : public CreatureScript
-{
-    private:
-        enum
-        {
-            EVENT_PRIMARY_SKILL = 1,
-            EVENT_SECONDARY_SKILL,
-            EVENT_CHECK_PLAYER_IN_RANGE
-        };
-
-    public:
-        npc_thorim_pre_phase_add() : CreatureScript("npc_thorim_pre_phase_add") { }
-
-        struct npc_thorim_pre_phaseAI : public ScriptedAI
-        {
-            npc_thorim_pre_phaseAI(Creature *pCreature) : ScriptedAI(pCreature), myHelper(GetDifficulty())
-            {
-                pInstance = pCreature->GetInstanceScript();
-                me->SetReactState(REACT_AGGRESSIVE);
-                myIndex = myHelper[me->GetEntry()];
-                amIHealer = HealerCheck(true)(me);
-            }
-
-            void Reset() override
-            {
-                events.Reset();
-                events.ScheduleEvent(EVENT_CHECK_PLAYER_IN_RANGE, 1*IN_MILLISECONDS);
-                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(3*IN_MILLISECONDS, 6*IN_MILLISECONDS));
-                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand (12*IN_MILLISECONDS, 15*IN_MILLISECONDS));
-            }
-
-            void IsSummonedBy(Unit* /*summoner*/) override
-            {
-                Reset();
-            }
-
-            void EnterCombat(Unit* /*who*/) override { }
-
-            void AttackStart(Unit* target) override
-            {
-                if (myIndex == INDEX_DARK_RUNE_ACOLYTE || myIndex == INDEX_MERCENARY_SOLDIER_A || myIndex == INDEX_MERCENARY_SOLDIER_H)
-                    AttackStartCaster(target, 30.0f);
-                else
-                    ScriptedAI::AttackStart(target);
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (!UpdateVictim() && !amIHealer)
-                    return;
-
-                events.Update(diff);
-
-                if (me->HasUnitState(UNIT_STATE_CASTING))
-                    return;
-
-                while (uint32 eventId = events.ExecuteEvent())
+                if (events.IsInPhase(PHASE_1) && CanStartPhase2(attacker))
                 {
-                    switch (eventId)
-                    {
-                        case EVENT_CHECK_PLAYER_IN_RANGE:
-                            if (!me->IsInCombat())
-                            {
-                                Player* player = 0;
-                                Skyfire::AnyPlayerInObjectRangeCheck u_check(me, 70.0f, true);
-                                Skyfire::PlayerSearcher<Skyfire::AnyPlayerInObjectRangeCheck> searcher(me, player, u_check);
-                                me->VisitNearbyObject(30.0f, searcher);
-                                if (player)
-                                    if (!player->IsGameMaster())
-                                        AttackStart(player);
+                    Talk(SAY_JUMPDOWN);
+                    events.SetPhase(PHASE_2);
+                    events.ScheduleEvent(EVENT_JUMPDOWN, 8000);
+                    events.ScheduleEvent(EVENT_ACTIVATE_LIGHTNING_FIELD, 15000);
+                    events.RescheduleEvent(EVENT_BERSERK, 300000, 0, PHASE_2);
 
-                                events.ScheduleEvent(EVENT_CHECK_PLAYER_IN_RANGE, 1*IN_MILLISECONDS);
-                            }
-                            break;
-                        case EVENT_PRIMARY_SKILL:
-                            if (Unit* target = amIHealer ? (me->GetHealthPct() > 40? DoSelectLowestHpFriendly(40) : me) : me->GetVictim())
-                            {
-                                DoCast(target, myHelper(myIndex, PrePhaseAddHelper::INDEX_PRIMARY));
-                                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(10*IN_MILLISECONDS, 15*IN_MILLISECONDS));
-                            }
-                            else
-                                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(2*IN_MILLISECONDS, 3*IN_MILLISECONDS));
-                            break;
-                        case EVENT_SECONDARY_SKILL:
-                            if (Unit* target = amIHealer ? (me->GetHealthPct() > 40? DoSelectLowestHpFriendly(40) : me) : me->GetVictim())
-                            {
-                                DoCast(target, myHelper(myIndex, PrePhaseAddHelper::INDEX_SECONDARY));
-                                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand(4*IN_MILLISECONDS, 8*IN_MILLISECONDS));
-                            }
-                            else
-                                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand(1*IN_MILLISECONDS, 2*IN_MILLISECONDS));
-                            break;
-                        default:
-                            break;
-                    }
+                    if (Creature* sif = GetThorimCreature(instance, DATA_SIF))
+                        sif->InterruptNonMeleeSpells(false);
+
+                    // Hard Mode
+                    if (_hardMode)
+                        GrantCriteriaCredit(CRITERIA_SPELL_SIFFED);
                 }
-
-                if (myIndex == INDEX_DARK_RUNE_ACOLYTE)
-                    DoSpellAttackIfReady(SPELL_HOLY_SMITE);
-                else
-                    DoMeleeAttackIfReady();
-            }
-
-            private:
-                InstanceScript* pInstance;
-                PrePhaseAddHelper myHelper;
-                PrePhaseAddIndex myIndex;
-                EventMap events;
-                bool amIHealer;
-        };
-
-        CreatureAI* GetAI(Creature* pCreature) const
-        {
-            return GetInstanceAI<npc_thorim_pre_phaseAI>(pCreature);
-        }
-};
-
-/************************************************************************/
-/* Adds in arena-phase                                                  */
-/* Note: The behavior script below will be registered for all           */
-/* arena-phase indices, so we need some helpers for managing their      */
-/* spells and entries.                                                  */
-/************************************************************************/
-enum ArenaAddsSpells
-{
-    // Primary spells
-    SPELL_MORTAL_STRIKE         = 35054,
-    SPELL_LOW_BLOW              = 62326,
-    SPELL_RUNIC_LIGHTNING_10    = 62327,
-    SPELL_RUNIC_LIGHTNING_25    = 62445,
-    SPELL_RUNIC_STRIKE          = 62322,
-    SPELL_WHIRLING_TRIP         = 64151,
-    SPELL_CLEAVE                = 42724,
-    //SPELL_RENEW_10              = 62333,  // Used from previous definition
-    //SPELL_RENEW_25              = 62441,
-    // Secondary spells
-    SPELL_WHIRLWIND             = 33500,
-    SPELL_PUMMEL                = 38313,
-    SPELL_RUNIC_SHIELD_10       = 62321,
-    SPELL_RUNIC_SHIELD_25       = 62529,
-    SPELL_IMPALE_10             = 62331,
-    SPELL_IMPALE_25             = 62418,
-    SPELL_SHIELD_SMASH_10       = 62332,
-    SPELL_SHIELD_SMASH_25       = 62420,
-    //SPELL_GREATER_HEAL_10       = 62334,  // Used from previous definition
-    //SPELL_GREATER_HEAL_25       = 62442,
-    // Some tertiary skills
-    SPELL_RUNIC_MENDING         = 62328
-};
-
-enum ArenaAddIndex
-{
-    INDEX_DARK_RUNE_CHAMPION = 0,
-    INDEX_DARK_RUNE_COMMONER,
-    INDEX_DARK_RUNE_EVOKER,
-    INDEX_DARK_RUNE_WARBRINGER,
-    INDEX_IRON_RING_GUARD,
-    INDEX_IRON_HONOR_GUARD,
-    INDEX_ARENA_DARK_RUNE_ACOLYTE,
-    INDEX_ARENA_ADD_NONE
-};
-const uint32 ArenaAddSpells_Primary[2][7] =
-{
-    {SPELL_MORTAL_STRIKE, SPELL_LOW_BLOW, SPELL_RUNIC_LIGHTNING_10, SPELL_RUNIC_STRIKE, SPELL_WHIRLING_TRIP, SPELL_CLEAVE, SPELL_RENEW_10},
-    {SPELL_MORTAL_STRIKE, SPELL_LOW_BLOW, SPELL_RUNIC_LIGHTNING_25, SPELL_RUNIC_STRIKE, SPELL_WHIRLING_TRIP, SPELL_CLEAVE, SPELL_RENEW_25}
-};
-const uint32 ArenaAddSpells_Secondary[2][7] =
-{
-    {SPELL_WHIRLWIND, SPELL_PUMMEL, SPELL_RUNIC_SHIELD_10, 0, SPELL_IMPALE_10, SPELL_SHIELD_SMASH_10, SPELL_GREATER_HEAL_10},
-    {SPELL_WHIRLWIND, SPELL_PUMMEL, SPELL_RUNIC_SHIELD_25, 0, SPELL_IMPALE_25, SPELL_SHIELD_SMASH_25, SPELL_GREATER_HEAL_25}
-};
-
-class ArenaPhaseAddHelper
-{
-    private:
-        enum ManCnt
-        {
-            In10Man = 0,
-            In25Man
-        };
-
-    public:
-        enum Index
-        {
-            INDEX_PRIMARY,
-            INDEX_SECONDARY
-        };
-
-        ArenaPhaseAddHelper(DifficultyID raidDifficulty)
-        {
-            if (raidDifficulty == DIFFICULTY_25MAN_NORMAL || raidDifficulty == DIFFICULTY_25MAN_HEROIC) // should not be heroic, just for the case
-                diffi = In10Man;
-            else
-                diffi = In25Man;
-        }
-
-        ArenaAddIndex operator[](uint32 creatureEntry)
-        {
-            for (uint8 i = 0; i < 8; i++)
-                if (ArenaAddEntries[i] == creatureEntry)
-                    return ArenaAddIndex(i);
-            return INDEX_ARENA_ADD_NONE;
-        }
-
-        uint32 operator()(ArenaAddIndex myId, Index idx)
-        {
-            if (myId < INDEX_ARENA_ADD_NONE)
-            {
-                if (idx == INDEX_PRIMARY)
-                    return ArenaAddSpells_Primary[diffi][myId];
-                else
-                    return ArenaAddSpells_Secondary[diffi][myId];
-            }
-            return 0;
-        }
-
-    private:
-        ManCnt diffi;
-};
-
-class npc_thorim_arena_phase_add : public CreatureScript
-{
-    private:
-        enum
-        {
-            EVENT_PRIMARY_SKILL = 1,
-            EVENT_SECONDARY_SKILL,
-            EVENT_CHARGE
-        };
-
-    public:
-        npc_thorim_arena_phase_add() : CreatureScript("npc_thorim_arena_phase_add") { }
-
-        struct npc_thorim_arena_phaseAI : public ScriptedAI
-        {
-            npc_thorim_arena_phaseAI(Creature* creature) : ScriptedAI(creature), myHelper(GetDifficulty())
-            {
-                instance = creature->GetInstanceScript();
-                myIndex = myHelper[me->GetEntry()];
-                IsInArena = ArenaAreaCheck(false)(me);
-                amIhealer = HealerCheck(true)(me);
-            }
-
-            bool IsOnSameSide(const Unit* who)
-            {
-                return (IsInArena == ArenaAreaCheck(false)(who));
-            }
-
-            void DamageTaken(Unit* who, uint32& damage) override
-            {
-                if (!IsOnSameSide(who))
+                else if (me->HealthBelowPctDamaged(1, damage))
+                {
                     damage = 0;
-            }
-
-            void Reset() override
-            {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(3*IN_MILLISECONDS, 6*IN_MILLISECONDS));
-                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand (7*IN_MILLISECONDS, 9*IN_MILLISECONDS));
-                if (myIndex == INDEX_DARK_RUNE_CHAMPION)
-                    events.ScheduleEvent(EVENT_CHARGE, 8*IN_MILLISECONDS);
-            }
-
-            void IsSummonedBy(Unit* summoner) override
-            {
-                if (summoner->HasAura(SPELL_BERSERK_PHASE_1))
-                    summoner->AddAura(SPELL_BERSERK_PHASE_1, me);
-            }
-
-            void EnterCombat(Unit* /*who*/) override
-            {
-                if (myIndex == INDEX_DARK_RUNE_WARBRINGER)
-                    DoCast(me, SPELL_AURA_OF_CELERITY);
-            }
-
-            // this should only happen if theres no alive player in the arena -> summon orb
-            // might be called by mind control release or controllers death
-            void EnterEvadeMode() override
-            {
-                if (Creature* thorim = me->GetCreature(*me, instance ? instance->GetData64(BOSS_THORIM) : 0))
-                    thorim->AI()->DoAction(ACTION_BERSERK);
-                _EnterEvadeMode();
-                me->GetMotionMaster()->MoveTargetedHome();
-                Reset();
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (!UpdateVictim() && !amIhealer)
-                    return;
-
-                if (me->GetVictim() && !IsOnSameSide(me->GetVictim()))
-                {
-                    me->getThreatManager().modifyThreatPercent(me->GetVictim(), -100);
-                    return;
+                    FinishEncounter();
                 }
-
-                events.Update(diff);
-
-                if (me->HasUnitState(UNIT_STATE_CASTING))
-                    return;
-
-                while (uint32 eventId = events.ExecuteEvent())
-                {
-                    switch (eventId)
-                    {
-                        case EVENT_PRIMARY_SKILL:
-                            if (Unit* target = amIhealer ? (me->GetHealthPct() > 40 ? DoSelectLowestHpFriendly(40) : me) : me->GetVictim())
-                            {
-                                if (myIndex == INDEX_DARK_RUNE_EVOKER)  // Specialize
-                                    DoCast(target, SPELL_RUNIC_MENDING);
-                                else
-                                    DoCast(target, myHelper(myIndex, ArenaPhaseAddHelper::INDEX_PRIMARY));
-
-                                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(3*IN_MILLISECONDS, 6*IN_MILLISECONDS));
-                            }
-                            else
-                                events.ScheduleEvent(EVENT_PRIMARY_SKILL, urand(1*IN_MILLISECONDS, 2*IN_MILLISECONDS));
-                            break;
-                        case EVENT_SECONDARY_SKILL:
-                            if (Unit* target = amIhealer ? (me->GetHealthPct() > 40 ? DoSelectLowestHpFriendly(40) : me) : me->GetVictim())
-                            {
-                                if (uint32 spellID = myHelper(myIndex, ArenaPhaseAddHelper::INDEX_SECONDARY))
-                                    DoCast(target, spellID);
-                                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand(12*IN_MILLISECONDS, 16*IN_MILLISECONDS));
-                            }
-                            else
-                                events.ScheduleEvent(EVENT_SECONDARY_SKILL, urand(2*IN_MILLISECONDS, 4*IN_MILLISECONDS));
-                            break;
-                        case EVENT_CHARGE:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f, true))
-                                DoCast(target, SPELL_CHARGE);
-                            events.ScheduleEvent(EVENT_CHARGE, 12*IN_MILLISECONDS);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-
-                if (myIndex == INDEX_ARENA_DARK_RUNE_ACOLYTE)
-                    DoSpellAttackIfReady(SPELL_HOLY_SMITE);
-                else
-                    DoMeleeAttackIfReady();
             }
 
         private:
-            InstanceScript* instance;
-            ArenaAddIndex myIndex;
-            EventMap events;
-            ArenaPhaseAddHelper myHelper;
-            bool IsInArena;
-            bool amIhealer;
+            uint64 _activePillarGUID;
+            uint8 _killedCount;
+            uint8 _waveType;
+            bool _hardMode;
+            bool _encounterFinished;
+            bool _orbSummoned;
+            bool _dontStandInTheLightning;
+            ArenaBoundary _boundary;
         };
 
-        CreatureAI* GetAI(Creature* creature) const override
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return GetInstanceAI<npc_thorim_arena_phaseAI>(creature);
+            return GetUlduarAI<boss_thorimAI>(creature);
         }
 };
 
-SummonLocation colossusAddLocations[]=
+struct npc_thorim_trashAI : public ScriptedAI
 {
-    {{2218.38f, -297.50f, 412.18f, 1.030f}, 32874},
-    {{2235.07f, -297.98f, 412.18f, 1.613f}, 32874},
-    {{2235.26f, -338.34f, 412.18f, 1.589f}, 32874},
-    {{2217.69f, -337.39f, 412.18f, 1.241f}, 32874},
-    {{2227.58f, -308.30f, 412.18f, 1.591f}, 33110},
-    {{2227.47f, -345.37f, 412.18f, 1.566f}, 33110}
+    npc_thorim_trashAI(Creature* creature) : ScriptedAI(creature), _info(NULL)
+    {
+        _instance = creature->GetInstanceScript();
+        for (uint8 i = 0; i < ThorimTrashCount; ++i)
+            if (me->GetEntry() == StaticThorimTrashInfo[i].Entry)
+                _info = &StaticThorimTrashInfo[i];
+
+        ASSERT(_info);
+    }
+
+    struct AIHelper
+    {
+        /// returns heal amount of the given spell including hots
+        static uint32 GetTotalHeal(SpellInfo const* spellInfo, Unit const* caster)
+        {
+            uint32 heal = 0;
+            for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
+            {
+                SpellEffectInfo const& spellEffectInfo = spellInfo->Effects[i];
+                if (spellEffectInfo.IsEffect(SPELL_EFFECT_HEAL))
+                    heal += spellEffectInfo.CalcValue(caster);
+
+                if (spellEffectInfo.IsEffect(SPELL_EFFECT_APPLY_AURA) && spellEffectInfo.IsAura(SPELL_AURA_PERIODIC_HEAL))
+                    heal += spellInfo->GetMaxTicks() * spellEffectInfo.CalcValue(caster);
+            }
+            return heal;
+        }
+
+        /// returns remaining heal amount on given target
+        static uint32 GetRemainingHealOn(Unit* target)
+        {
+            uint32 heal = 0;
+            Unit::AuraEffectList const& auras = target->GetAuraEffectsByType(SPELL_AURA_PERIODIC_HEAL);
+            for (Unit::AuraEffectList::const_iterator itr = auras.begin(); itr != auras.end(); ++itr)
+            {
+                AuraEffect const* aurEff = *itr;
+                int32 remainingTicks = aurEff->GetTotalTicks() - int32(aurEff->GetTickNumber());
+                if (remainingTicks > 0)
+                    heal += aurEff->GetAmount() * remainingTicks;
+            }
+
+            return heal;
+        }
+
+        class MostHPMissingInRange
+        {
+            public:
+                MostHPMissingInRange(Unit const* referer, float range, uint32 hp, bool exclSelf = false)
+                    : _referer(referer), _range(range), _hp(hp), _exclSelf(exclSelf) { }
+
+                bool operator()(Unit* u)
+                {
+                    if (_exclSelf && u == _referer)
+                        return false;
+
+                    if ((u->GetHealth() + GetRemainingHealOn(u) + _hp) > u->GetMaxHealth())
+                        return false;
+
+                    uint32 missingHP = u->GetMaxHealth() - u->GetHealth();
+                    if (u->IsAlive() && _referer->IsFriendlyTo(u) && _referer->IsWithinDistInMap(u, _range) && missingHP > _hp)
+                    {
+                        _hp = missingHP;
+                        return true;
+                    }
+
+                    return false;
+                }
+
+            private:
+                Unit const* _referer;
+                float _range;
+                uint32 _hp;
+                bool _exclSelf;
+        };
+
+        static Unit* GetUnitWithMostMissingHp(SpellInfo const* spellInfo, Unit* caster)
+        {
+            // use positive range, it's a healing spell
+            float const range = spellInfo->GetMaxRange(true);
+            uint32 const heal = GetTotalHeal(spellInfo, caster);
+
+            Unit* target = NULL;
+            MostHPMissingInRange checker(caster, range, heal);
+            Skyfire::UnitLastSearcher<MostHPMissingInRange> searcher(caster, target, checker);
+            caster->VisitNearbyObject(range, searcher);
+
+            return target;
+        }
+
+        static Unit* GetHealTarget(SpellInfo const* spellInfo, Unit* caster)
+        {
+            Unit* healTarget = NULL;
+            if (!(spellInfo->AttributesEx & SPELL_ATTR1_CANT_TARGET_SELF) && !roll_chance_f(caster->GetHealthPct()) && ((caster->GetHealth() + GetRemainingHealOn(caster) + GetTotalHeal(spellInfo, caster)) <= caster->GetMaxHealth()))
+                healTarget = caster;
+            else
+                healTarget = GetUnitWithMostMissingHp(spellInfo, caster);
+
+            return healTarget;
+        }
+    };
+
+    bool UseAbility(uint32 spellId)
+    {
+        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spellId);
+        if (!spellInfo)
+            return false;
+
+        Unit* target = NULL;
+        if (AIHelper::GetTotalHeal(spellInfo, me))
+            target = AIHelper::GetHealTarget(spellInfo, me);
+        else
+            target = me->GetVictim();
+
+        if (!target)
+            return false;
+
+        if (_info->Type == MERCENARY_SOLDIER)
+        {
+            bool allowMove = true;
+            if (me->IsInRange(target, spellInfo->GetMinRange(), spellInfo->GetMaxRange()))
+                allowMove = false;
+
+            if (IsCombatMovementAllowed() != allowMove)
+            {
+                SetCombatMovement(allowMove);
+
+                // need relaunch movement
+                ScriptedAI::AttackStart(target);
+
+                // give some time to allow reposition, try again in a second
+                if (allowMove)
+                    return false;
+            }
+        }
+
+        DoCast(target, spellId);
+        return true;
+    }
+
+    // Arena creatures leave combat when they end up outside of their area
+    virtual bool IsInBoundary() const { return true; }
+
+    void UpdateAI(uint32 diff) OVERRIDE
+    {
+        if (!UpdateVictim())
+            return;
+
+        if (!IsInBoundary())
+        {
+            EnterEvadeMode();
+            return;
+        }
+
+        _events.Update(diff);
+
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+
+        while (uint32 eventId = _events.ExecuteEvent())
+        {
+            HandleEvent(eventId);
+
+            if (me->HasUnitState(UNIT_STATE_CASTING))
+                return;
+        }
+
+        if (_info->Type == DARK_RUNE_ACOLYTE)
+            DoSpellAttackIfReady(SPELL_HOLY_SMITE);
+        else
+            DoMeleeAttackIfReady();
+    }
+
+    virtual void HandleEvent(uint32 eventId) = 0;
+
+protected:
+    InstanceScript* _instance;
+    EventMap _events;
+
+    ThorimTrashInfo const* _info;
+};
+
+class npc_thorim_pre_phase : public CreatureScript
+{
+    public:
+        npc_thorim_pre_phase() : CreatureScript("npc_thorim_pre_phase") { }
+
+        struct npc_thorim_pre_phaseAI : public npc_thorim_trashAI
+        {
+            npc_thorim_pre_phaseAI(Creature* creature) : npc_thorim_trashAI(creature)
+            {
+                me->setActive(true); // prevent grid unload
+            }
+
+            void Reset() OVERRIDE
+            {
+                _events.Reset();
+                if (_info->PrimaryAbility)
+                    _events.ScheduleEvent(EVENT_PRIMARY_ABILITY, urand(3000, 6000));
+                if (_info->SecondaryAbility)
+                {
+                    if (_info->SecondaryAbility == SPELL_SHOOT)
+                        _events.ScheduleEvent(EVENT_SECONDARY_ABILITY, 2000);
+                    else
+                        _events.ScheduleEvent(EVENT_SECONDARY_ABILITY, urand(12000, 15000));
+                }
+                if (_info->ThirdAbility)
+                    _events.ScheduleEvent(EVENT_THIRD_ABILITY, urand(6000, 8000));
+                if (_info->Type == MERCENARY_SOLDIER)
+                    SetCombatMovement(false);
+            }
+
+            void JustDied(Unit* /*killer*/) OVERRIDE
+            {
+                if (Creature* thorim = GetThorimCreature(_instance, BOSS_THORIM))
+                    thorim->AI()->DoAction(ACTION_INCREASE_PREADDS_COUNT);
+            }
+
+            void DamageTaken(Unit* attacker, uint32& damage) OVERRIDE
+            {
+                // nullify spell damage
+                if (!attacker || !attacker->GetAffectingPlayer())
+                    damage = 0;
+            }
+
+            void HandleEvent(uint32 eventId) OVERRIDE
+            {
+                switch (eventId)
+                {
+                    case EVENT_PRIMARY_ABILITY:
+                        if (UseAbility(_info->PrimaryAbility))
+                            _events.ScheduleEvent(eventId, urand(15000, 20000));
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    case EVENT_SECONDARY_ABILITY:
+                        if (UseAbility(_info->SecondaryAbility))
+                        {
+                            if (_info->SecondaryAbility == SPELL_SHOOT)
+                                _events.ScheduleEvent(eventId, 2000);
+                            else
+                                _events.ScheduleEvent(eventId, urand(4000, 8000));
+                        }
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    case EVENT_THIRD_ABILITY:
+                        if (UseAbility(_info->ThirdAbility))
+                            _events.ScheduleEvent(eventId, urand(6000, 8000));
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        };
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return GetUlduarAI<npc_thorim_pre_phaseAI>(creature);
+        }
+};
+
+class npc_thorim_arena_phase : public CreatureScript
+{
+    public:
+        npc_thorim_arena_phase() : CreatureScript("npc_thorim_arena_phase") { }
+
+        struct npc_thorim_arena_phaseAI : public npc_thorim_trashAI
+        {
+            npc_thorim_arena_phaseAI(Creature* creature) : npc_thorim_trashAI(creature)
+            {
+                switch (_info->Type)
+                {
+                    case DARK_RUNE_CHAMPION:
+                    case DARK_RUNE_WARBRINGER:
+                    case DARK_RUNE_COMMONER:
+                    case DARK_RUNE_EVOKER:
+                        _isInArena = true;
+                        break;
+                    case DARK_RUNE_ACOLYTE:
+                    {
+                        _isInArena = (_info->Entry == NPC_DARK_RUNE_ACOLYTE_PRE);
+                        _boundary.Set(true, !_isInArena);
+                        break;
+                    }
+                    default:
+                        _isInArena = false;
+                        break;
+                }
+            }
+
+            bool CanAIAttack(Unit const* who) const OVERRIDE
+            {
+                // don't try to attack players in balcony
+                if (_isInArena && HeightPositionCheck(true)(who))
+                    return false;
+
+                return _boundary.IsInBoundary(who);
+            }
+
+            bool IsInBoundary() const OVERRIDE
+            {
+                return _boundary.IsInBoundary(me);
+            }
+
+            void DoAction(int32 action) OVERRIDE
+            {
+                // the arena creatures only stay bound to the arena once they have jumped into it
+                if (action == ACTION_ENABLE_BOUNDARY)
+                    _boundary.Set(true);
+            }
+
+            void Reset() OVERRIDE
+            {
+                _events.Reset();
+                if (_info->PrimaryAbility)
+                    _events.ScheduleEvent(EVENT_PRIMARY_ABILITY, urand(3000, 6000));
+                if (_info->SecondaryAbility)
+                    _events.ScheduleEvent(EVENT_SECONDARY_ABILITY, urand(7000, 9000));
+                if (_info->ThirdAbility)
+                    _events.ScheduleEvent(EVENT_THIRD_ABILITY, urand(6000, 8000));
+                if (_info->Type == DARK_RUNE_CHAMPION)
+                    _events.ScheduleEvent(EVENT_ABILITY_CHARGE, 8000);
+            }
+
+            void EnterCombat(Unit* /*who*/) OVERRIDE
+            {
+                if (_info->Type == DARK_RUNE_WARBRINGER)
+                    DoCast(me, SPELL_AURA_OF_CELERITY);
+
+                if (!_isInArena)
+                    if (Creature* colossus = GetThorimCreature(_instance, DATA_RUNIC_COLOSSUS))
+                        colossus->AI()->DoAction(ACTION_ACTIVATE_RUNIC_SMASH);
+            }
+
+            void EnterEvadeMode() OVERRIDE
+            {
+                // this should only happen if theres no alive player in the arena -> summon orb
+                if (Creature* thorim = GetThorimCreature(_instance, BOSS_THORIM))
+                    thorim->AI()->DoAction(ACTION_BERSERK);
+                ScriptedAI::EnterEvadeMode();
+            }
+
+            void HandleEvent(uint32 eventId) OVERRIDE
+            {
+                switch (eventId)
+                {
+                    case EVENT_PRIMARY_ABILITY:
+                        if (UseAbility(_info->PrimaryAbility))
+                            _events.ScheduleEvent(eventId, urand(3000, 6000));
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    case EVENT_SECONDARY_ABILITY:
+                        if (UseAbility(_info->SecondaryAbility))
+                            _events.ScheduleEvent(eventId, urand(12000, 16000));
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    case EVENT_THIRD_ABILITY:
+                        if (UseAbility(_info->ThirdAbility))
+                            _events.ScheduleEvent(eventId, urand(6000, 8000));
+                        else
+                            _events.ScheduleEvent(eventId, 1000);
+                        break;
+                    case EVENT_ABILITY_CHARGE:
+                        if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, PlayerInRangePredicate(me, 8.0f, 25.0f)))
+                            DoCast(target, SPELL_CHARGE);
+                        _events.ScheduleEvent(eventId, 12000);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+        private:
+            bool _isInArena;
+            ArenaBoundary _boundary;
+        };
+
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
+        {
+            return GetUlduarAI<npc_thorim_arena_phaseAI>(creature);
+        }
+};
+
+struct npc_thorim_minibossAI : public ScriptedAI
+{
+    npc_thorim_minibossAI(Creature* creature) : ScriptedAI(creature), _summons(creature)
+    {
+        _instance = creature->GetInstanceScript();
+
+        // the mini bosses and their adds only fight players who are not in the arena
+        _boundary.Set(true, true);
+    }
+
+    bool CanAIAttack(Unit const* who) const OVERRIDE
+    {
+        return _boundary.IsInBoundary(who);
+    }
+
+    void JustSummoned(Creature* summon) OVERRIDE
+    {
+        _summons.Summon(summon);
+    }
+
+    void SummonedCreatureDespawn(Creature* summon) OVERRIDE
+    {
+        _summons.Despawn(summon);
+    }
+
+    void DoAction(int32 action) OVERRIDE
+    {
+        if (action == ACTION_ACTIVATE_ADDS)
+        {
+            for (SummonList::const_iterator itr = _summons.begin(); itr != _summons.end(); ++itr)
+                if (Creature* summon = Unit::GetCreature(*me, *itr))
+                    SetImmuneToPC(summon, false);
+        }
+    }
+
+protected:
+    InstanceScript* _instance;
+    EventMap _events;
+    SummonList _summons;
+    ArenaBoundary _boundary;
 };
 
 class npc_runic_colossus : public CreatureScript
@@ -1447,93 +1518,77 @@ class npc_runic_colossus : public CreatureScript
     public:
         npc_runic_colossus() : CreatureScript("npc_runic_colossus") { }
 
-        struct npc_runic_colossusAI : public ScriptedAI
+        struct npc_runic_colossusAI : public npc_thorim_minibossAI
         {
-            npc_runic_colossusAI(Creature* creature) : ScriptedAI(creature), _summons(me)
+            npc_runic_colossusAI(Creature* creature) : npc_thorim_minibossAI(creature)
             {
-                instance = creature->GetInstanceScript();
-                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
-                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_GRIP, true);
+                Initialize();
             }
 
-            void Reset() override
+            void Initialize()
             {
-                me->setActive(false);
-                me->GetMotionMaster()->MoveTargetedHome();
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                me->RemoveAurasDueToSpell(SPELL_BERSERK_PHASE_1);
-                _phase = PHASE_COLOSSUS_IDLE;
+                _runicActive = false;
+            }
+
+            void Reset() OVERRIDE
+            {
+                Initialize();
                 _events.Reset();
-                _events.SetPhase(_phase);
-                me->SetReactState(REACT_AGGRESSIVE);
-                // Runed Door closed
-                if (instance)
-                    instance->SetData(DATA_RUNIC_DOOR, uint32(GOState::GO_STATE_READY));
+
+                // close the Runic Door
+                _instance->HandleGameObject(_instance->GetData64(DATA_RUNIC_DOOR), false);
 
                 // Spawn trashes
                 _summons.DespawnAll();
-                for (uint8 i = 0; i < 6; i++)
-                    me->SummonCreature(colossusAddLocations[i].entry, colossusAddLocations[i].pos.GetPositionX(), colossusAddLocations[i].pos.GetPositionY(), colossusAddLocations[i].pos.GetPositionZ(),
-                    colossusAddLocations[i].pos.GetOrientation(), TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
+                for (SummonLocation const& s : ColossusAddLocations)
+                    me->SummonCreature(s.entry, s.pos, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
             }
 
-            void JustSummoned(Creature* summon) override
+            void MoveInLineOfSight(Unit* /*who*/) OVERRIDE
             {
-                _summons.Summon(summon);
+                // don't enter combat
             }
 
-            void JustDied(Unit* /*killer*/) override
+            void DoAction(int32 action) OVERRIDE
             {
-                // Runed Door opened
-                if (instance)
-                {
-                    instance->SetData(DATA_RUNIC_DOOR, uint32(GOState::GO_STATE_ACTIVE));
-                    if (Creature* thorim = me->GetCreature(*me, instance->GetData64(BOSS_THORIM)))
-                        thorim->AI()->Talk(SAY_SPECIAL);
-                }
-            }
+                npc_thorim_minibossAI::DoAction(action);
 
-            void DoAction(int32 action) override
-            {
-                switch (action)
-                {
-                    case ACTION_DOSCHEDULE_RUNIC_SMASH:
-                        _events.ScheduleEvent(EVENT_RUNIC_SMASH, 1*IN_MILLISECONDS, 0, PHASE_RUNIC_SMASH);
-                        _phase = PHASE_RUNIC_SMASH;
-                        _events.SetPhase(_phase);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            void DoRunicSmash(bool _side)
-            {
-                for (uint8 i = 0; i < 9; i++)
-                    if (Creature* bunny = me->SummonCreature(NPC_THORIM_GOLEM_RH_BUNNY, _side ? 2236.0f : 2219.0f, i * 10 - 380.0f, 412.2f, 0, TempSummonType::TEMPSUMMON_TIMED_DESPAWN, (5*IN_MILLISECONDS)))
-                        bunny->AI()->SetData(1, (i + 1)* 200);
-
-                for (uint8 i = 0; i < 9; i++)
-                    if (Creature* bunny = me->SummonCreature(NPC_THORIM_GOLEM_LH_BUNNY, _side ? 2246.0f : 2209.0f, i * 10 - 380.0f, 412.2f, 0, TempSummonType::TEMPSUMMON_TIMED_DESPAWN, (5*IN_MILLISECONDS)))
-                        bunny->AI()->SetData(1, (i + 1)* 200);
-            }
-
-            void EnterCombat(Unit* /*who*/) override
-            {
-                _phase = PHASE_MELEE;
-                _events.SetPhase(_phase);
-                _events.ScheduleEvent(EVENT_BARRIER, urand(12*IN_MILLISECONDS, 15*IN_MILLISECONDS), 0, _phase);
-                _events.ScheduleEvent(EVENT_SMASH, urand (15*IN_MILLISECONDS, 18*IN_MILLISECONDS), 0, _phase);
-                _events.ScheduleEvent(EVENT_COLOSSUS_CHARGE, urand (20*IN_MILLISECONDS, 24*IN_MILLISECONDS), 0, _phase);
-
-                me->InterruptNonMeleeSpells(true);
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (_phase == PHASE_COLOSSUS_IDLE || (!UpdateVictim() && _phase != PHASE_RUNIC_SMASH))
+                if (_runicActive)
                     return;
 
+                if (action == ACTION_ACTIVATE_RUNIC_SMASH)
+                {
+                    _runicActive = true;
+                    _events.ScheduleEvent(EVENT_RUNIC_SMASH, 7000);
+                }
+            }
+
+            void JustDied(Unit* /*killer*/) OVERRIDE
+            {
+                // open the Runic Door
+                _instance->HandleGameObject(_instance->GetData64(DATA_RUNIC_DOOR), true);
+
+                if (Creature* thorim = GetThorimCreature(_instance, BOSS_THORIM))
+                    thorim->AI()->Talk(SAY_SPECIAL);
+
+                if (Creature* giant = GetThorimCreature(_instance, DATA_RUNE_GIANT))
+                {
+                    SetImmuneToPC(giant, false);
+                    giant->AI()->DoAction(ACTION_ACTIVATE_ADDS);
+                }
+            }
+
+            void EnterCombat(Unit* /*who*/) OVERRIDE
+            {
+                DoZoneInCombat();
+                _events.Reset();
+                _events.ScheduleEvent(EVENT_RUNIC_BARRIER, urand(12000, 15000));
+                _events.ScheduleEvent(EVENT_SMASH, urand(15000, 18000));
+                _events.ScheduleEvent(EVENT_RUNIC_CHARGE, urand(20000, 24000));
+            }
+
+            void UpdateAI(uint32 diff) OVERRIDE
+            {
                 _events.Update(diff);
 
                 if (me->HasUnitState(UNIT_STATE_CASTING))
@@ -1543,113 +1598,46 @@ class npc_runic_colossus : public CreatureScript
                 {
                     switch (eventId)
                     {
-                        case EVENT_BARRIER:
-                            Talk(EMOTE_BARRIER);
-                            DoCast(me, SPELL_RUNIC_BARRIER);
-                            _events.ScheduleEvent(EVENT_BARRIER, urand(35*IN_MILLISECONDS, 45*IN_MILLISECONDS), PHASE_MELEE);
-                            return;
+                        case EVENT_RUNIC_BARRIER:
+                            Talk(EMOTE_RUNIC_BARRIER);
+                            DoCastAOE(SPELL_RUNIC_BARRIER);
+                            _events.ScheduleEvent(eventId, urand(35000, 45000));
+                            break;
                         case EVENT_SMASH:
-                            DoCast(me, SPELL_SMASH);
-                            _events.ScheduleEvent(EVENT_SMASH, urand(15*IN_MILLISECONDS, 18*IN_MILLISECONDS), PHASE_MELEE);
-                            return;
-                        case EVENT_CHARGE:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, -8.0f, true))
-                            {
+                            DoCastAOE(SPELL_SMASH);
+                            _events.ScheduleEvent(eventId, urand(15000, 18000));
+                            break;
+                        case EVENT_RUNIC_CHARGE:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, PlayerInRangePredicate(me, 8.0f, 40.0f)))
                                 DoCast(target, SPELL_RUNIC_CHARGE);
-                                _events.ScheduleEvent(EVENT_COLOSSUS_CHARGE, 20*IN_MILLISECONDS, 0, PHASE_MELEE);
-                            }
-                            else
-                                _events.ScheduleEvent(EVENT_COLOSSUS_CHARGE, 2*IN_MILLISECONDS, 0,PHASE_MELEE);
-                            return;
+                            _events.ScheduleEvent(eventId, 20000);
+                            break;
                         case EVENT_RUNIC_SMASH:
-                            _side = urand(0, 1);
-                            if (_side == 0)
-                                DoCast(me, SPELL_RUNIC_SMASH_RIGHT);
-                            else
-                                DoCast(me, SPELL_RUNIC_SMASH_LEFT);
-
-                            _events.ScheduleEvent(EVENT_SMASH_WAVE, 5.5*IN_MILLISECONDS, 0, PHASE_RUNIC_SMASH);
-                            _events.ScheduleEvent(EVENT_RUNIC_SMASH, 8*IN_MILLISECONDS, 0, PHASE_RUNIC_SMASH);
-                            return;
-                        case EVENT_SMASH_WAVE:
-                            if (!UpdateVictim())
-                                DoRunicSmash(_side);
-                            return;
+                            DoCast(me, urand(0, 1) ? SPELL_RUNIC_SMASH_LEFT : SPELL_RUNIC_SMASH_RIGHT);
+                            _events.ScheduleEvent(eventId, 6000);
+                            break;
                         default:
-                            return;
+                            break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
+
+                if (!UpdateVictim())
+                    return;
 
                 DoMeleeAttackIfReady();
             }
 
-            private:
-                InstanceScript* instance;
-                SummonList _summons;
-                EventMap _events;
-                Phases _phase;
-                bool _side;
+        private:
+            bool _runicActive;
         };
 
-        CreatureAI* GetAI(Creature* creature) const override
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return GetInstanceAI<npc_runic_colossusAI>(creature);
+            return GetUlduarAI<npc_runic_colossusAI>(creature);
         }
-};
-
-class npc_runic_smash : public CreatureScript
-{
-    public:
-        npc_runic_smash() : CreatureScript("npc_runic_smash") { }
-
-        struct npc_runic_smashAI : public ScriptedAI
-        {
-            npc_runic_smashAI(Creature* creature) : ScriptedAI(creature)
-            {
-                me->SetReactState(REACT_PASSIVE);
-                me->SetDisplayFromModel(1);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
-                SetCombatMovement(false);
-            }
-
-            void Reset() override
-            {
-                ExplodeTimer = 10*IN_MILLISECONDS;
-            }
-
-            void SetData(uint32 /*type*/, uint32 data) override
-            {
-                ExplodeTimer = data;
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                if (ExplodeTimer <= diff)
-                {
-                    DoCastAOE(SPELL_RUNIC_SMASH, true);
-                    ExplodeTimer = 10*IN_MILLISECONDS;
-                }
-                else ExplodeTimer -= diff;
-            }
-
-            private:
-                uint32 ExplodeTimer;
-        };
-
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return GetInstanceAI<npc_runic_smashAI>(creature);
-        }
-};
-
-SummonLocation giantAddLocations[]=
-{
-    {{2198.05f, -428.77f, 419.95f, 6.056f}, 32875},
-    {{2220.31f, -436.22f, 412.26f, 1.064f}, 32875},
-    {{2158.88f, -441.73f, 438.25f, 0.127f}, 32875},
-    {{2198.29f, -436.92f, 419.95f, 0.261f}, 33110},
-    {{2230.93f, -434.27f, 412.26f, 1.931f}, 33110}
 };
 
 class npc_ancient_rune_giant : public CreatureScript
@@ -1657,55 +1645,39 @@ class npc_ancient_rune_giant : public CreatureScript
     public:
         npc_ancient_rune_giant() : CreatureScript("npc_ancient_rune_giant") { }
 
-        struct npc_ancient_rune_giantAI : public ScriptedAI
+        struct npc_ancient_rune_giantAI : public npc_thorim_minibossAI
         {
-            npc_ancient_rune_giantAI(Creature* creature) : ScriptedAI(creature), _summons(me)
+            npc_ancient_rune_giantAI(Creature* creature) : npc_thorim_minibossAI(creature) { }
+
+            void Reset() OVERRIDE
             {
-                instance = creature->GetInstanceScript();
-                me->ApplySpellImmune(0, IMMUNITY_EFFECT, SPELL_EFFECT_KNOCK_BACK, true);
-                me->ApplySpellImmune(0, IMMUNITY_MECHANIC, MECHANIC_GRIP, true);
-            }
-
-            void Reset() override
-            {
-                me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC);
-                me->RemoveAurasDueToSpell(SPELL_BERSERK_PHASE_1);
-
-                me->GetMotionMaster()->MoveTargetedHome();
-
                 _events.Reset();
 
-                // Stone Door closed
-                if (instance)
-                    instance->SetData(DATA_STONE_DOOR, uint32(GOState::GO_STATE_READY));
+                // close the Stone Door
+                _instance->HandleGameObject(_instance->GetData64(DATA_STONE_DOOR), false);
 
                 // Spawn trashes
                 _summons.DespawnAll();
-                for (uint8 i = 0; i < 5; i++)
-                    me->SummonCreature(giantAddLocations[i].entry, giantAddLocations[i].pos.GetPositionX(), giantAddLocations[i].pos.GetPositionY(), giantAddLocations[i].pos.GetPositionZ(),
-                    giantAddLocations[i].pos.GetOrientation(),TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, (3*IN_MILLISECONDS));
+                for (SummonLocation const& s : GiantAddLocations)
+                    me->SummonCreature(s.entry, s.pos, TempSummonType::TEMPSUMMON_CORPSE_TIMED_DESPAWN, 3000);
             }
 
-            void JustSummoned(Creature *summon) override
+            void EnterCombat(Unit* /*who*/) OVERRIDE
             {
-                _summons.Summon(summon);
+                DoZoneInCombat();
+                _events.Reset();
+                _events.ScheduleEvent(EVENT_RUNIC_FORTIFICATION, 1);
+                _events.ScheduleEvent(EVENT_STOMP, urand(10000, 12000));
+                _events.ScheduleEvent(EVENT_RUNE_DETONATION, 25000);
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void JustDied(Unit* /*killer*/) OVERRIDE
             {
-                DoCast(me, SPELL_RUNIC_FORTIFICATION);
-                _events.ScheduleEvent(EVENT_STOMP, urand(10*IN_MILLISECONDS, 12*IN_MILLISECONDS));
-                _events.ScheduleEvent(EVENT_DETONATION, 25*IN_MILLISECONDS);
+                // open the Stone Door
+                _instance->HandleGameObject(_instance->GetData64(DATA_STONE_DOOR), true);
             }
 
-            void JustDied(Unit* /*killer*/) override
-            {
-                // Stone Door opened
-                if (instance)
-                    instance->SetData(DATA_STONE_DOOR, uint32(GOState::GO_STATE_ACTIVE));
-            }
-
-            void UpdateAI(uint32 diff) override
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -1719,36 +1691,34 @@ class npc_ancient_rune_giant : public CreatureScript
                 {
                     switch (eventId)
                     {
+                        case EVENT_RUNIC_FORTIFICATION:
+                            Talk(EMOTE_RUNIC_MIGHT);
+                            DoCastAOE(SPELL_RUNIC_FORTIFICATION);
+                            break;
                         case EVENT_STOMP:
-                            DoCast(me, SPELL_STOMP);
-                            _events.ScheduleEvent(EVENT_STOMP, urand(10*IN_MILLISECONDS, 12*IN_MILLISECONDS));
-                            return;
-                        case EVENT_DETONATION:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f, true))
-                            {
+                            DoCastAOE(SPELL_STOMP);
+                            _events.ScheduleEvent(eventId, urand(10000, 12000));
+                            break;
+                        case EVENT_RUNE_DETONATION:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 60.0f, true))
                                 DoCast(target, SPELL_RUNE_DETONATION);
-                                _events.ScheduleEvent(EVENT_DETONATION, urand(10*IN_MILLISECONDS, 12*IN_MILLISECONDS));
-                            }
-                            else
-                                _events.ScheduleEvent(EVENT_DETONATION, urand(2*IN_MILLISECONDS, 3*IN_MILLISECONDS));
-                            return;
+                            _events.ScheduleEvent(eventId, urand(10000, 12000));
+                            break;
                         default:
-                            return;
+                            break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
 
                 DoMeleeAttackIfReady();
             }
-
-            private:
-                InstanceScript* instance;
-                SummonList _summons;
-                EventMap _events;
         };
 
-        CreatureAI* GetAI(Creature* creature) const override
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return GetInstanceAI<npc_ancient_rune_giantAI>(creature);
+            return GetUlduarAI<npc_ancient_rune_giantAI>(creature);
         }
 };
 
@@ -1761,43 +1731,41 @@ class npc_sif : public CreatureScript
         {
             npc_sifAI(Creature* creature) : ScriptedAI(creature)
             {
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_PACIFIED | UNIT_FLAG_DISABLE_MOVE);
+                SetCombatMovement(false);
+                _instance = creature->GetInstanceScript();
             }
 
-            void Reset() override
+            void Reset() OVERRIDE
             {
                 _events.Reset();
-                _events.ScheduleEvent(EVENT_FROSTBOLT, 2*IN_MILLISECONDS);
-                _events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, 15*IN_MILLISECONDS);
-                _events.ScheduleEvent(EVENT_BLIZZARD, 30*IN_MILLISECONDS);
-                _events.ScheduleEvent(EVENT_FROST_NOVA, urand(20*IN_MILLISECONDS, 25*IN_MILLISECONDS));
-                _events.ScheduleEvent(EVENT_TELEPORT, urand(20*IN_MILLISECONDS, 35*IN_MILLISECONDS));
             }
 
-            void DoAction(int32 action) override
+            void SpellHit(Unit* /*caster*/, SpellInfo const* spellInfo) OVERRIDE
             {
-                switch (action)
+                if (spellInfo->Id == SPELL_STORMHAMMER_SIF)
                 {
-                    case ACTION_ENCOUNTER_COMPLETE:
-                        _events.Reset();
-                        me->InterruptNonMeleeSpells(false);
-                        me->SetReactState(REACT_PASSIVE);
-                        me->AttackStop();
-                        me->CombatStop(true);
-                        me->DespawnOrUnsummon(8000);
-                        break;
-                    default:
-                        break;
+                    me->InterruptSpell(CURRENT_GENERIC_SPELL);
+                    me->SetReactState(REACT_PASSIVE);
+                    me->AttackStop();
                 }
             }
 
-            void SpellHit(Unit* caster, SpellInfo const* spell) override
+            void DoAction(int32 action) OVERRIDE
             {
-                if (spell->Id == SPELL_STORMHAMMER_SIF)
-                    DoCast(me, SPELL_SIF_TRANSFORM, true);
+                if (action == ACTION_START_HARD_MODE)
+                {
+                    me->SetReactState(REACT_AGGRESSIVE);
+                    DoZoneInCombat(me);
+                    Talk(SAY_SIF_EVENT);
+                    _events.Reset();
+                    _events.ScheduleEvent(EVENT_FROSTBOLT, 2000);
+                    _events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, 15000);
+                    _events.ScheduleEvent(EVENT_BLINK, urand(20000, 25000));
+                    _events.ScheduleEvent(EVENT_BLIZZARD, 30000);
+                }
             }
 
-            void UpdateAI(uint32 diff) override
+            void UpdateAI(uint32 diff) OVERRIDE
             {
                 if (!UpdateVictim())
                     return;
@@ -1811,559 +1779,593 @@ class npc_sif : public CreatureScript
                 {
                     switch (eventId)
                     {
-                        case EVENT_FROSTBOLT:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 60.0f, true))
-                                DoCast(target, SPELL_FROSTBOLT);
-                            _events.ScheduleEvent(EVENT_FROSTBOLT, 4*IN_MILLISECONDS);
-                            return;
-                        case EVENT_FROSTBOLT_VOLLEY:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 40.0f, true))
-                            {
-                                DoResetThreat();
-                                me->AddThreat(target, 5000000.0f);
-                                DoCast(target, SPELL_FROSTBOLT_VOLLEY, true);
-                                _events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, urand(15*IN_MILLISECONDS, 20*IN_MILLISECONDS));
-                            }
-                            else
-                                _events.ScheduleEvent(EVENT_FROSTBOLT_VOLLEY, urand(1.5*IN_MILLISECONDS, 2*IN_MILLISECONDS));
-                            return;
-                        case EVENT_BLIZZARD:
-                            DoCast(me, SPELL_BLIZZARD, true);
-                            _events.ScheduleEvent(EVENT_BLIZZARD, 45*IN_MILLISECONDS);
+                        case EVENT_BLINK:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                                DoCast(target, SPELL_BLINK);
+                            _events.ScheduleEvent(EVENT_FROST_NOVA, 1);
+                            _events.ScheduleEvent(eventId, urand(20000, 25000));
                             return;
                         case EVENT_FROST_NOVA:
-                            DoCastAOE(SPELL_FROSTNOVA, true);
-                            _events.ScheduleEvent(EVENT_FROST_NOVA, urand(20*IN_MILLISECONDS, 25*IN_MILLISECONDS));
+                            DoCastAOE(SPELL_FROSTNOVA);
                             return;
-                        case EVENT_TELEPORT:
-                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 60.0f, true))
-                                me->NearTeleportTo(target->GetPositionX(), target->GetPositionY(), target->GetPositionZ(), target->GetOrientation());
-                            _events.ScheduleEvent(EVENT_TELEPORT, urand(20*IN_MILLISECONDS, 35*IN_MILLISECONDS));
+                        case EVENT_FROSTBOLT:
+                            if (Unit* target = SelectTarget(SELECT_TARGET_RANDOM, 0, 100.0f, true))
+                                DoCast(target, SPELL_FROSTBOLT);
+                            _events.ScheduleEvent(eventId, 2000);
+                            return;
+                        case EVENT_FROSTBOLT_VOLLEY:
+                            DoCastAOE(SPELL_FROSTBOLT_VOLLEY);
+                            _events.ScheduleEvent(eventId, urand(15000, 20000));
+                            return;
+                        case EVENT_BLIZZARD:
+                            DoCastAOE(SPELL_BLIZZARD);
+                            _events.ScheduleEvent(eventId, urand(35000, 45000));
                             return;
                         default:
-                            return;
+                            break;
                     }
+
+                    if (me->HasUnitState(UNIT_STATE_CASTING))
+                        return;
                 }
-            }
 
-            private:
-                EventMap _events;
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return GetInstanceAI<npc_sifAI>(creature);
-        }
-};
-
-class npc_lightning_orb : public CreatureScript
-{
-    public:
-        npc_lightning_orb() : CreatureScript("npc_lightning_orb") { }
-
-        struct npc_lightning_orbAI : public ScriptedAI
-        {
-            npc_lightning_orbAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void Reset() override
-            {
-                me->SetReactState(REACT_PASSIVE);
-                me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
-                me->GetMotionMaster()->MovePath(NPC_LIGHTNING_ORB, false);
-            }
-
-            void MovementInform(uint32 type, uint32 point) override
-            {
-                if (type == WAYPOINT_MOTION_TYPE && point == 7)
-                    me->DespawnOrUnsummon(5000);
-            }
-
-            void UpdateAI(uint32 /*diff*/) override { }
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return GetInstanceAI<npc_lightning_orbAI>(creature);
-        }
-};
-
-class npc_thorim_combat_trigger : public CreatureScript
-{
-    public:
-        npc_thorim_combat_trigger() : CreatureScript("npc_thorim_combat_trigger") { }
-
-        struct npc_thorim_combat_triggerAI : public ScriptedAI
-        {
-            npc_thorim_combat_triggerAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void Reset() override
-            {
-                _events.Reset();
-            }
-
-            void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
-            {
-                switch (spell->Id)
-                {
-                    case SPELL_LIGHTNING_PILLAR:
-                        _events.ScheduleEvent(EVENT_LIGHTING_BOLT_TRIGGER, 500);
-                        break;
-                    case SPELL_LIGHTNING_RELEASE:
-                        _events.CancelEvent(EVENT_LIGHTING_BOLT_TRIGGER);
-                        me->InterruptNonMeleeSpells(true);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            void UpdateAI(uint32 diff) override
-            {
-                _events.Update(diff);
-
-                if (me->HasUnitState(UNIT_STATE_CASTING))
-                    return;
-
-                while (uint32 eventId = _events.ExecuteEvent())
-                {
-                    if (eventId == EVENT_LIGHTING_BOLT_TRIGGER)
-                    {
-                        DoCast(SPELL_LIGHTING_BOLT_DUMMY);
-                        _events.ScheduleEvent(EVENT_LIGHTING_BOLT_TRIGGER, 1000);
-                    }
-                }
-            }
-
-            private:
-                EventMap _events;
-        };
-
-        CreatureAI* GetAI(Creature* creature) const override
-        {
-            return GetInstanceAI<npc_thorim_combat_triggerAI>(creature);
-        }
-};
-
-class npc_thorim_trap_bunny : public CreatureScript
-{
-    public:
-        npc_thorim_trap_bunny() : CreatureScript("npc_thorim_trap_bunny") { }
-
-        struct npc_thorim_trap_bunnyAI : public ScriptedAI
-        {
-            npc_thorim_trap_bunnyAI(Creature* creature) : ScriptedAI(creature) { }
-
-            void Reset() override
-            {
-                me->SetReactState(REACT_AGGRESSIVE);
-            }
-
-            void MoveInLineOfSight(Unit* who) override
-            {
-                if (!cooldown && me->GetExactDist(who) <= 12.0f && me->CanStartAttack(who, false))
-                {
-                    cooldown = MINUTE * IN_MILLISECONDS;
-                    DoCastAOE(me->GetEntry() == NPC_THORIM_TRAP_BUNNY_1 ? SPELL_PARALYTIC_FIELD_1 : SPELL_PARALYTIC_FIELD_2, true);
-                }
-            }
-
-            void EnterCombat(Unit* who) override
-            {
-                EnterEvadeMode();
-            }
-
-            void AttackStart(Unit* victim) override { }
-
-            void UpdateAI(uint32 diff) override
-            {
-                UpdateVictim();
-
-                if (cooldown)
-                {
-                    if (cooldown <= diff)
-                        cooldown = 0;
-                    else
-                        cooldown -= diff;
-                }
+                // no melee attack
             }
 
         private:
-            uint32 cooldown = 0;
+            EventMap _events;
+            InstanceScript* _instance;
         };
 
-        CreatureAI* GetAI(Creature* creature) const override
+        CreatureAI* GetAI(Creature* creature) const OVERRIDE
         {
-            return GetInstanceAI<npc_thorim_trap_bunnyAI>(creature);
+            return GetUlduarAI<npc_sifAI>(creature);
         }
 };
 
-std::map<uint32, uint32> const EventBunnyConnections =
-{
-    std::make_pair(507791, 507789),
-    std::make_pair(507789, 507802),
-    std::make_pair(507802, 507794),
-    std::make_pair(507794, 507795),
-    std::make_pair(507795, 507805),
-    std::make_pair(507805, 0),
-    std::make_pair(507797, 0),
-    std::make_pair(507798, 0),
-    std::make_pair(507799, 0),
-    std::make_pair(507808, 0),
-    std::make_pair(507809, 0),
-};
-
-class npc_thorim_event_bunny : public CreatureScript
+// 62576 - Blizzard
+// 62602 - Blizzard
+class spell_thorim_blizzard_effect : public SpellScriptLoader
 {
     public:
-        npc_thorim_event_bunny() : CreatureScript("npc_thorim_event_bunny") { }
+        spell_thorim_blizzard_effect() : SpellScriptLoader("spell_thorim_blizzard_effect") { }
 
-        struct npc_thorim_event_bunnyAI : public ScriptedAI
+        class spell_thorim_blizzard_effect_AuraScript : public AuraScript
         {
-            npc_thorim_event_bunnyAI(Creature* creature) : ScriptedAI(creature) { }
+            PrepareAuraScript(spell_thorim_blizzard_effect_AuraScript);
 
-            void DoAction(int32 action) override
+            bool CheckAreaTarget(Unit* target)
             {
-                switch (action)
+                /// @todo: fix this for all dynobj auras
+                if (target != GetOwner())
                 {
-                    case ACTION_START_EVENT_BUNNY_START:
+                    // check if not stacking aura already on target
+                    // this one prevents overriding auras periodically by 2 near area aura owners
+                    Unit::AuraApplicationMap const& auraMap = target->GetAppliedAuras();
+                    for (Unit::AuraApplicationMap::const_iterator iter = auraMap.begin(); iter != auraMap.end(); ++iter)
                     {
-                        auto itr = EventBunnyConnections.find(me->GetDBTableGUIDLow());
-                        if (itr == EventBunnyConnections.end())
-                            return;
-
-                        if (uint32 guid = itr->second)
-                        {
-                            std::list<Creature*> bunnies;
-                            GetCreatureListWithEntryInGrid(bunnies, me, NPC_THORIM_EVENT_BUNNY, 20.0f);
-                            bunnies.remove_if([guid](Creature* bunny) { return bunny->GetDBTableGUIDLow() != guid; });
-                            if (!bunnies.empty())
-                                DoCast(bunnies.front(), SPELL_COSMETIC_LIGHTNING_BEAM, true);
-                        }
-                        else
-                            timer = 1;
-
-                        break;
+                        Aura const* aura = iter->second->GetBase();
+                        if (GetId() == aura->GetId() && GetOwner() != aura->GetOwner() /*!GetAura()->CanStackWith(aura)*/)
+                            return false;
                     }
-                    case ACTION_START_EVENT_BUNNY_STOP:
-                        timer = 0;
-                        me->InterruptSpell(CURRENT_CHANNELED_SPELL);
-                        break;
-                    default:
-                        break;
                 }
+
+                return true;
             }
 
-            void EnterCombat(Unit* /*who*/) override
+            void Register() OVERRIDE
             {
-                EnterEvadeMode();
+                DoCheckAreaTarget += AuraCheckAreaTargetFn(spell_thorim_blizzard_effect_AuraScript::CheckAreaTarget);
             }
-
-            void AttackStart(Unit* /*victim*/) override { }
-
-            void UpdateAI(uint32 diff) override
-            {
-                UpdateVictim();
-
-                if (timer)
-                {
-                    if (timer <= diff)
-                    {
-                        DoCastAOE(SPELL_LIGHTNING_FIELD, true);
-                        timer += 1 * IN_MILLISECONDS;
-                    }
-                    else
-                        timer -= diff;
-                }
-            }
-
-        private:
-            uint32 timer = 0;
         };
 
-        CreatureAI* GetAI(Creature* creature) const override
+        AuraScript* GetAuraScript() const OVERRIDE
         {
-            return GetInstanceAI<npc_thorim_event_bunnyAI>(creature);
+            return new spell_thorim_blizzard_effect_AuraScript();
         }
 };
 
-class spell_stormhammer_targeting : public SpellScriptLoader
+// 62580, 62604 - Frostbolt Volley
+class spell_thorim_frostbolt_volley : public SpellScriptLoader
 {
     public:
-        spell_stormhammer_targeting() : SpellScriptLoader("spell_stormhammer_targeting") { }
+        spell_thorim_frostbolt_volley() : SpellScriptLoader("spell_thorim_frostbolt_volley") { }
 
-        class spell_stormhammer_targeting_SpellScript : public SpellScript
+        class spell_thorim_frostbolt_volley_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_stormhammer_targeting_SpellScript);
+            PrepareSpellScript(spell_thorim_frostbolt_volley_SpellScript);
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                _target = nullptr;
-                targets.remove_if(ArenaAreaCheck(false));
+                targets.remove_if([](WorldObject* object) -> bool
+                {
+                    if (object->GetTypeId() == TypeID::TYPEID_PLAYER)
+                        return false;
+
+                    if (Creature* creature = object->ToCreature())
+                        return !creature->IsPet();
+
+                    return true;
+                });
+            }
+
+            void Register() OVERRIDE
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_frostbolt_volley_SpellScript::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ENEMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_thorim_frostbolt_volley_SpellScript();
+        }
+};
+
+// 62016 - Charge Orb
+class spell_thorim_charge_orb : public SpellScriptLoader
+{
+    public:
+        spell_thorim_charge_orb() : SpellScriptLoader("spell_thorim_charge_orb") { }
+
+        class spell_thorim_charge_orb_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_thorim_charge_orb_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_LIGHTNING_PILLAR_1) != NULL;
+            }
+
+            void FilterTargets(std::list<WorldObject*>& targets)
+            {
+                targets.remove_if(HeightPositionCheck(false));
 
                 if (targets.empty())
                     return;
 
-                _target = Skyfire::Containers::SelectRandomContainerElement(targets);
-                SetTarget(targets);
-            }
-
-            void SetTarget(std::list<WorldObject*>& targets)
-            {
+                WorldObject* target = Skyfire::Containers::SelectRandomContainerElement(targets);
                 targets.clear();
-
-                if (_target)
-                    targets.push_back(_target);
+                targets.push_back(target);
             }
 
-            void Register() override
+            void HandleScript()
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_stormhammer_targeting_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_stormhammer_targeting_SpellScript::SetTarget, EFFECT_1, TARGET_UNIT_SRC_AREA_ENEMY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_stormhammer_targeting_SpellScript::SetTarget, EFFECT_2, TARGET_UNIT_SRC_AREA_ENEMY);
+                if (Unit* target = GetHitUnit())
+                    target->CastSpell((Unit*)NULL, SPELL_LIGHTNING_PILLAR_1, true);
             }
 
-            private:
-                WorldObject* _target;
+            void Register() OVERRIDE
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_charge_orb_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                AfterHit += SpellHitFn(spell_thorim_charge_orb_SpellScript::HandleScript);
+            }
         };
 
-        SpellScript* GetSpellScript() const override
+        SpellScript* GetSpellScript() const OVERRIDE
         {
-            return new spell_stormhammer_targeting_SpellScript();
+            return new spell_thorim_charge_orb_SpellScript();
         }
 };
 
-class spell_thorim_charge_orb_targeting : public SpellScriptLoader
+// 62466 - Lightning Charge
+class spell_thorim_lightning_charge : public SpellScriptLoader
 {
     public:
-        spell_thorim_charge_orb_targeting() : SpellScriptLoader("spell_thorim_charge_orb_targeting") { }
+        spell_thorim_lightning_charge() : SpellScriptLoader("spell_thorim_lightning_charge") { }
 
-        class spell_thorim_charge_orb_targeting_SpellScript : public SpellScript
+        class spell_thorim_lightning_charge_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_thorim_charge_orb_targeting_SpellScript);
+            PrepareSpellScript(spell_thorim_lightning_charge_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_LIGHTNING_CHARGE) != NULL;
+            }
+
+            void HandleFocus()
+            {
+                // the cast is triggered and instant, so face the target by hand
+                if (WorldObject* target = GetExplTargetWorldObject())
+                    GetCaster()->SetFacingToObject(target);
+            }
+
+            void HandleCharge()
+            {
+                GetCaster()->CastSpell(GetCaster(), SPELL_LIGHTNING_CHARGE, false);
+            }
+
+            void Register() OVERRIDE
+            {
+                BeforeCast += SpellCastFn(spell_thorim_lightning_charge_SpellScript::HandleFocus);
+                AfterCast += SpellCastFn(spell_thorim_lightning_charge_SpellScript::HandleCharge);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_thorim_lightning_charge_SpellScript();
+        }
+};
+
+// 61934 - Leap
+class spell_thorim_arena_leap : public SpellScriptLoader
+{
+    public:
+        spell_thorim_arena_leap() : SpellScriptLoader("spell_thorim_arena_leap") { }
+
+        class spell_thorim_arena_leap_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_thorim_arena_leap_SpellScript);
+
+            bool Load() OVERRIDE
+            {
+                return GetCaster()->GetTypeId() == TypeID::TYPEID_UNIT;
+            }
+
+            void HandleScript(SpellEffIndex /*effIndex*/)
+            {
+                if (Position const* pos = GetHitDest())
+                    GetCaster()->ToCreature()->SetHomePosition(*pos);
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectLaunch += SpellEffectFn(spell_thorim_arena_leap_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_JUMP_DEST);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_thorim_arena_leap_SpellScript();
+        }
+};
+
+// 62042 - Stormhammer
+class spell_thorim_stormhammer : public SpellScriptLoader
+{
+    public:
+        spell_thorim_stormhammer() : SpellScriptLoader("spell_thorim_stormhammer") { }
+
+        class spell_thorim_stormhammer_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_thorim_stormhammer_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_STORMHAMMER_BOOMERANG) && sSpellMgr->GetSpellInfo(SPELL_DEAFENING_THUNDER);
+            }
 
             void FilterTargets(std::list<WorldObject*>& targets)
             {
-                _target = nullptr;
+                targets.remove_if([](WorldObject* target) -> bool { return HeightPositionCheck(true)(target) || OutOfArenaCheck()(target); });
 
                 if (targets.empty())
+                {
+                    FinishCast(SpellCastResult::SPELL_FAILED_NO_VALID_TARGETS);
                     return;
+                }
 
-                // Charge Orb should be cast always only on 1 orb
-                _target = Skyfire::Containers::SelectRandomContainerElement(targets);
-                SetTarget(targets);
-            }
-
-            void SetTarget(std::list<WorldObject*>& targets)
-            {
+                WorldObject* target = Skyfire::Containers::SelectRandomContainerElement(targets);
                 targets.clear();
-
-                if (_target)
-                    targets.push_back(_target);
+                targets.push_back(target);
             }
 
-            void Register() override
+            void HandleScript(SpellEffIndex /*effIndex*/)
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_charge_orb_targeting_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_charge_orb_targeting_SpellScript::SetTarget, EFFECT_0, TARGET_UNIT_SRC_AREA_ENTRY);
+                if (Unit* target = GetHitUnit())
+                {
+                    target->CastSpell(target, SPELL_DEAFENING_THUNDER, true);
+                    target->CastSpell(GetCaster(), SPELL_STORMHAMMER_BOOMERANG, true);
+                }
             }
 
-            private:
-                WorldObject* _target;
+            void LoseHammer()
+            {
+                GetCaster()->SetUInt32Value(UNIT_FIELD_VIRTUAL_ITEM_ID, 0);
+            }
+
+            void Register() OVERRIDE
+            {
+                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_stormhammer_SpellScript::FilterTargets, EFFECT_ALL, TARGET_UNIT_SRC_AREA_ENEMY);
+                AfterCast += SpellCastFn(spell_thorim_stormhammer_SpellScript::LoseHammer);
+                OnEffectHitTarget += SpellEffectFn(spell_thorim_stormhammer_SpellScript::HandleScript, EFFECT_2, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
         };
 
-        SpellScript* GetSpellScript() const override
+        SpellScript* GetSpellScript() const OVERRIDE
         {
-            return new spell_thorim_charge_orb_targeting_SpellScript();
+            return new spell_thorim_stormhammer_SpellScript();
         }
 };
 
-class spell_thorim_berserk : public SpellScriptLoader
+// 64767 - Stormhammer
+class spell_thorim_stormhammer_sif : public SpellScriptLoader
 {
     public:
-        spell_thorim_berserk() : SpellScriptLoader("spell_thorim_berserk") { }
+        spell_thorim_stormhammer_sif() : SpellScriptLoader("spell_thorim_stormhammer_sif") { }
 
-        class spell_thorim_berserk_SpellScript : public SpellScript
+        class spell_thorim_stormhammer_sif_SpellScript : public SpellScript
         {
-            PrepareSpellScript(spell_thorim_berserk_SpellScript);
+            PrepareSpellScript(spell_thorim_stormhammer_sif_SpellScript);
 
-            void FilterTargets(std::list<WorldObject*>& targets)
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
             {
-                targets.remove_if(BerserkSelector());
+                return sSpellMgr->GetSpellInfo(SPELL_STORMHAMMER_BOOMERANG) && sSpellMgr->GetSpellInfo(SPELL_SIF_TRANSFORM);
             }
 
-            void Register() override
+            void HandleScript(SpellEffIndex /*effIndex*/)
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_berserk_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_SRC_AREA_ENTRY);
+                if (Unit* target = GetHitUnit())
+                {
+                    target->CastSpell(GetCaster(), SPELL_STORMHAMMER_BOOMERANG, true);
+                    target->CastSpell(target, SPELL_SIF_TRANSFORM, true);
+                }
             }
 
-            private:
-                WorldObject* _target;
+            void LoseHammer()
+            {
+                GetCaster()->SetUInt32Value(UNIT_FIELD_VIRTUAL_ITEM_ID, 0);
+            }
+
+            void Register() OVERRIDE
+            {
+                AfterCast += SpellCastFn(spell_thorim_stormhammer_sif_SpellScript::LoseHammer);
+                OnEffectHitTarget += SpellEffectFn(spell_thorim_stormhammer_sif_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
+            }
         };
 
-        SpellScript* GetSpellScript() const override
+        SpellScript* GetSpellScript() const OVERRIDE
         {
-            return new spell_thorim_berserk_SpellScript();
+            return new spell_thorim_stormhammer_sif_SpellScript();
         }
 };
 
-class LightingReleaseTargetFilter
+// 64909 - Stormhammer
+class spell_thorim_stormhammer_boomerang : public SpellScriptLoader
 {
     public:
-        explicit LightingReleaseTargetFilter(Unit* caster) : _caster(caster) { }
+        spell_thorim_stormhammer_boomerang() : SpellScriptLoader("spell_thorim_stormhammer_boomerang") { }
 
-        bool operator()(WorldObject* unit) const
+        class spell_thorim_stormhammer_boomerang_SpellScript : public SpellScript
         {
-            return !unit->IsWithinLOSInMap(_caster);
+            PrepareSpellScript(spell_thorim_stormhammer_boomerang_SpellScript);
+
+            void RecoverHammer(SpellEffIndex /*effIndex*/)
+            {
+                if (Unit* target = GetHitUnit())
+                    target->SetUInt32Value(UNIT_FIELD_VIRTUAL_ITEM_ID, THORIM_WEAPON_ITEM_ID);
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_thorim_stormhammer_boomerang_SpellScript::RecoverHammer, EFFECT_0, SPELL_EFFECT_DUMMY);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_thorim_stormhammer_boomerang_SpellScript();
+        }
+};
+
+// 62057, 62058 - Runic Smash
+class spell_thorim_runic_smash : public SpellScriptLoader
+{
+    public:
+        spell_thorim_runic_smash() : SpellScriptLoader("spell_thorim_runic_smash") { }
+
+        class spell_thorim_runic_smash_SpellScript : public SpellScript
+        {
+            PrepareSpellScript(spell_thorim_runic_smash_SpellScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
+            {
+                return sSpellMgr->GetSpellInfo(SPELL_RUNIC_SMASH) != NULL;
+            }
+
+            void HandleScript(SpellEffIndex effIndex)
+            {
+                PreventHitDefaultEffect(effIndex);
+
+                std::list<Creature*> triggers;
+                GetCaster()->GetCreatureListWithEntryInGrid(triggers, GetSpellInfo()->Id == SPELL_RUNIC_SMASH_LEFT ? NPC_GOLEM_LEFT_HAND_BUNNY : NPC_GOLEM_RIGHT_HAND_BUNNY, 150.0f);
+                for (Creature* trigger : triggers)
+                {
+                    uint32 time = uint32(GetCaster()->GetExactDist(trigger) * 30.f);
+                    trigger->m_Events.AddEvent(new RunicSmashExplosionEvent(trigger), trigger->m_Events.CalculateTime(time));
+                }
+            }
+
+            void Register() OVERRIDE
+            {
+                OnEffectHitTarget += SpellEffectFn(spell_thorim_runic_smash_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_TRIGGER_SPELL);
+            }
+        };
+
+        SpellScript* GetSpellScript() const OVERRIDE
+        {
+            return new spell_thorim_runic_smash_SpellScript();
+        }
+};
+
+class UpperOrbCheck
+{
+    public:
+        UpperOrbCheck() : _check(true) { }
+
+        bool operator() (Creature* target) const
+        {
+            return target->GetEntry() == NPC_THUNDER_ORB && _check(target);
         }
 
     private:
-        Unit* _caster;
+        HeightPositionCheck const _check;
 };
 
-class spell_thorim_lightning_release : public SpellScriptLoader
+// 62184 - Activate Lightning Orb Periodic
+class spell_thorim_activate_lightning_orb_periodic : public SpellScriptLoader
 {
     public:
-        spell_thorim_lightning_release() : SpellScriptLoader("spell_thorim_lightning_release") { }
+        spell_thorim_activate_lightning_orb_periodic() : SpellScriptLoader("spell_thorim_activate_lightning_orb_periodic") { }
 
-        class spell_thorim_lightning_release_SpellScript : public SpellScript
+        class spell_thorim_activate_lightning_orb_periodic_AuraScript : public AuraScript
         {
-            PrepareSpellScript(spell_thorim_lightning_release_SpellScript);
+            PrepareAuraScript(spell_thorim_activate_lightning_orb_periodic_AuraScript);
 
-            void FilterTargets(std::list<WorldObject*>& targets)
+            InstanceScript* instance;
+
+            void PeriodicTick(AuraEffect const* /*aurEff*/)
             {
-                targets.remove_if(LightingReleaseTargetFilter(GetCaster()));
+                PreventDefaultAction();
+
+                Unit* caster = GetCaster();
+                std::list<Creature*> triggers;
+
+                UpperOrbCheck check;
+                Skyfire::CreatureListSearcher<UpperOrbCheck> searcher(caster, triggers, check);
+                caster->VisitNearbyObject(100.0f, searcher);
+
+                if (!triggers.empty())
+                {
+                    Creature* target = Skyfire::Containers::SelectRandomContainerElement(triggers);
+                    if (Creature* thorim = GetThorimCreature(instance, BOSS_THORIM))
+                        thorim->AI()->SetGUID(target->GetGUID(), DATA_CHARGED_PILLAR);
+                }
             }
 
-            void Register() override
+            bool Load() OVERRIDE
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_lightning_release_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_TARGET_ANY);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_lightning_release_SpellScript::FilterTargets, EFFECT_1, TARGET_UNIT_CONE_ENEMY_104);
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_lightning_release_SpellScript::FilterTargets, EFFECT_2, TARGET_UNIT_CONE_ENTRY);
-            }
-        };
+                instance = NULL;
+                if (Unit* caster = GetCaster())
+                    instance = caster->GetInstanceScript();
 
-        SpellScript* GetSpellScript() const override
-        {
-            return new spell_thorim_lightning_release_SpellScript();
-        }
-};
-
-class spell_thorim_lightning_destruction : public SpellScriptLoader
-{
-    public:
-        spell_thorim_lightning_destruction() : SpellScriptLoader("spell_thorim_lightning_destruction") { }
-
-        class spell_thorim_lightning_destruction_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_thorim_lightning_destruction_SpellScript);
-
-            void FilterTargets(std::list<WorldObject*>& targets)
-            {
-                targets.remove_if(ArenaAreaCheck(true));
-                targets.remove_if(PlayerOrPetCheck());
+                return instance != NULL;
             }
 
-            void Register() override
+            void Register() OVERRIDE
             {
-                OnObjectAreaTargetSelect += SpellObjectAreaTargetSelectFn(spell_thorim_lightning_destruction_SpellScript::FilterTargets, EFFECT_0, TARGET_UNIT_SRC_AREA_ENEMY);
+                OnEffectPeriodic += AuraEffectPeriodicFn(spell_thorim_activate_lightning_orb_periodic_AuraScript::PeriodicTick, EFFECT_0, SPELL_AURA_PERIODIC_TRIGGER_SPELL);
             }
         };
 
-        SpellScript* GetSpellScript() const override
+        AuraScript* GetAuraScript() const OVERRIDE
         {
-            return new spell_thorim_lightning_destruction_SpellScript();
+            return new spell_thorim_activate_lightning_orb_periodic_AuraScript();
         }
 };
 
-class go_thorim_lever : public GameObjectScript
+// 62320 - Aura of Celerity
+class spell_thorim_aura_of_celerity : public SpellScriptLoader
 {
     public:
-        go_thorim_lever() : GameObjectScript("go_thorim_lever") { }
+        spell_thorim_aura_of_celerity() : SpellScriptLoader("spell_thorim_aura_of_celerity") { }
 
-        bool OnGossipHello(Player* /*player*/, GameObject* go) override
+        class spell_thorim_aura_of_celerity_AuraScript : public AuraScript
         {
-            if (GameObject* door = go->FindNearestGameObject(GO_THORIM_DARK_IRON_PROTCULLIS, 15.0f))
+            PrepareAuraScript(spell_thorim_aura_of_celerity_AuraScript);
+
+            bool Validate(SpellInfo const* /*spellInfo*/) OVERRIDE
             {
-                door->UseDoorOrButton();
-                go->SetFlag(GAMEOBJECT_FIELD_FLAGS, GO_FLAG_NOT_SELECTABLE | GO_FLAG_IN_USE);
-                go->SetGoState(GOState::GO_STATE_ACTIVE);
-                return true;
+                return sSpellMgr->GetSpellInfo(SPELL_AURA_OF_CELERITY_VISUAL) != NULL;
             }
-            return false;
+
+            void AfterRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                GetTarget()->RemoveAurasDueToSpell(SPELL_AURA_OF_CELERITY_VISUAL);
+            }
+
+            void Register() OVERRIDE
+            {
+                AfterEffectRemove += AuraEffectRemoveFn(spell_thorim_aura_of_celerity_AuraScript::AfterRemove, EFFECT_0, SPELL_AURA_MELEE_SLOW, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const OVERRIDE
+        {
+            return new spell_thorim_aura_of_celerity_AuraScript();
         }
 };
 
-class at_thorim_jumpdown : public AreaTriggerScript
+class achievement_dont_stand_in_the_lightning : public AchievementCriteriaScript
 {
     public:
-        at_thorim_jumpdown() : AreaTriggerScript("at_thorim_jumpdown") { }
+        achievement_dont_stand_in_the_lightning() : AchievementCriteriaScript("achievement_dont_stand_in_the_lightning") { }
 
-        bool OnTrigger(Player* player, AreaTriggerEntry const* trigger) override
+        bool OnCheck(Player* /*source*/, Unit* target) OVERRIDE
         {
-            if (Creature* thorim = player->FindNearestCreature(NPC_THORIM, 100.0f))
-                thorim->AI()->DoAction(ACTION_JUMPDOWN);
-
-            return true;
+            return target && target->GetAI() && target->GetAI()->GetData(ACHIEVEMENT_DONT_STAND_IN_THE_LIGHTNING);
         }
 };
 
-class achievement_who_needs_bloodlust : public AchievementCriteriaScript
+class achievement_lose_your_illusion : public AchievementCriteriaScript
 {
     public:
-        achievement_who_needs_bloodlust(const char* name) : AchievementCriteriaScript(name) { }
+        achievement_lose_your_illusion() : AchievementCriteriaScript("achievement_lose_your_illusion") { }
 
-        bool OnCheck(Player* player, Unit* /*target*/)
+        bool OnCheck(Player* /*source*/, Unit* target) OVERRIDE
         {
-            if (!player)
+            return target && target->GetAI() && target->GetAI()->GetData(ACHIEVEMENT_LOSE_YOUR_ILLUSION);
+        }
+};
+
+class achievement_i_ll_take_you_all_on : public AchievementCriteriaScript
+{
+    public:
+        achievement_i_ll_take_you_all_on() : AchievementCriteriaScript("achievement_i_ll_take_you_all_on"), _check() { }
+
+        bool OnCheck(Player* source, Unit* /*target*/) OVERRIDE
+        {
+            return _check(source);
+        }
+
+    private:
+        OutOfArenaCheck _check;
+};
+
+class condition_thorim_arena_leap : public ConditionScript
+{
+    public:
+        condition_thorim_arena_leap() : ConditionScript("condition_thorim_arena_leap"), _check(false) { }
+
+        bool OnConditionCheck(Condition* condition, ConditionSourceInfo& sourceInfo) OVERRIDE
+        {
+            WorldObject* target = sourceInfo.mConditionTargets[condition->ConditionTarget];
+            if (!target || !target->GetMap()->IsInstance())
                 return false;
 
-            if (player->HasAura(SPELL_AURA_OF_CELERITY))
-                return true;
+            // the bunny next to the balcony wall must not be picked as a landing point
+            if (Creature* creature = target->ToCreature())
+                if (creature->GetDBTableGUIDLow() == LEAP_EXCLUDED_BUNNY_GUID)
+                    return false;
 
-            return false;
+            return _check(target);
         }
+
+    private:
+        HeightPositionCheck _check;
 };
-
-class achievement_ill_take_you_all_on : public AchievementCriteriaScript
-{
-    public:
-        achievement_ill_take_you_all_on(const char* name) : AchievementCriteriaScript(name) { }
-
-        bool OnCheck(Player* player, Unit* target) override
-        {
-            return player && target && player->IsWithinDistInMap(target, sWorld->GetFloatConfig(WorldFloatConfigs::CONFIG_GROUP_XP_DISTANCE)) && (player->GetPositionX() >= 2180.0f || player->GetPositionY() <= -414.0f);
-        }
-};
-
-} // namespace
 
 void AddSC_boss_thorim()
 {
     new boss_thorim();
-    new npc_thorim_controller();
-    new npc_thorim_pre_phase_add();
-    new npc_thorim_arena_phase_add();
+    new npc_thorim_pre_phase();
+    new npc_thorim_arena_phase();
     new npc_runic_colossus();
-    new npc_runic_smash();
     new npc_ancient_rune_giant();
     new npc_sif();
-    new npc_lightning_orb();
-    new npc_thorim_combat_trigger();
-    new npc_thorim_trap_bunny();
-    new npc_thorim_event_bunny();
-
-    new spell_stormhammer_targeting();
-    new spell_thorim_berserk();
-    new spell_thorim_charge_orb_targeting();
-    new spell_thorim_lightning_destruction();
-    new spell_thorim_lightning_release();
-
-    new go_thorim_lever();
-
-    new at_thorim_jumpdown();
-
-    new achievement_who_needs_bloodlust("achievement_who_needs_bloodlust");
-    new achievement_who_needs_bloodlust("achievement_who_needs_bloodlust_25");
-    new achievement_ill_take_you_all_on("achievement_ill_take_you_all_on");
-    new achievement_ill_take_you_all_on("achievement_ill_take_you_all_on_25");
+    new spell_thorim_blizzard_effect();
+    new spell_thorim_frostbolt_volley();
+    new spell_thorim_charge_orb();
+    new spell_thorim_lightning_charge();
+    new spell_thorim_stormhammer();
+    new spell_thorim_stormhammer_sif();
+    new spell_thorim_stormhammer_boomerang();
+    new spell_thorim_arena_leap();
+    new spell_thorim_runic_smash();
+    new spell_thorim_activate_lightning_orb_periodic();
+    new spell_thorim_aura_of_celerity();
+    new achievement_dont_stand_in_the_lightning();
+    new achievement_lose_your_illusion();
+    new achievement_i_ll_take_you_all_on();
+    new condition_thorim_arena_leap();
 }
