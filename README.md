@@ -143,9 +143,7 @@ cmake --build build --parallel "$(nproc)"
 cmake --install build
 ```
 
-**Stable realm:** the `Stable` branch only has these setup tools once
-`Development` has been merged into it (pull request `Development` → `Stable`).
-Do that before the very first Stable build.
+**Stable realm:**
 ```bash
 git clone -b Stable https://github.com/Willzman/SkyFire_548 ~/skyfire/src-stable
 cd ~/skyfire/src-stable
@@ -308,13 +306,12 @@ Everything else (6.1, 6.2, 6.5, 6.7) is unchanged. 6.1 also creates the empty
 `world_stable` and `characters_stable` databases; they wait unused.
 
 **Adding Stable later:**
-1. Merge `Development` into `Stable` (pull request `Development` → `Stable`).
-2. Build the **Stable realm** block from step 4 and run the `stable` command from
+1. Build the **Stable realm** block from step 4 and run the `stable` command from
    step 6.3.
-3. Stop the authserver running from `~/skyfire/dev/bin` and start it from
+2. Stop the authserver running from `~/skyfire/dev/bin` and start it from
    `~/skyfire/stable/bin` instead. Only one authserver can run (both use
    port 3724).
-4. Start the Stable worldserver.
+3. Start the Stable worldserver.
 
 Accounts and characters you made on Development stay; both realms use the same
 `auth` database.
