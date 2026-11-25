@@ -191,6 +191,16 @@ DBCStorage <SpellEffectScalingEntry> sSpellEffectScalingStore(SpellEffectScaling
 
 SpellCategoryStore sSpellsByCategoryStore;
 PetFamilySpellsStore sPetFamilySpellsStore;
+
+bool IsPetFamilySkillLine(uint32 skillId)
+{
+    for (uint32 i = 0; i < sCreatureFamilyStore.GetNumRows(); ++i)
+        if (CreatureFamilyEntry const* family = sCreatureFamilyStore.LookupEntry(i))
+            if (family->skillLine[0] == skillId || family->skillLine[1] == skillId)
+                return true;
+
+    return false;
+}
 SpellsPerClassStore sSpellsPerClassStore;
 ClassBySkillIdStore sClassBySkillIdStore;
 SpellEffectScallingByEffectId sSpellEffectScallingByEffectId;
@@ -830,6 +840,11 @@ void LoadDBCStores(const std::string& dataPath)
                 if (sInfo->Effect == SPELL_EFFECT_SEND_TAXI)
                     spellPaths.insert(sInfo->EffectMiscValue);
 
+        std::set<uint32> pathDestinations;
+        for (TaxiPathSetBySource::const_iterator src_i = sTaxiPathSetBySource.begin(); src_i != sTaxiPathSetBySource.end(); ++src_i)
+            for (TaxiPathSetForSource::const_iterator dest_i = src_i->second.begin(); dest_i != src_i->second.end(); ++dest_i)
+                pathDestinations.insert(dest_i->first);
+
         memset(sTaxiNodesMask, 0, sizeof(sTaxiNodesMask));
         memset(sOldContinentsNodesMask, 0, sizeof(sOldContinentsNodesMask));
         memset(sHordeTaxiNodesMask, 0, sizeof(sHordeTaxiNodesMask));
@@ -841,23 +856,30 @@ void LoadDBCStores(const std::string& dataPath)
             if (!node)
                 continue;
 
+            // A node without any path is a quest or scripted flight point. Keeping it in the network
+            // lets it win the nearest node search over the real flight master next to it.
             TaxiPathSetBySource::const_iterator src_i = sTaxiPathSetBySource.find(i);
-            if (src_i != sTaxiPathSetBySource.end() && !src_i->second.empty())
-            {
-                bool ok = false;
-                for (TaxiPathSetForSource::const_iterator dest_i = src_i->second.begin(); dest_i != src_i->second.end(); ++dest_i)
-                {
-                    // not spell path
-                    if (spellPaths.find(dest_i->second.ID) == spellPaths.end())
-                    {
-                        ok = true;
-                        break;
-                    }
-                }
+            if (src_i == sTaxiPathSetBySource.end() || src_i->second.empty())
+                continue;
 
-                if (!ok)
-                    continue;
+            // A node of neither faction that no flight leads to starts a quest flight. Keeping it in the network
+            // lets it win the nearest node search over the flight master standing next to it.
+            if (!node->Flags && pathDestinations.find(i) == pathDestinations.end())
+                continue;
+
+            bool ok = false;
+            for (TaxiPathSetForSource::const_iterator dest_i = src_i->second.begin(); dest_i != src_i->second.end(); ++dest_i)
+            {
+                // not spell path
+                if (spellPaths.find(dest_i->second.ID) == spellPaths.end())
+                {
+                    ok = true;
+                    break;
+                }
             }
+
+            if (!ok)
+                continue;
 
             // valid taxi network node
             uint8  field = (uint8)((i - 1) / 8);

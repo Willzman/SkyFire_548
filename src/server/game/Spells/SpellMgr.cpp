@@ -3229,7 +3229,8 @@ void SpellMgr::LoadSpellInfoCorrections()
                 spellInfo->ProcCharges = 1;
                 break;
             case 44544: // Fingers of Frost
-                spellInfo->Effects[EFFECT_0].SpellClassMask = flag128(685904631, 1151048, 0, 0);
+                // Only Ice Lance and Deep Freeze act as if the target were frozen; the client data lists Deep Freeze alone
+                spellInfo->Effects[EFFECT_0].SpellClassMask = flag128(0x00020000, 0x00100000, 0, 0);
                 break;
 
             case 28200: // Ascendance (Talisman of Ascendance trinket)
@@ -3243,8 +3244,10 @@ void SpellMgr::LoadSpellInfoCorrections()
                 // add corruption to affected spells
                 spellInfo->Effects[EFFECT_1].SpellClassMask[0] |= 2;
                 break;
-            case 51852: // The Eye of Acherus (no spawn in phase 2 in db)
-                spellInfo->Effects[EFFECT_0].MiscValue |= 1;
+            case 51852: // The Eye of Acherus
+                // The flyer has to see Acherus (169) as well as the Havenshire spawns of the flight (170)
+                spellInfo->Effects[EFFECT_0].ApplyAuraName = SPELL_AURA_PHASE_GROUP;
+                spellInfo->Effects[EFFECT_0].MiscValueB = 371;
                 break;
             case 51912: // Crafty's Ultra-Advanced Proto-Typical Shortening Blaster
                 spellInfo->Effects[EFFECT_0].ApplyAuraTickCount = 3000;

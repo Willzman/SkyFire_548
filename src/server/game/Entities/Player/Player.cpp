@@ -3314,6 +3314,16 @@ void Player::GiveLevel(uint8 level)
 
     UpdateSkillsForLevel();
 
+    // Skill abilities learned with the character level (class passives on shared skill lines, such as Victorious
+    // State on Defense) come with the new level, not only at the next login; learning one can add a skill, so the
+    // skill ids are copied first
+    std::vector<uint32> skillIds;
+    for (SkillStatusMap::const_iterator itr = mSkillStatus.begin(); itr != mSkillStatus.end(); ++itr)
+        if (itr->second.uState != SkillUpdateState::SKILL_DELETED)
+            skillIds.push_back(itr->first);
+    for (uint32 skillId : skillIds)
+        learnSkillRewardedSpells(skillId, GetPureSkillValue(skillId));
+
     // save base values (bonuses already included in stored stats
     for (uint8 i = STAT_STRENGTH; i < MAX_STATS; ++i)
         SetCreateStat(Stats(i), info.stats[i]);
@@ -4041,6 +4051,11 @@ bool Player::addSpell(uint32 spellId, bool active, bool learning, bool dependent
             if (HasSkill(pSkill->id))
                 continue;
 
+            // Spells such as Player Damage Reduction are also listed under the pet families' skill lines. A player
+            // given such a line learns the pet passives of the whole line on login and runs them on itself.
+            if (IsPetFamilySkillLine(pSkill->id))
+                continue;
+
             if (_spell_idx->second->learnOnGetSkill == ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL ||
                 // runeforging special case, not have ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL
                 (pSkill->id == SKILL_RUNEFORGING && (_spell_idx->second->max_value == 0 || _spell_idx->second->max_value == 1)))
@@ -4736,7 +4751,7 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
 
     if (!noCost && !sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_NO_RESET_TALENT_COST))
     {
-        cost = GetNextResetTalentsCost();
+        cost = resetTalents ? GetNextResetTalentsCost() : GetNextResetSpecializationCost();
 
         if (!HasEnoughMoney(uint64(cost)))
         {
@@ -4806,8 +4821,16 @@ bool Player::ResetTalents(bool noCost, bool resetTalents, bool resetSpecializati
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_FOR_TALENTS, cost);
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_NUMBER_OF_TALENT_RESETS, 1);
 
-        SetTalentResetCost(cost);
-        SetTalentResetTime(time(NULL));
+        if (resetTalents)
+        {
+            SetTalentResetCost(cost);
+            SetTalentResetTime(time(NULL));
+        }
+        else
+        {
+            SetSpecializationResetCost(cost);
+            SetSpecializationResetTime(time(NULL));
+        }
     }
 
     /* when prev line will dropped use next line
@@ -16313,7 +16336,7 @@ void Player::PetSpellInitialize()
 
     uint32 spellCount = 0;
     uint32 spellHistoryCount = 0;
-    uint32 cooldownCount = pet->m_CreatureSpellCooldowns.size() + pet->m_CreatureCategoryCooldowns.size();
+    uint32 cooldownCount = 0;
 
     WorldPacket data(SMSG_PET_SPELLS_MESSAGE, 8 + 2 + 4 + 4 + 4 * MAX_UNIT_ACTION_BAR_INDEX + 1 + 1);
 
@@ -16344,13 +16367,7 @@ void Player::PetSpellInitialize()
         {
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(itr->first);
             if (!spellInfo)
-            {
-                data << uint32(0);
-                data << uint32(0);
-                data << uint16(0);
-                data << uint32(0);
                 continue;
-            }
 
             time_t cooldown = (itr->second > curTime) ? (itr->second - curTime) * IN_MILLISECONDS : 0;
 
@@ -17778,7 +17795,7 @@ bool Player::BuyItemFromVendorSlot(uint64 vendorguid, uint32 vendorslot, uint32 
             SF_LOG_ERROR("entities.player", "Player %s tried to buy %u item id %u, causing overflow", GetName().c_str(), (uint32)count, pProto->ItemId);
             count = (uint8)maxCount;
         }
-        price = pProto->BuyPrice * count; //it should not exceed MAX_MONEY_AMOUNT
+        price = uint32(uint64(pProto->BuyPrice) * count / pProto->BuyCount); //it should not exceed MAX_MONEY_AMOUNT
 
         // reputation discount
         price = uint32(floor(price * GetReputationPriceDiscount(creature)));
@@ -19115,7 +19132,10 @@ void Player::UpdateVisibilityForPlayer()
 {
     // updates visibility of all objects around point of view for current player
     Skyfire::VisibleNotifier notifier(*this);
-    m_seer->VisitNearbyObject(GetSightRange(), notifier);
+    // in instances use the range of the relocation notifier: an always visible object whose origin lies outside the
+    // sight range, such as a large destructible floor, would otherwise be sent out of range here and only come back
+    // with the next movement; the open world keeps the cheaper scan
+    m_seer->VisitNearbyObject(GetMap()->Instanceable() ? MAX_VISIBILITY_DISTANCE : GetSightRange(), notifier);
     notifier.SendToSelf();   // send gathered data
 }
 
@@ -19747,12 +19767,24 @@ void Player::learnQuestRewardedSpells()
 
 void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
 {
+    // The abilities of a class skill line carry no class mask of their own: a character who somehow holds another
+    // class's line must not get its abilities
+    if (SkillLineEntry const* skillLine = sSkillLineStore.LookupEntry(skill_id))
+        if (skillLine->categoryId == SKILL_CATEGORY_CLASS)
+            if (uint32 skillClass = GetClassBySkillId(skill_id))
+                if (skillClass != getClass())
+                    return;
+
     uint32 raceMask = getRaceMask();
     uint32 classMask = getClassMask();
     for (uint32 j = 0; j < sSkillLineAbilityStore.GetNumRows(); ++j)
     {
         SkillLineAbilityEntry const* pAbility = sSkillLineAbilityStore.LookupEntry(j);
-        if (!pAbility || pAbility->skillId != skill_id || pAbility->learnOnGetSkill != ABILITY_LEARNED_ON_GET_PROFESSION_SKILL)
+        // Abilities learned with the skill's rank and those learned with the character's level both come with the
+        // skill; the second kind holds class passives on shared skill lines, such as Victorious State on Defense
+        if (!pAbility || pAbility->skillId != skill_id ||
+            (pAbility->learnOnGetSkill != ABILITY_LEARNED_ON_GET_PROFESSION_SKILL &&
+             pAbility->learnOnGetSkill != ABILITY_LEARNED_ON_GET_RACE_OR_CLASS_SKILL))
             continue;
         // Check race if set
         if (pAbility->racemask && !(pAbility->racemask & raceMask))
@@ -19761,10 +19793,14 @@ void Player::learnSkillRewardedSpells(uint32 skill_id, uint32 skill_value)
         if (pAbility->classmask && !(pAbility->classmask & classMask))
             continue;
 
-        if (sSpellMgr->GetSpellInfo(pAbility->spellId))
+        if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(pAbility->spellId))
         {
+            // Check level, skip class spells if not high enough
+            if (std::max(spellInfo->SpellLevel, spellInfo->BaseLevel) > getLevel())
+                continue;
+
             // need unlearn spell
-            if (skill_value < pAbility->req_skill_value)
+            if (skill_value < pAbility->req_skill_value && pAbility->learnOnGetSkill == ABILITY_LEARNED_ON_GET_PROFESSION_SKILL)
                 removeSpell(pAbility->spellId);
             // need learn
             else if (!IsInWorld())
