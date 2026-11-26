@@ -123,7 +123,14 @@ namespace lfg
             return count;
         }
 
-        bool TryAssignLfgRoles(std::vector<LfgRoleAssignment>& assignments, size_t index, uint8 tanks, uint8 healers, uint8 damage)
+        struct LfgRoleCaps
+        {
+            uint8 tanks;
+            uint8 healers;
+            uint8 damage;
+        };
+
+        bool TryAssignLfgRoles(std::vector<LfgRoleAssignment>& assignments, size_t index, uint8 tanks, uint8 healers, uint8 damage, LfgRoleCaps const& caps)
         {
             if (index == assignments.size())
                 return true;
@@ -136,11 +143,11 @@ namespace lfg
                 if (!(assignment.availableRoles & role))
                     continue;
 
-                if (role == PLAYER_ROLE_TANK && tanks >= LFG_TANKS_NEEDED)
+                if (role == PLAYER_ROLE_TANK && tanks >= caps.tanks)
                     continue;
-                if (role == PLAYER_ROLE_HEALER && healers >= LFG_HEALERS_NEEDED)
+                if (role == PLAYER_ROLE_HEALER && healers >= caps.healers)
                     continue;
-                if (role == PLAYER_ROLE_DAMAGE && damage >= LFG_DPS_NEEDED)
+                if (role == PLAYER_ROLE_DAMAGE && damage >= caps.damage)
                     continue;
 
                 assignment.assignedRole = role | assignment.leader;
@@ -148,7 +155,7 @@ namespace lfg
                 if (TryAssignLfgRoles(assignments, index + 1,
                     tanks + (role == PLAYER_ROLE_TANK),
                     healers + (role == PLAYER_ROLE_HEALER),
-                    damage + (role == PLAYER_ROLE_DAMAGE)))
+                    damage + (role == PLAYER_ROLE_DAMAGE), caps))
                     return true;
             }
 
@@ -1159,7 +1166,24 @@ namespace lfg
             return left.guid < right.guid;
         });
 
-        if (!TryAssignLfgRoles(assignments, 0, 0, 0, 0))
+        // Normal 1 tank / 1 healer / 3 damage. With DungeonFinder.Dungeon.IgnoreRoles
+        // the caps are loosened step by step, so a group keeps a tank and a
+        // healer when it has one and fills the rest with whatever roles it has.
+        LfgRoleCaps const normalCaps = { LFG_TANKS_NEEDED, LFG_HEALERS_NEEDED, LFG_DPS_NEEDED };
+        LfgRoleCaps const looseCaps[] =
+        {
+            { LFG_TANKS_NEEDED, LFG_HEALERS_NEEDED, MAXGROUPSIZE },
+            { LFG_TANKS_NEEDED, MAXGROUPSIZE, MAXGROUPSIZE },
+            { MAXGROUPSIZE, MAXGROUPSIZE, MAXGROUPSIZE },
+        };
+
+        bool assigned = TryAssignLfgRoles(assignments, 0, 0, 0, 0, normalCaps);
+        if (!assigned && sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES))
+            for (LfgRoleCaps const& caps : looseCaps)
+                if ((assigned = TryAssignLfgRoles(assignments, 0, 0, 0, 0, caps)))
+                    break;
+
+        if (!assigned)
             return false;
 
         for (LfgRoleAssignment const& assignment : assignments)

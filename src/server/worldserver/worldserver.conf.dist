@@ -1318,6 +1318,37 @@ TicketSystem.FeedBackTickets = 1
 DungeonFinder.OptionsMask = 1
 
 #
+#     DungeonFinder.Dungeon.MinPlayers
+#        Description: Fewest players the dungeon finder needs to start a 5-player dungeon.
+#                     Below 5, a group starts as soon as this many compatible players are
+#                     queued; it does not wait to fill to 5. A dungeon group that queues
+#                     from inside its dungeon for more players always gets at least one.
+#                     Dungeons are not scaled down for smaller groups.
+#        Default:     5 - (Blizzlike)
+#                     1..4 - (Smaller groups)
+
+DungeonFinder.Dungeon.MinPlayers = 5
+
+#
+#     DungeonFinder.Scenario.MinPlayers
+#        Description: Fewest players the dungeon finder needs to start a 3-player scenario.
+#        Default:     3 - (Blizzlike)
+#                     1..2 - (Smaller groups)
+
+DungeonFinder.Scenario.MinPlayers = 3
+
+#
+#     DungeonFinder.Dungeon.IgnoreRoles
+#        Description: Let dungeon finder groups form without the 1 tank / 1 healer / 3 damage
+#                     split. The normal split is still tried first, and a group keeps a tank and a
+#                     healer when it has one. Without this, a smaller group can still have no
+#                     tank or healer, but never more than 1 tank, 1 healer or 3 damage.
+#        Default:     0 - (Disabled, blizzlike roles)
+#                     1 - (Enabled, any roles)
+
+DungeonFinder.Dungeon.IgnoreRoles = 0
+
+#
 #   DBC.EnforceItemAttributes
 #        Description: Disallow overriding item attributes stored in DBC files with values from the
 #                     database.
