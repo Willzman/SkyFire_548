@@ -1315,6 +1315,14 @@ void World::LoadConfigSettings(bool reload)
     }
     setIntConfig(WorldIntConfigs::CONFIG_LFG_SCENARIO_MIN_PLAYERS, uint32(lfgScenarioMinPlayers));
 
+    int32 lfgRaidFinderMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.RaidFinder.MinPlayers", 25);
+    if (lfgRaidFinderMinPlayers < 1 || lfgRaidFinderMinPlayers > 25)
+    {
+        SF_LOG_ERROR("server.loading", "DungeonFinder.RaidFinder.MinPlayers (%i) must be in range 1..25. Set to 25.", lfgRaidFinderMinPlayers);
+        lfgRaidFinderMinPlayers = 25;
+    }
+    setIntConfig(WorldIntConfigs::CONFIG_LFG_RAID_FINDER_MIN_PLAYERS, uint32(lfgRaidFinderMinPlayers));
+
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.Dungeon.IgnoreRoles", false));
 
     // DBC_ItemAttributes

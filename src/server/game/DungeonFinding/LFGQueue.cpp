@@ -100,6 +100,9 @@ namespace lfg
             if (!dungeon)
                 return MAXGROUPSIZE;
 
+            if (sLFGMgr->IsRaidFinderDungeon(dungeonId))
+                return sLFGMgr->GetRaidFinderGroupSize(dungeonId);
+
             if (IsScenarioDungeon(dungeonId))
             {
                 if (MapDifficulty const* difficulty = GetMapDifficultyData(dungeon->m_ContinentID, DifficultyID(dungeon->m_DifficultyID)))
@@ -130,6 +133,15 @@ namespace lfg
             return false;
         }
 
+        uint32 GetRaidFinderDungeon(LfgDungeonSet const& dungeons)
+        {
+            for (LfgDungeonSet::const_iterator it = dungeons.begin(); it != dungeons.end(); ++it)
+                if (sLFGMgr->IsRaidFinderDungeon(*it))
+                    return *it;
+
+            return 0;
+        }
+
         bool HasFlexibleRaidDungeon(LfgDungeonSet const& dungeons)
         {
             for (LfgDungeonSet::const_iterator it = dungeons.begin(); it != dungeons.end(); ++it)
@@ -145,6 +157,12 @@ namespace lfg
                 return sLFGMgr->IsDebugFlexRaidMinimumOverrideEnabled() ? 1 : LFG_FLEX_RAID_MIN_PLAYERS;
 
             uint8 maxSize = GetDungeonMaxGroupSize(dungeonId);
+
+            if (sLFGMgr->IsRaidFinderDungeon(dungeonId))
+            {
+                uint32 raidMin = sWorld->getIntConfig(WorldIntConfigs::CONFIG_LFG_RAID_FINDER_MIN_PLAYERS);
+                return raidMin >= 1 && raidMin < maxSize ? uint8(raidMin) : maxSize;
+            }
 
             // DungeonFinder.Dungeon.MinPlayers / DungeonFinder.Scenario.MinPlayers
             // let a group start with fewer players than the dungeon holds.
@@ -200,6 +218,13 @@ namespace lfg
 
             if (HasFlexibleRaidDungeon(dungeons))
                 return LFGMgr::CheckFlexibleRaidRoles(roles, GetQueueMaxGroupSize(dungeons));
+
+            if (uint32 raidFinder = GetRaidFinderDungeon(dungeons))
+            {
+                uint8 tanks, healers, damage;
+                sLFGMgr->GetRaidFinderRoleCaps(raidFinder, tanks, healers, damage);
+                return LFGMgr::CheckRaidFinderRoles(roles, tanks, healers, damage);
+            }
 
             return LFGMgr::CheckGroupRoles(roles);
         }
@@ -257,9 +282,11 @@ namespace lfg
             tanks = LFG_TANKS_NEEDED;
             healers = LFG_HEALERS_NEEDED;
             dps = LFG_DPS_NEEDED;
+            if (uint32 raidFinder = GetRaidFinderDungeon(dungeons))
+                sLFGMgr->GetRaidFinderRoleCaps(raidFinder, tanks, healers, dps);
 
             LfgRolesMap assignedRoles = roles;
-            if (LFGMgr::CheckGroupRoles(assignedRoles))
+            if (CheckQueueRoles(assignedRoles, dungeons))
                 for (LfgRolesMap::const_iterator it = assignedRoles.begin(); it != assignedRoles.end(); ++it)
                     ConsumeRoleSlot(it->second, tanks, healers, dps);
             else
@@ -587,7 +614,7 @@ namespace lfg
         for (LfgGuidList::const_iterator it = check.begin(); it != check.end(); ++it)
         {
             LfgQueueDataContainer::const_iterator itQueue = QueueDataStore.find(*it);
-            if (itQueue != QueueDataStore.end() && HasFlexibleRaidDungeon(itQueue->second.dungeons))
+            if (itQueue != QueueDataStore.end() && (HasFlexibleRaidDungeon(itQueue->second.dungeons) || GetRaidFinderDungeon(itQueue->second.dungeons)))
             {
                 checkGroupLimit = MAXRAIDSIZE;
                 break;

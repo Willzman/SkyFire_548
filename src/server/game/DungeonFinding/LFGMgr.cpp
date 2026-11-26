@@ -563,6 +563,14 @@ namespace lfg
                 break;
             }
 
+        uint32 raidFinderDungeon = 0;
+        for (LfgDungeonSet::const_iterator it = dungeons.begin(); it != dungeons.end(); ++it)
+            if (IsRaidFinderDungeon(*it))
+            {
+                raidFinderDungeon = *it;
+                break;
+            }
+
         // Already in queue?
         LfgState state = GetState(gguid);
         bool hasActiveQueueState = state == LFG_STATE_ROLECHECK || state == LFG_STATE_PROPOSAL ||
@@ -595,7 +603,7 @@ namespace lfg
             joinData.result = LFG_JOIN_NOT_MEET_REQS;
         else if (grp)
         {
-            uint8 groupMemberLimit = hasFlexibleRaid ? MAXRAIDSIZE : MAXGROUPSIZE;
+            uint8 groupMemberLimit = hasFlexibleRaid ? MAXRAIDSIZE : raidFinderDungeon ? GetRaidFinderGroupSize(raidFinderDungeon) : MAXGROUPSIZE;
             if (grp->GetMembersCount() > groupMemberLimit)
                 joinData.result = LFG_JOIN_TOO_MUCH_MEMBERS;
             else
@@ -681,7 +689,8 @@ namespace lfg
         // A full group already inside its dungeon has nothing to queue for.
         // Joining again starts a role check that greys out Leave Queue, then a
         // proposal someone declines.
-        if (joinData.result == LFG_JOIN_OK && isContinue && grp && !hasFlexibleRaid && grp->GetMembersCount() >= MAXGROUPSIZE)
+        if (joinData.result == LFG_JOIN_OK && isContinue && grp && !hasFlexibleRaid &&
+            grp->GetMembersCount() >= (raidFinderDungeon ? GetRaidFinderGroupSize(raidFinderDungeon) : MAXGROUPSIZE))
         {
             grp->SendUpdate();
             joinData.result = LFG_JOIN_GROUP_FULL;
@@ -971,6 +980,7 @@ namespace lfg
                 check_roles = roleCheck.roles;
                 bool scenario = false;
                 bool flexibleRaid = false;
+                uint32 raidFinder = 0;
                 for (LfgDungeonSet::const_iterator it = roleCheck.dungeons.begin(); it != roleCheck.dungeons.end(); ++it)
                 {
                     LFGDungeonData const* dungeon = GetLFGDungeon(*it);
@@ -985,6 +995,9 @@ namespace lfg
 
                     if (IsFlexibleRaidData(*dungeon))
                         flexibleRaid = true;
+
+                    if (!raidFinder && IsRaidFinderDungeon(*it))
+                        raidFinder = *it;
                 }
 
                 bool rolesOk = false;
@@ -992,6 +1005,12 @@ namespace lfg
                     rolesOk = CheckDpsOnlyRoles(check_roles, uint8(check_roles.size()));
                 else if (flexibleRaid)
                     rolesOk = CheckFlexibleRaidRoles(check_roles, MAXRAIDSIZE);
+                else if (raidFinder)
+                {
+                    uint8 tanks, healers, damage;
+                    GetRaidFinderRoleCaps(raidFinder, tanks, healers, damage);
+                    rolesOk = CheckRaidFinderRoles(check_roles, tanks, healers, damage);
+                }
                 else
                     rolesOk = CheckGroupRoles(check_roles);
 
@@ -1203,6 +1222,82 @@ namespace lfg
         return true;
     }
 
+    namespace
+    {
+        // Hall's condition for giving each player one of their roles within the
+        // slot caps: for every set of roles, the players who can only take roles
+        // from that set must fit in its slots.
+        bool RaidFinderRolesFit(std::vector<uint8> const& playerRoles, uint8 const caps[3])
+        {
+            uint8 const bits[3] = { PLAYER_ROLE_TANK, PLAYER_ROLE_HEALER, PLAYER_ROLE_DAMAGE };
+            for (uint8 subset = 1; subset < 8; ++subset)
+            {
+                uint8 mask = 0;
+                uint32 slots = 0;
+                for (uint8 i = 0; i < 3; ++i)
+                    if (subset & (1 << i))
+                    {
+                        mask |= bits[i];
+                        slots += caps[i];
+                    }
+
+                uint32 players = 0;
+                for (uint8 roles : playerRoles)
+                    if (!(roles & ~mask))
+                        ++players;
+
+                if (players > slots)
+                    return false;
+            }
+            return true;
+        }
+    }
+
+    bool LFGMgr::CheckRaidFinderRoles(LfgRolesMap& groles, uint8 tanks, uint8 healers, uint8 damage)
+    {
+        if (groles.empty() || groles.size() > uint32(tanks) + healers + damage)
+            return false;
+
+        std::vector<uint8> remaining;
+        remaining.reserve(groles.size());
+        for (LfgRolesMap::const_iterator it = groles.begin(); it != groles.end(); ++it)
+        {
+            uint8 roles = it->second & LFG_COMBAT_ROLE_MASK;
+            if (!roles)
+                return false;
+            remaining.push_back(roles);
+        }
+
+        uint8 caps[3] = { tanks, healers, damage };
+        if (!RaidFinderRolesFit(remaining, caps))
+            return false;
+
+        // Give each player in turn the first role (tank, healer, damage) that
+        // still leaves a valid assignment for everyone after them.
+        uint8 const bits[3] = { PLAYER_ROLE_TANK, PLAYER_ROLE_HEALER, PLAYER_ROLE_DAMAGE };
+        size_t index = 0;
+        for (LfgRolesMap::iterator it = groles.begin(); it != groles.end(); ++it, ++index)
+        {
+            uint8 const leader = it->second & PLAYER_ROLE_LEADER;
+            std::vector<uint8> rest(remaining.begin() + index + 1, remaining.end());
+            for (uint8 i = 0; i < 3; ++i)
+            {
+                if (!(remaining[index] & bits[i]) || !caps[i])
+                    continue;
+
+                --caps[i];
+                if (RaidFinderRolesFit(rest, caps))
+                {
+                    it->second = bits[i] | leader;
+                    break;
+                }
+                ++caps[i];
+            }
+        }
+
+        return true;
+    }
+
     bool LFGMgr::CheckFlexibleRaidRoles(LfgRolesMap& groles, uint8 maxPlayers)
     {
         if (groles.empty() || !maxPlayers || groles.size() > maxPlayers)
@@ -1310,6 +1405,11 @@ namespace lfg
                         proposal.id, GUID_LOPART(pguid));
                     return false;
                 }
+
+                // A raid (Raid Finder, flexible raid) has to be a raid group before
+                // the 6th member joins, so members are spread over subgroups.
+                if (IsRaidDungeon(*dungeon) && !grp->isRaidGroup())
+                    grp->ConvertToRaid();
 
                 uint64 gguid = grp->GetGUID();
                 SetActiveQueueId(gguid, GetActiveQueueId(proposal.leader));
@@ -2338,6 +2438,30 @@ namespace lfg
     {
         LFGDungeonData const* dungeon = GetLFGDungeon(dungeonId);
         return dungeon && dungeon->difficulty == DIFFICULTY_25MAN_LFR && IsRaidDungeon(*dungeon);
+    }
+
+    uint8 LFGMgr::GetRaidFinderGroupSize(uint32 dungeonId)
+    {
+        if (LFGDungeonData const* dungeon = GetLFGDungeon(dungeonId))
+            if (MapDifficulty const* difficulty = GetMapDifficultyData(dungeon->map, dungeon->difficulty))
+                if (difficulty->maxPlayers)
+                    return uint8(std::min<uint32>(difficulty->maxPlayers, MAXRAIDSIZE));
+
+        return 25;
+    }
+
+    void LFGMgr::GetRaidFinderRoleCaps(uint32 dungeonId, uint8& tanks, uint8& healers, uint8& damage)
+    {
+        tanks = 2;
+        healers = 6;
+        damage = 17;
+        if (LFGDungeonData const* dungeon = GetLFGDungeon(dungeonId))
+            if (dungeon->countTank + dungeon->countHealer + dungeon->countDamage > 0)
+            {
+                tanks = dungeon->countTank;
+                healers = dungeon->countHealer;
+                damage = dungeon->countDamage;
+            }
     }
 
     bool LFGMgr::IsFlexibleRaidDungeon(uint32 dungeonId)
