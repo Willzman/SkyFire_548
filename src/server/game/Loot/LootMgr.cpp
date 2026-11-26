@@ -60,6 +60,12 @@ struct LootGroupInvalidSelector : public SF_UNARY_FUNCTION<LootStoreItem*, bool>
                 if (++foundDuplicates == _loot.maxDuplicates)
                     return true;
 
+        // Personal loot: don't roll an entry the looter could never see (e.g. a
+        // class-limited item in a container), or the group drops nothing.
+        if (_loot.personalLooter && !item->conditions.empty() &&
+            !sConditionMgr->IsObjectMeetToConditions(const_cast<Player*>(_loot.personalLooter), item->conditions))
+            return true;
+
         return false;
     }
 
@@ -449,7 +455,9 @@ bool Loot::FillLoot(uint32 lootId, LootStore const& store, Player* lootOwner, bo
     items.reserve(MAX_NR_LOOT_ITEMS);
     quest_items.reserve(MAX_NR_QUEST_ITEMS);
 
+    personalLooter = personal ? lootOwner : NULL;
     tab->Process(*this, store.IsRatesAllowed(), lootMode);          // Processing is done there, callback via Loot::AddItem()
+    personalLooter = NULL;
 
     // Setting access rights for group loot case
     Group* group = lootOwner->GetGroup();

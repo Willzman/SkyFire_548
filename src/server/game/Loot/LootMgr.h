@@ -293,7 +293,11 @@ struct Loot
     //  Only set for inventory items that can be right-click looted
     uint32 containerID;
 
-    Loot(uint32 _gold = 0) : gold(_gold), unlootedCount(0), roundRobinPlayer(0), loot_type(LootType::LOOT_CORPSE), maxDuplicates(1), containerID(0), _guid(0) { }
+    // Set only while FillLoot rolls personal loot (item containers): group rolls
+    // then skip entries whose conditions this player doesn't meet.
+    Player const* personalLooter;
+
+    Loot(uint32 _gold = 0) : gold(_gold), unlootedCount(0), roundRobinPlayer(0), loot_type(LootType::LOOT_CORPSE), maxDuplicates(1), containerID(0), personalLooter(NULL), _guid(0) { }
     ~Loot() { clear(); }
 
     // The client identifies an open loot window by this GUID, not by the looted object.
