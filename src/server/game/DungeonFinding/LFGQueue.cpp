@@ -13,6 +13,7 @@
 #include "ObjectAccessor.h"
 #include "ObjectDefines.h"
 #include "Player.h"
+#include "World.h"
 #include "WorldSession.h"
 
 #include <algorithm>
@@ -143,7 +144,17 @@ namespace lfg
             if (IsFlexibleRaidDungeon(dungeonId))
                 return sLFGMgr->IsDebugFlexRaidMinimumOverrideEnabled() ? 1 : LFG_FLEX_RAID_MIN_PLAYERS;
 
-            return GetDungeonMaxGroupSize(dungeonId);
+            uint8 maxSize = GetDungeonMaxGroupSize(dungeonId);
+
+            // DungeonFinder.Dungeon.MinPlayers / DungeonFinder.Scenario.MinPlayers
+            // let a group start with fewer players than the dungeon holds.
+            uint32 configMin = IsScenarioDungeon(dungeonId)
+                ? sWorld->getIntConfig(WorldIntConfigs::CONFIG_LFG_SCENARIO_MIN_PLAYERS)
+                : sWorld->getIntConfig(WorldIntConfigs::CONFIG_LFG_DUNGEON_MIN_PLAYERS);
+            if (configMin >= 1 && configMin < maxSize)
+                return uint8(configMin);
+
+            return maxSize;
         }
 
         void GetQueueGroupSizeRange(LfgDungeonSet const& dungeons, uint8& minSize, uint8& maxSize)
@@ -608,7 +619,11 @@ namespace lfg
             LfgQueueDataContainer::iterator itQueue = QueueDataStore.find(check.front());
             uint8 minGroupSize = GetQueueMinGroupSize(itQueue->second.dungeons);
 
-            if (numPlayers < minGroupSize)
+            // A dungeon group queueing for more players must get at least one,
+            // even when it already meets a lowered minimum group size.
+            bool const needsNewPlayer = numLfgGroups == 1 && numPlayers < GetQueueMaxGroupSize(itQueue->second.dungeons);
+
+            if (numPlayers < minGroupSize || needsNewPlayer)
             {
                 SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) single group. Compatibles", strGuids.c_str());
 

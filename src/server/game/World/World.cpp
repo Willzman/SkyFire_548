@@ -1298,6 +1298,25 @@ void World::LoadConfigSettings(bool reload)
     // Dungeon finder
     setIntConfig(WorldIntConfigs::CONFIG_LFG_OPTIONSMASK, sConfigMgr->GetIntDefault("DungeonFinder.OptionsMask", 1));
 
+    // Smaller dungeon finder groups. Defaults keep the normal 5 (dungeons) and 3 (scenarios).
+    int32 lfgDungeonMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.Dungeon.MinPlayers", 5);
+    if (lfgDungeonMinPlayers < 1 || lfgDungeonMinPlayers > 5)
+    {
+        SF_LOG_ERROR("server.loading", "DungeonFinder.Dungeon.MinPlayers (%i) must be in range 1..5. Set to 5.", lfgDungeonMinPlayers);
+        lfgDungeonMinPlayers = 5;
+    }
+    setIntConfig(WorldIntConfigs::CONFIG_LFG_DUNGEON_MIN_PLAYERS, uint32(lfgDungeonMinPlayers));
+
+    int32 lfgScenarioMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.Scenario.MinPlayers", 3);
+    if (lfgScenarioMinPlayers < 1 || lfgScenarioMinPlayers > 3)
+    {
+        SF_LOG_ERROR("server.loading", "DungeonFinder.Scenario.MinPlayers (%i) must be in range 1..3. Set to 3.", lfgScenarioMinPlayers);
+        lfgScenarioMinPlayers = 3;
+    }
+    setIntConfig(WorldIntConfigs::CONFIG_LFG_SCENARIO_MIN_PLAYERS, uint32(lfgScenarioMinPlayers));
+
+    SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.Dungeon.IgnoreRoles", false));
+
     // DBC_ItemAttributes
     SetBoolConfig(WorldBoolConfigs::CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES, sConfigMgr->GetBoolDefault("DBC.EnforceItemAttributes", true));
 
