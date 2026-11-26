@@ -175,6 +175,16 @@ namespace lfg
                     return;
                 }
 
+                // A 1-member group (always the case with
+                // DungeonFinder.Dungeon.MinPlayers = 1) keeps its unfinished
+                // dungeon too, like a full group: the player can teleport back
+                // in from the dungeon finder, and Leave Group still ends it.
+                if (groupState == LFG_STATE_DUNGEON)
+                {
+                    player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
+                    return;
+                }
+
                 group->Disband();
 
                 SF_LOG_DEBUG("lfg", "LFGPlayerScript::OnMapChanged, Player %s(%u) was the only member left; disbanded LFG group %u with state %u.",
