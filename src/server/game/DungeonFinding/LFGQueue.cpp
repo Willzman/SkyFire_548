@@ -204,6 +204,35 @@ namespace lfg
             return LFGMgr::CheckGroupRoles(roles);
         }
 
+        // With DungeonFinder.*.MinPlayers below the dungeon's size, the queue
+        // shows only the players still missing to reach the minimum, picked
+        // tank first, then healer, then damage from the open role slots.
+        // At the default minimum nothing changes.
+        void LimitRoleShortageToMinimum(LfgRolesMap const& roles, LfgDungeonSet const& dungeons, uint8& tanks, uint8& healers, uint8& dps)
+        {
+            uint8 const minSize = GetQueueMinGroupSize(dungeons);
+            uint8 const maxSize = GetQueueMaxGroupSize(dungeons);
+            if (minSize >= maxSize)
+                return;
+
+            uint8 const players = uint8(roles.size());
+            uint8 missing = players < minSize ? uint8(minSize - players) : 0;
+            // Only a dungeon group queueing for more players waits at or above
+            // the minimum (it must gain one), so show it one open slot.
+            if (!missing && players < maxSize)
+                missing = 1;
+
+            uint8 const openTanks = tanks;
+            uint8 const openHealers = healers;
+            uint8 const openDps = dps;
+
+            tanks = std::min(openTanks, missing);
+            missing -= tanks;
+            healers = std::min(openHealers, missing);
+            missing -= healers;
+            dps = std::min(openDps, missing);
+        }
+
         void CalculateRoleShortage(LfgRolesMap const& roles, LfgDungeonSet const& dungeons, uint8& tanks, uint8& healers, uint8& dps)
         {
             if (HasScenarioDungeon(dungeons))
@@ -212,6 +241,7 @@ namespace lfg
                 tanks = 0;
                 healers = 0;
                 dps = roles.size() >= groupSize ? 0 : uint8(groupSize - roles.size());
+                LimitRoleShortageToMinimum(roles, dungeons, tanks, healers, dps);
                 return;
             }
 
@@ -235,6 +265,8 @@ namespace lfg
             else
                 for (LfgRolesMap::const_iterator it = roles.begin(); it != roles.end(); ++it)
                     ConsumeRoleSlot(it->second, tanks, healers, dps);
+
+            LimitRoleShortageToMinimum(roles, dungeons, tanks, healers, dps);
         }
 
         int32 SelectWaitTime(uint8 tanks, uint8 healers, uint8 dps, int32 wtTank, int32 wtHealer, int32 wtDps, int32 wtAvg)
