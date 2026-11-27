@@ -542,6 +542,37 @@ MaxCoreStuckTime = 0
 AddonChannel = 1
 
 #
+#    BugReport.Enable
+#        Description: Accept reports from the Bug Report addon (installed by the launcher), saved
+#                     to the auth database's bug_reports table. Works with AddonChannel off too.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled)
+
+BugReport.Enable = 1
+
+#
+#    BugReport.MinLength
+#        Description: Shortest description, in characters, a bug report may have.
+#        Default:     10
+
+BugReport.MinLength = 10
+
+#
+#    BugReport.Cooldown
+#        Description: Seconds a character must wait between two bug reports.
+#        Default:     60
+
+BugReport.Cooldown = 60
+
+#
+#    BugReport.MaxPerDay
+#        Description: Most bug reports one character may send in 24 hours (counted since the
+#                     world server started).
+#        Default:     20
+
+BugReport.MaxPerDay = 20
+
+#
 #    MapUpdate.Threads
 #        Description: Number of threads to update maps.
 #        Default:     1

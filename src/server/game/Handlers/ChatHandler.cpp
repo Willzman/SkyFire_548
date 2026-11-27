@@ -4,6 +4,7 @@
 */
 
 #include "AccountMgr.h"
+#include "BugReportHandler.h"
 #include "CellImpl.h"
 #include "ChannelMgr.h"
 #include "Chat.h"
@@ -645,6 +646,14 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
 
         if (!reply.empty())
             sender->WhisperAddon(reply, prefix, sender);
+        return;
+    }
+
+    // The Bug Report addon (shipped with the launcher) whispers itself its
+    // reports, in pieces; see BugReportHandler.cpp.
+    if (type == ChatMsg::CHAT_MSG_WHISPER && prefix == BUG_REPORT_ADDON_PREFIX)
+    {
+        BugReport::HandleAddonMessage(sender, message);
         return;
     }
 
