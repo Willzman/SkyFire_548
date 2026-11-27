@@ -1325,10 +1325,11 @@ DungeonFinder.OptionsMask = 1
 #                     from inside its dungeon for more players always gets at least one.
 #                     Dungeons are not scaled down for smaller groups. Raid Finder has its
 #                     own option below.
-#        Default:     5 - (Blizzlike)
-#                     1..4 - (Smaller groups)
+#        Default:     3 - (Small groups; with DungeonFinder.RequireRoles a tank, a healer and a damage player)
+#                     5 - (Blizzlike)
+#                     1..5 - (Any size)
 
-DungeonFinder.Dungeon.MinPlayers = 5
+DungeonFinder.Dungeon.MinPlayers = 3
 
 #
 #     DungeonFinder.Scenario.MinPlayers
@@ -1343,10 +1344,11 @@ DungeonFinder.Scenario.MinPlayers = 3
 #        Description: Fewest players the dungeon finder needs to start a Raid Finder (LFR) wing.
 #                     Raid Finder groups hold up to 25 players with at most 2 tanks, 6 healers
 #                     and 17 damage. Raids are not scaled down for smaller groups.
-#        Default:     25 - (Blizzlike)
-#                     1..24 - (Smaller groups)
+#        Default:     3 - (Small groups; with DungeonFinder.RequireRoles a tank, a healer and a damage player)
+#                     25 - (Blizzlike)
+#                     1..25 - (Any size)
 
-DungeonFinder.RaidFinder.MinPlayers = 25
+DungeonFinder.RaidFinder.MinPlayers = 3
 
 #
 #     DungeonFinder.Dungeon.IgnoreRoles
@@ -1369,6 +1371,17 @@ DungeonFinder.Dungeon.IgnoreRoles = 0
 #                     1 - (Enabled)
 
 DungeonFinder.SoloQueue.Enable = 0
+
+#
+#     DungeonFinder.RequireRoles
+#        Description: A dungeon or Raid Finder group only starts once it has at least one tank, one
+#                     healer and one damage player. Until then the queue waits for more players, even
+#                     past the MinPlayers options. Scenarios, flexible raids and solo queues are not
+#                     affected. Useful with lowered MinPlayers, so a short group still has every role.
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, blizzlike: a full group has 1 tank / 1 healer / 3 damage anyway)
+
+DungeonFinder.RequireRoles = 1
 
 #
 #   DBC.EnforceItemAttributes

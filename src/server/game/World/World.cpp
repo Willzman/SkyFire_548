@@ -1298,12 +1298,13 @@ void World::LoadConfigSettings(bool reload)
     // Dungeon finder
     setIntConfig(WorldIntConfigs::CONFIG_LFG_OPTIONSMASK, sConfigMgr->GetIntDefault("DungeonFinder.OptionsMask", 1));
 
-    // Smaller dungeon finder groups. Defaults keep the normal 5 (dungeons) and 3 (scenarios).
-    int32 lfgDungeonMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.Dungeon.MinPlayers", 5);
+    // Smaller dungeon finder groups: dungeons and Raid Finder start at 3 by default
+    // (with DungeonFinder.RequireRoles, still a tank, a healer and a damage player).
+    int32 lfgDungeonMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.Dungeon.MinPlayers", 3);
     if (lfgDungeonMinPlayers < 1 || lfgDungeonMinPlayers > 5)
     {
-        SF_LOG_ERROR("server.loading", "DungeonFinder.Dungeon.MinPlayers (%i) must be in range 1..5. Set to 5.", lfgDungeonMinPlayers);
-        lfgDungeonMinPlayers = 5;
+        SF_LOG_ERROR("server.loading", "DungeonFinder.Dungeon.MinPlayers (%i) must be in range 1..5. Set to 3.", lfgDungeonMinPlayers);
+        lfgDungeonMinPlayers = 3;
     }
     setIntConfig(WorldIntConfigs::CONFIG_LFG_DUNGEON_MIN_PLAYERS, uint32(lfgDungeonMinPlayers));
 
@@ -1315,16 +1316,17 @@ void World::LoadConfigSettings(bool reload)
     }
     setIntConfig(WorldIntConfigs::CONFIG_LFG_SCENARIO_MIN_PLAYERS, uint32(lfgScenarioMinPlayers));
 
-    int32 lfgRaidFinderMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.RaidFinder.MinPlayers", 25);
+    int32 lfgRaidFinderMinPlayers = sConfigMgr->GetIntDefault("DungeonFinder.RaidFinder.MinPlayers", 3);
     if (lfgRaidFinderMinPlayers < 1 || lfgRaidFinderMinPlayers > 25)
     {
-        SF_LOG_ERROR("server.loading", "DungeonFinder.RaidFinder.MinPlayers (%i) must be in range 1..25. Set to 25.", lfgRaidFinderMinPlayers);
-        lfgRaidFinderMinPlayers = 25;
+        SF_LOG_ERROR("server.loading", "DungeonFinder.RaidFinder.MinPlayers (%i) must be in range 1..25. Set to 3.", lfgRaidFinderMinPlayers);
+        lfgRaidFinderMinPlayers = 3;
     }
     setIntConfig(WorldIntConfigs::CONFIG_LFG_RAID_FINDER_MIN_PLAYERS, uint32(lfgRaidFinderMinPlayers));
 
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.Dungeon.IgnoreRoles", false));
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE, sConfigMgr->GetBoolDefault("DungeonFinder.SoloQueue.Enable", false));
+    SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_REQUIRE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.RequireRoles", true));
 
     // DBC_ItemAttributes
     SetBoolConfig(WorldBoolConfigs::CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES, sConfigMgr->GetBoolDefault("DBC.EnforceItemAttributes", true));

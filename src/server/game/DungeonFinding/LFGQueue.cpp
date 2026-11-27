@@ -296,6 +296,28 @@ namespace lfg
             LimitRoleShortageToMinimum(roles, dungeons, tanks, healers, dps);
         }
 
+        // DungeonFinder.RequireRoles: a dungeon or Raid Finder group needs at
+        // least one tank, one healer and one damage player (by assigned role).
+        // Scenarios (damage only) and flexible raids are left as they are.
+        bool IsMissingRequiredRole(LfgRolesMap const& assignedRoles, LfgDungeonSet const& dungeons)
+        {
+            if (!sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_REQUIRE_ROLES))
+                return false;
+
+            if (HasScenarioDungeon(dungeons) || HasFlexibleRaidDungeon(dungeons))
+                return false;
+
+            bool tank = false, healer = false, damage = false;
+            for (LfgRolesMap::const_iterator it = assignedRoles.begin(); it != assignedRoles.end(); ++it)
+            {
+                tank |= (it->second & PLAYER_ROLE_TANK) != 0;
+                healer |= (it->second & PLAYER_ROLE_HEALER) != 0;
+                damage |= (it->second & PLAYER_ROLE_DAMAGE) != 0;
+            }
+
+            return !(tank && healer && damage);
+        }
+
         int32 SelectWaitTime(uint8 tanks, uint8 healers, uint8 dps, int32 wtTank, int32 wtHealer, int32 wtDps, int32 wtAvg)
         {
             if (tanks)
@@ -811,12 +833,19 @@ namespace lfg
 
         uint8 minGroupSize = GetQueueMinGroupSize(proposalDungeons);
         uint8 maxGroupSize = GetQueueMaxGroupSize(proposalDungeons);
+        bool soloEntry = false;
         if (check.size() == 1)
         {
             LfgQueueDataContainer::const_iterator itSolo = QueueDataStore.find(check.front());
             if (itSolo != QueueDataStore.end() && itSolo->second.solo)
+            {
                 minGroupSize = 1;
+                soloEntry = true;
+            }
         }
+
+        // A solo queue goes in alone, so it can't cover every role.
+        bool const missingRole = !soloEntry && IsMissingRequiredRole(proposalRoles, proposalDungeons);
         if (numPlayers > maxGroupSize)
         {
             SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) Too much players (%u)", strGuids.c_str(), numPlayers);
@@ -824,10 +853,12 @@ namespace lfg
             return LFG_INCOMPATIBLES_TOO_MUCH_PLAYERS;
         }
 
-        // Enough players?
-        if (numPlayers < minGroupSize)
+        // Enough players? With DungeonFinder.RequireRoles, a group missing a
+        // tank, healer or damage player keeps waiting for more players.
+        if (numPlayers < minGroupSize || (missingRole && numPlayers < maxGroupSize))
         {
-            SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) Compatibles but not enough players(%u)", strGuids.c_str(), numPlayers);
+            SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) Compatibles but not enough players(%u)%s", strGuids.c_str(), numPlayers,
+                missingRole ? " or a role is missing" : "");
             LfgCompatibilityData data(LFG_COMPATIBLES_WITH_LESS_PLAYERS);
             data.roles = proposalRoles;
 
@@ -836,6 +867,14 @@ namespace lfg
 
             SetCompatibilityData(strGuids, data);
             return LFG_COMPATIBLES_WITH_LESS_PLAYERS;
+        }
+
+        // A full group that still lacks a required role can't grow any more.
+        if (missingRole)
+        {
+            SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) full group lacks a required role", strGuids.c_str());
+            SetCompatibles(strGuids, LFG_INCOMPATIBLES_NO_ROLES);
+            return LFG_INCOMPATIBLES_NO_ROLES;
         }
 
         uint64 gguid = *check.begin();
