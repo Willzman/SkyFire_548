@@ -1,0 +1,19 @@
+[Unit]
+Description=SkyFire feedback upload API (tools/feedback/feedback_api.py)
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=william
+WorkingDirectory=/home/william/skyfire/feedback/app
+ExecStart=/usr/bin/python3 -E -s feedback_api.py --config /home/william/skyfire/feedback/feedback.conf
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/william/skyfire/feedback
+
+[Install]
+WantedBy=multi-user.target

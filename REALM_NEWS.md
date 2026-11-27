@@ -9,6 +9,7 @@ merged: what players will notice, not how it was done.
 ## 2026-11-27
 
 - Report bugs from inside the game: click the bug button on the minimap (or type **/bug**), pick a category and say what went wrong. Your location, target and quests are filled in for you, and you get a report number (like BUG-12) to quote.
+- When a bug you reported is fixed, the game tells you so the next time you log in on that character.
 
 ## 2026-11-26
 
