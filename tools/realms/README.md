@@ -74,7 +74,7 @@ them all as applied without running them.
 `tools/realms/<realm>.conf` holds a realm's own gameplay settings (`Key = Value`
 lines, `#` comments). `configure_realm.sh` copies them into that realm's
 `worldserver.conf` on every run, after the realm keys. `stable.conf` sets the
-Dungeon Finder options (solo queue on, normal queues start at 3 players, Raid Finder for
+Dungeon Finder options (solo queue on, normal queues and Raid Finder start at 3 players, for
 small premades). A key the installed build doesn't have yet is skipped with a
 warning. Change values in that file, not in the live `worldserver.conf`, or the
 next run puts them back. There is no `dev.conf`: the Development realm's
