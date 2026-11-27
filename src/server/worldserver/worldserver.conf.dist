@@ -1378,10 +1378,10 @@ DungeonFinder.SoloQueue.Enable = 0
 #                     healer and one damage player. Until then the queue waits for more players, even
 #                     past the MinPlayers options. Scenarios, flexible raids and solo queues are not
 #                     affected. Useful with lowered MinPlayers, so a short group still has every role.
-#        Default:     0 - (Disabled, blizzlike: a full group has 1 tank / 1 healer / 3 damage anyway)
-#                     1 - (Enabled)
+#        Default:     1 - (Enabled)
+#                     0 - (Disabled, blizzlike: a full group has 1 tank / 1 healer / 3 damage anyway)
 
-DungeonFinder.RequireRoles = 0
+DungeonFinder.RequireRoles = 1
 
 #
 #   DBC.EnforceItemAttributes

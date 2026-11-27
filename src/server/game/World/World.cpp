@@ -1325,7 +1325,7 @@ void World::LoadConfigSettings(bool reload)
 
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.Dungeon.IgnoreRoles", false));
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE, sConfigMgr->GetBoolDefault("DungeonFinder.SoloQueue.Enable", false));
-    SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_REQUIRE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.RequireRoles", false));
+    SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_REQUIRE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.RequireRoles", true));
 
     // DBC_ItemAttributes
     SetBoolConfig(WorldBoolConfigs::CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES, sConfigMgr->GetBoolDefault("DBC.EnforceItemAttributes", true));
