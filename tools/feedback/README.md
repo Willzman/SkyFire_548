@@ -49,8 +49,17 @@ Two fine-grained personal access tokens, so neither can do more than its job
    each screenshot there and links its raw URL.
 3. **Images token**: only that images repository; *Contents: Read and write*.
 
-Put both in the config file below. They never go in the launcher, the
-add-ons or this repository.
+Make them at https://github.com/settings/personal-access-tokens/new: a name,
+an expiry (a year, say, with a reminder to renew), resource owner the account
+that owns the repositories, *Only select repositories*, then under
+*Repository permissions* just the one permission above.
+
+Then put them in the config with `set_tokens.sh`, run on the server in a
+terminal (`ssh -t`). You paste each token there; it is checked against GitHub
+with one read-only request, written to the config (mode 600) without showing
+up on screen or in a command line, `dry_run` is turned off, and it offers to
+start the worker. The tokens never go in the launcher, the add-ons or this
+repository.
 
 ## Server setup (mopserverpc)
 
