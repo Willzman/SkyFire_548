@@ -8,6 +8,7 @@ merged: what players will notice, not how it was done.
 
 ## 2026-11-26
 
+- Dungeon Finder: groups smaller than 5 now always have a tank, a healer and a damage player, so the queue waits until it can find all three.
 - Dungeon Finder: a **Solo** checkbox next to Find Group (from the launcher's Solo Queue add-on). Tick it and you go into the dungeon by yourself, right away.
 - Raid Finder groups are now proper 25-player raids (2 tanks, 6 healers, 17 damage) instead of 5-player groups.
 - The party menu now shows the right dungeon and raid difficulty; no more "Dungeon Difficulty set to 10 Player" when a group forms.
