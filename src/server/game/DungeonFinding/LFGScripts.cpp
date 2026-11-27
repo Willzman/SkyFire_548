@@ -158,11 +158,28 @@ namespace lfg
                     return;
                 }
 
+                // A released ghost is moved to the graveyard outside and walks
+                // back in, so keep the group for the corpse run. In a 1-player
+                // group (DungeonFinder.Dungeon.MinPlayers = 1) that ghost is
+                // the last member, and disbanding would lock them out.
+                if (!player->IsAlive())
+                    return;
+
                 // Only the last member out may tear the group down. Anyone else stepping off the
                 // dungeon map - hearthstone, summon, the dungeon finder's own teleport out, or
                 // simply logging in elsewhere - is free to come back, and disbanding here would
                 // evict the members still inside.
                 if (group->GetMembersCount() > 1)
+                {
+                    player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
+                    return;
+                }
+
+                // A 1-member group (always the case with
+                // DungeonFinder.Dungeon.MinPlayers = 1) keeps its unfinished
+                // dungeon too, like a full group: the player can teleport back
+                // in from the dungeon finder, and Leave Group still ends it.
+                if (groupState == LFG_STATE_DUNGEON)
                 {
                     player->RemoveAurasDueToSpell(LFG_SPELL_LUCK_OF_THE_DRAW);
                     return;
