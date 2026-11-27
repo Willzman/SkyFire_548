@@ -30,6 +30,7 @@
 
 #include "BugReportHandler.h"
 
+#include "Chat.h"
 #include "Config.h"
 #include "CryptoHash.h"
 #include "CryptoRandom.h"
@@ -345,6 +346,28 @@ namespace
         Pending.erase(player->GetGUIDLow());
         return true;
     }
+}
+
+void BugReport::NotifyFixed(Player* player)
+{
+    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_FIXED_BUG_REPORTS);
+    stmt->setUInt32(0, realmID);
+    stmt->setUInt32(1, player->GetGUIDLow());
+    PreparedQueryResult result = LoginDatabase.Query(stmt);
+    if (!result)
+        return;
+
+    ChatHandler chat(player->GetSession());
+    do
+    {
+        uint32 id = (*result)[0].GetUInt32();
+        chat.PSendSysMessage("|cff33ccffBug Report:|r BUG-%u, which you reported, has been fixed. Thank you!", id);
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BUG_REPORT_NOTIFIED);
+        stmt->setUInt32(0, id);
+        LoginDatabase.Execute(stmt);
+    }
+    while (result->NextRow());
 }
 
 void BugReport::HandleAddonMessage(Player* sender, std::string const& message)

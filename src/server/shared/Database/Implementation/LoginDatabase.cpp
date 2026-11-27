@@ -130,4 +130,6 @@ void LoginDatabaseConnection::DoPrepareStatements()
     // Keeps an account's 5 newest tokens (the one just added included).
     PrepareStatement(LOGIN_DEL_OLD_FEEDBACK_TOKENS, "DELETE FROM account_feedback_token WHERE account_id = ? AND token_hash NOT IN "
         "(SELECT token_hash FROM (SELECT token_hash FROM account_feedback_token WHERE account_id = ? ORDER BY created_at DESC LIMIT 5) AS newest)", CONNECTION_ASYNC);
+    PrepareStatement(LOGIN_SEL_FIXED_BUG_REPORTS, "SELECT id FROM bug_reports WHERE realm_id = ? AND character_guid = ? AND status = 'fixed' AND player_notified = 0 ORDER BY id", CONNECTION_SYNCH);
+    PrepareStatement(LOGIN_UPD_BUG_REPORT_NOTIFIED, "UPDATE bug_reports SET player_notified = 1 WHERE id = ?", CONNECTION_ASYNC);
 }

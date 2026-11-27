@@ -7,6 +7,7 @@
 #include "ArenaTeam.h"
 #include "ArenaTeamMgr.h"
 #include "Battleground.h"
+#include "BugReportHandler.h"
 #include "CalendarMgr.h"
 #include "CharacterBoost.h"
 #include "Chat.h"
@@ -1858,6 +1859,10 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
         pCurrChar->CastSpell(pCurrChar, 103985, true); //Stance of White Tiger
 
     sScriptMgr->OnPlayerLogin(pCurrChar, firstLogin);
+
+    // "BUG-12, which you reported, has been fixed": set by the feedback worker
+    // when its GitHub issue is closed as completed.
+    BugReport::NotifyFixed(pCurrChar);
     delete holder;
 }
 

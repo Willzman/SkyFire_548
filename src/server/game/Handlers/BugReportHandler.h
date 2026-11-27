@@ -18,6 +18,11 @@ namespace BugReport
 {
     // Handles one SFBUG addon message from the player and answers it.
     void HandleAddonMessage(Player* sender, std::string const& message);
+
+    // At login: tells the player which of their reports were fixed (the
+    // feedback worker marks a report fixed when its GitHub issue is closed as
+    // completed), once each.
+    void NotifyFixed(Player* player);
 }
 
 #endif
