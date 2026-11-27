@@ -40,19 +40,20 @@ namespace lfg
     struct LfgQueueData
     {
         LfgQueueData() : joinTime(time_t(time(NULL))), tanks(LFG_TANKS_NEEDED),
-            healers(LFG_HEALERS_NEEDED), dps(LFG_DPS_NEEDED), solo(false)
+            healers(LFG_HEALERS_NEEDED), dps(LFG_DPS_NEEDED), closedSize(0)
         { }
 
         LfgQueueData(time_t _joinTime, LfgDungeonSet const& _dungeons, LfgRolesMap const& _roles) :
             joinTime(_joinTime), tanks(LFG_TANKS_NEEDED), healers(LFG_HEALERS_NEEDED),
-            dps(LFG_DPS_NEEDED), solo(false), dungeons(_dungeons), roles(_roles)
+            dps(LFG_DPS_NEEDED), closedSize(0), dungeons(_dungeons), roles(_roles)
         { }
 
         time_t joinTime;                                       ///< Player queue join time (to calculate wait times)
         uint8 tanks;                                           ///< Tanks needed
         uint8 healers;                                         ///< Healers needed
         uint8 dps;                                             ///< Dps needed
-        bool solo;                                             ///< Solo queue: goes in alone, never matched with others
+        uint8 closedSize;                                      ///< Solo (1) / Duo (2) queue: the group is exactly this size,
+                                                               ///< only matched with entries of the same kind; 0 = normal queue
         LfgDungeonSet dungeons;                                ///< Selected Player/Group Dungeon/s
         LfgRolesMap roles;                                     ///< Selected Player Role/s
         std::string bestCompatible;                            ///< Best compatible combination of people queued
@@ -81,7 +82,7 @@ namespace lfg
         void AddQueueData(uint64 guid, time_t joinTime, LfgDungeonSet const& dungeons, LfgRolesMap const& rolesMap);
         void RemoveQueueData(uint64 guid);
         bool HasQueueData(uint64 guid) const;
-        void SetSoloQueue(uint64 guid);
+        void SetClosedSize(uint64 guid, uint8 size);
 
         // Update Timers (when proposal success)
         void UpdateWaitTimeAvg(int32 waitTime, uint32 dungeonId);

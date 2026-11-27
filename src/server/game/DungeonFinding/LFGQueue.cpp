@@ -464,11 +464,11 @@ namespace lfg
         return QueueDataStore.find(guid) != QueueDataStore.end();
     }
 
-    void LFGQueue::SetSoloQueue(uint64 guid)
+    void LFGQueue::SetClosedSize(uint64 guid, uint8 size)
     {
         LfgQueueDataContainer::iterator itr = QueueDataStore.find(guid);
         if (itr != QueueDataStore.end())
-            itr->second.solo = true;
+            itr->second.closedSize = size;
     }
 
     void LFGQueue::UpdateWaitTimeAvg(int32 waitTime, uint32 dungeonId)
@@ -656,18 +656,29 @@ namespace lfg
             return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
         }
 
-        // A solo queue (DungeonFinder.SoloQueue.Enable, the SoloQueue addon) goes
-        // in alone: never combine it with anyone else.
-        if (check.size() > 1)
-            for (LfgGuidList::const_iterator it = check.begin(); it != check.end(); ++it)
+        // Solo (1) and Duo (2) queues (DungeonFinder.SoloQueue.Enable, the
+        // launcher's Solo Queue add-on) form a group of exactly that size and are
+        // only combined with entries of the same kind: a Duo with one other Duo
+        // player, a Solo with nobody. Never mixed with normal queues.
+        uint8 closedSize = 0;
+        for (LfgGuidList::const_iterator it = check.begin(); it != check.end(); ++it)
+        {
+            LfgQueueDataContainer::const_iterator itQueue = QueueDataStore.find(*it);
+            uint8 size = itQueue != QueueDataStore.end() ? itQueue->second.closedSize : 0;
+            if (it == check.begin())
+                closedSize = size;
+            else if (size != closedSize)
             {
-                LfgQueueDataContainer::const_iterator itQueue = QueueDataStore.find(*it);
-                if (itQueue != QueueDataStore.end() && itQueue->second.solo)
-                {
-                    SetCompatibles(strGuids, LFG_INCOMPATIBLES_WRONG_GROUP_SIZE);
-                    return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
-                }
+                SetCompatibles(strGuids, LFG_INCOMPATIBLES_WRONG_GROUP_SIZE);
+                return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
             }
+        }
+
+        if (closedSize && check.size() > closedSize)
+        {
+            SetCompatibles(strGuids, LFG_INCOMPATIBLES_WRONG_GROUP_SIZE);
+            return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
+        }
 
         // Check all-but-new compatiblitity
         if (check.size() > 2)
@@ -718,7 +729,7 @@ namespace lfg
         if (check.size() == 1)
         {
             LfgQueueDataContainer::iterator itQueue = QueueDataStore.find(check.front());
-            uint8 minGroupSize = itQueue->second.solo ? 1 : GetQueueMinGroupSize(itQueue->second.dungeons);
+            uint8 minGroupSize = closedSize ? closedSize : GetQueueMinGroupSize(itQueue->second.dungeons);
 
             // A dungeon group queueing for more players must get at least one,
             // even when it already meets a lowered minimum group size.
@@ -833,19 +844,14 @@ namespace lfg
 
         uint8 minGroupSize = GetQueueMinGroupSize(proposalDungeons);
         uint8 maxGroupSize = GetQueueMaxGroupSize(proposalDungeons);
-        bool soloEntry = false;
-        if (check.size() == 1)
+        if (closedSize)
         {
-            LfgQueueDataContainer::const_iterator itSolo = QueueDataStore.find(check.front());
-            if (itSolo != QueueDataStore.end() && itSolo->second.solo)
-            {
-                minGroupSize = 1;
-                soloEntry = true;
-            }
+            minGroupSize = closedSize;
+            maxGroupSize = closedSize;
         }
 
-        // A solo queue goes in alone, so it can't cover every role.
-        bool const missingRole = !soloEntry && IsMissingRequiredRole(proposalRoles, proposalDungeons);
+        // A Solo or Duo group is too small to cover every role.
+        bool const missingRole = !closedSize && IsMissingRequiredRole(proposalRoles, proposalDungeons);
         if (numPlayers > maxGroupSize)
         {
             SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) Too much players (%u)", strGuids.c_str(), numPlayers);
