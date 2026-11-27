@@ -120,4 +120,14 @@ void LoginDatabaseConnection::DoPrepareStatements()
     PrepareStatement(LOGIN_INS_RBAC_ACCOUNT_PERMISSION, "INSERT INTO rbac_account_permissions (accountId, permissionId, granted, realmId) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE granted = VALUES(granted)", CONNECTION_ASYNC);
     PrepareStatement(LOGIN_DEL_RBAC_ACCOUNT_PERMISSION, "DELETE FROM rbac_account_permissions WHERE accountId = ? AND permissionId = ? AND (realmId = ? OR realmId = -1)", CONNECTION_ASYNC);
     PrepareStatement(LOGIN_INS_GM_NOTE, "INSERT INTO gm_notes (realm_id, account_id, player_id, note_date, note_time, map_id, zone_id, area_id, position_x, position_y, position_z, orientation, location, note) VALUES (?, ?, ?, CURDATE(), CURTIME(), ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
+
+    // Bug Report add-on (BugReportHandler.cpp). Synchronous: the add-on is told the new id.
+    PrepareStatement(LOGIN_INS_BUG_REPORT, "INSERT INTO bug_reports (ref, realm_id, account_id, character_guid, character_name, created_at, category, description, client_context, "
+        "map_id, zone_id, area_id, instance_id, position_x, position_y, position_z, orientation, target_guid, target_entry, level, class, race, core_revision) "
+        "VALUES (?, ?, ?, ?, ?, UNIX_TIMESTAMP(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_SYNCH);
+    PrepareStatement(LOGIN_SEL_BUG_REPORT_ID_BY_REF, "SELECT id FROM bug_reports WHERE ref = ?", CONNECTION_SYNCH);
+    PrepareStatement(LOGIN_INS_FEEDBACK_TOKEN, "INSERT INTO account_feedback_token (token_hash, account_id, created_at) VALUES (?, ?, UNIX_TIMESTAMP())", CONNECTION_ASYNC);
+    // Keeps an account's 5 newest tokens (the one just added included).
+    PrepareStatement(LOGIN_DEL_OLD_FEEDBACK_TOKENS, "DELETE FROM account_feedback_token WHERE account_id = ? AND token_hash NOT IN "
+        "(SELECT token_hash FROM (SELECT token_hash FROM account_feedback_token WHERE account_id = ? ORDER BY created_at DESC LIMIT 5) AS newest)", CONNECTION_ASYNC);
 }
