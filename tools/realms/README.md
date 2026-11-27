@@ -69,6 +69,25 @@ set `WorldDatabase.AutoBaseline` / `CharacterDatabase.AutoBaseline` if you are
 sure the imported data already contains every file in `sql/updates`; it marks
 them all as applied without running them.
 
+## New settings in an existing config
+
+Each run also adds to every existing `.conf` the settings its `.conf.dist` has
+gained since the file was made (a newer build's options), at the `.dist` default
+and with their description, under an "Added by configure_realm.sh" header at the
+end. Values already in the file are never changed, so re-running after every
+install keeps the configs complete.
+
+## Realm gameplay settings
+
+`tools/realms/<realm>.conf` holds a realm's own gameplay settings (`Key = Value`
+lines, `#` comments). `configure_realm.sh` copies them into that realm's
+`worldserver.conf` on every run, after the realm keys. `stable.conf` sets the
+Dungeon Finder options (solo queue on, normal queues and Raid Finder start at 3 players, for
+small premades). A key the installed build doesn't have yet is skipped with a
+warning. Change values in that file, not in the live `worldserver.conf`, or the
+next run puts them back. There is no `dev.conf`: the Development realm's
+settings are set by hand while testing.
+
 ## Notes
 
 * Each worldserver applies new SQL from its own checkout's `sql/updates` at

@@ -14,7 +14,8 @@
 # Stable install's; this script configures authserver.conf for stable, or for
 # dev with --with-authserver (when running Development on its own).
 #
-# Creates <prefix>/etc/*.conf from *.conf.dist when missing, then sets only the
+# Creates <prefix>/etc/*.conf from *.conf.dist when missing (or adds the settings a
+# newer .dist has gained to an existing .conf), then sets only the
 # keys below, so it is safe to re-run after every install. Other settings you
 # changed by hand are kept.
 #
@@ -121,13 +122,48 @@ else
 fi
 DB_PREFIX="$DB_HOST;$DB_PORT;$DB_USER;$DB_PASS"
 
-# Copy <name>.conf.dist to <name>.conf if the .conf does not exist yet.
+# add_missing_keys CONF DIST: append to CONF every setting of DIST that CONF has
+# no active "Key = ..." line for, with the comment block above it in DIST, at
+# DIST's default value. Settings added in a newer build then show up in an
+# older .conf; values already in CONF are never touched.
+add_missing_keys() {
+    local conf=$1 dist=$2 missing count
+    missing=$(awk '
+        NR == FNR {
+            if (match($0, /^[ \t]*[A-Za-z0-9_.]+[ \t]*=/)) {
+                key = $0; sub(/^[ \t]+/, "", key); sub(/[ \t]*=.*/, "", key); have[key] = 1
+            }
+            next
+        }
+        { block = block $0 "\n" }
+        /^[A-Za-z0-9_.]+[ \t]*=/ {
+            key = $0; sub(/[ \t]*=.*/, "", key)
+            if (!(key in have)) out = out block
+            block = ""
+        }
+        END { printf "%s", out }' "$conf" "$dist")
+    [[ -n $missing ]] || return 0
+    count=$(grep -cE '^[A-Za-z0-9_.]+[[:space:]]*=' <<< "$missing")
+    {
+        printf '\n###################################################################################################\n'
+        printf '# Added by configure_realm.sh on %s: settings in %s that this file did not have yet.\n' \
+            "$(date +%F)" "$(basename "$dist")"
+        printf '###################################################################################################\n'
+        printf '%s' "$missing"
+    } >> "$conf"
+    echo "Added $count new setting(s) from $(basename "$dist") to $conf"
+}
+
+# Copy <name>.conf.dist to <name>.conf if the .conf does not exist yet;
+# otherwise add the settings the .dist has gained since.
 ensure_conf() {
     local conf="$ETC/$1.conf" dist="$ETC/$1.conf.dist"
     if [[ ! -f $conf ]]; then
         [[ -f $dist ]] || die "neither $conf nor $dist exists"
         cp "$dist" "$conf"
         echo "Created $conf"
+    elif [[ -f $dist ]]; then
+        add_missing_keys "$conf" "$dist"
     fi
 }
 
@@ -182,6 +218,28 @@ if [[ $AUTO_SETUP == 1 ]] && grep -qE '^WorldDatabase\.BaseSqlFile[[:space:]]*=[
     echo "configure_realm: warning: no --world-dump set; worldserver will stop at startup if $WORLD_DB is empty" >&2
 fi
 echo "Configured $W as the $REALM realm (RealmID $REALM_ID, port $WORLD_PORT, $WORLD_DB / $CHAR_DB${AUTO_SETUP:+, auto-setup $AUTO_SETUP})"
+
+# The realm's own gameplay settings, from tools/realms/<realm>.conf next to
+# this script, if there is one. A key this build's worldserver.conf lacks is
+# skipped with a warning, so an older install still configures.
+SETTINGS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$REALM.conf"
+if [[ -f $SETTINGS ]]; then
+    applied=0
+    while IFS= read -r line || [[ -n $line ]]; do
+        line="${line%$'\r'}"
+        [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+        [[ $line =~ ^[[:space:]]*([^=[:space:]]+)[[:space:]]*=[[:space:]]*(.*)$ ]] \
+            || die "bad line in $SETTINGS: $line"
+        key=${BASH_REMATCH[1]} value=${BASH_REMATCH[2]}
+        if grep -qE "^[[:space:]]*${key//./\\.}[[:space:]]*=" "$W"; then
+            set_key "$W" "$key" "$value"
+            applied=$((applied + 1))
+        else
+            echo "configure_realm: warning: $key is not in $W (older build?), skipped" >&2
+        fi
+    done < "$SETTINGS"
+    echo "Applied $applied setting(s) from $SETTINGS"
+fi
 
 if [[ $REALM == stable || $WITH_AUTH == 1 ]]; then
     ensure_conf authserver
