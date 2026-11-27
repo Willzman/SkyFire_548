@@ -442,6 +442,13 @@ namespace lfg
         return QueueDataStore.find(guid) != QueueDataStore.end();
     }
 
+    void LFGQueue::SetSoloQueue(uint64 guid)
+    {
+        LfgQueueDataContainer::iterator itr = QueueDataStore.find(guid);
+        if (itr != QueueDataStore.end())
+            itr->second.solo = true;
+    }
+
     void LFGQueue::UpdateWaitTimeAvg(int32 waitTime, uint32 dungeonId)
     {
         LfgWaitTime& wt = waitTimesAvgStore[dungeonId];
@@ -627,6 +634,19 @@ namespace lfg
             return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
         }
 
+        // A solo queue (DungeonFinder.SoloQueue.Enable, the SoloQueue addon) goes
+        // in alone: never combine it with anyone else.
+        if (check.size() > 1)
+            for (LfgGuidList::const_iterator it = check.begin(); it != check.end(); ++it)
+            {
+                LfgQueueDataContainer::const_iterator itQueue = QueueDataStore.find(*it);
+                if (itQueue != QueueDataStore.end() && itQueue->second.solo)
+                {
+                    SetCompatibles(strGuids, LFG_INCOMPATIBLES_WRONG_GROUP_SIZE);
+                    return LFG_INCOMPATIBLES_WRONG_GROUP_SIZE;
+                }
+            }
+
         // Check all-but-new compatiblitity
         if (check.size() > 2)
         {
@@ -676,7 +696,7 @@ namespace lfg
         if (check.size() == 1)
         {
             LfgQueueDataContainer::iterator itQueue = QueueDataStore.find(check.front());
-            uint8 minGroupSize = GetQueueMinGroupSize(itQueue->second.dungeons);
+            uint8 minGroupSize = itQueue->second.solo ? 1 : GetQueueMinGroupSize(itQueue->second.dungeons);
 
             // A dungeon group queueing for more players must get at least one,
             // even when it already meets a lowered minimum group size.
@@ -791,6 +811,12 @@ namespace lfg
 
         uint8 minGroupSize = GetQueueMinGroupSize(proposalDungeons);
         uint8 maxGroupSize = GetQueueMaxGroupSize(proposalDungeons);
+        if (check.size() == 1)
+        {
+            LfgQueueDataContainer::const_iterator itSolo = QueueDataStore.find(check.front());
+            if (itSolo != QueueDataStore.end() && itSolo->second.solo)
+                minGroupSize = 1;
+        }
         if (numPlayers > maxGroupSize)
         {
             SF_LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) Too much players (%u)", strGuids.c_str(), numPlayers);

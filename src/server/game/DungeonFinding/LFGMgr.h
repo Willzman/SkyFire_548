@@ -379,6 +379,9 @@ namespace lfg
         void SetDebugRequirementOverride(bool enabled) { m_debugRequirementOverride = enabled; }
         /// Gets the server-wide debug override for flexible raid minimum group size
         bool IsDebugFlexRaidMinimumOverrideEnabled() const { return m_debugFlexRaidMinimumOverride; }
+        /// Solo queue (DungeonFinder.SoloQueue.Enable): the player's next solo join goes in alone
+        void RequestSoloQueue(uint64 guid);
+        bool ConsumeSoloQueueRequest(uint64 guid);
         /// Sets the server-wide debug override for flexible raid minimum group size
         void SetDebugFlexRaidMinimumOverride(bool enabled) { m_debugFlexRaidMinimumOverride = enabled; }
         /// Clears queue - Only for internal testing
@@ -536,6 +539,7 @@ namespace lfg
         uint32 m_options;                                  ///< Stores config options
         bool m_debugRequirementOverride;                   ///< bypasses LFG entry requirements for server-wide debugging
         bool m_debugFlexRaidMinimumOverride;               ///< allows flexible raid queues to form below normal minimum for debugging
+        std::map<uint64, time_t> m_soloQueueRequests;      ///< players whose next join is a solo queue, and when they asked
 
         LfgQueueContainer QueuesStore;                     ///< Queues
         LfgCachedDungeonContainer CachedDungeonMapStore;   ///< Stores all dungeons by groupType

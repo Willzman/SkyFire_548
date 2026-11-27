@@ -771,6 +771,8 @@ namespace lfg
             SetQueueTicketTime(guid, ticketTime);
             LFGQueue& queue = GetQueue(guid);
             queue.AddQueueData(guid, ticketTime, dungeons, rolesMap);
+            if (ConsumeSoloQueueRequest(guid))
+                queue.SetSoloQueue(guid);
 
             if (!isContinue)
             {
@@ -2432,6 +2434,23 @@ namespace lfg
             return LFG_TYPE_NONE;
 
         return LfgType(dungeon->type);
+    }
+
+    void LFGMgr::RequestSoloQueue(uint64 guid)
+    {
+        m_soloQueueRequests[guid] = time(NULL);
+    }
+
+    bool LFGMgr::ConsumeSoloQueueRequest(uint64 guid)
+    {
+        std::map<uint64, time_t>::iterator itr = m_soloQueueRequests.find(guid);
+        if (itr == m_soloQueueRequests.end())
+            return false;
+
+        // The addon joins right after the server's reply; an older request is stale.
+        bool const fresh = time(NULL) - itr->second <= 30;
+        m_soloQueueRequests.erase(itr);
+        return fresh && sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE);
     }
 
     bool LFGMgr::IsRaidFinderDungeon(uint32 dungeonId)

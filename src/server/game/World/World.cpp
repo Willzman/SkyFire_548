@@ -1324,6 +1324,7 @@ void World::LoadConfigSettings(bool reload)
     setIntConfig(WorldIntConfigs::CONFIG_LFG_RAID_FINDER_MIN_PLAYERS, uint32(lfgRaidFinderMinPlayers));
 
     SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_DUNGEON_IGNORE_ROLES, sConfigMgr->GetBoolDefault("DungeonFinder.Dungeon.IgnoreRoles", false));
+    SetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE, sConfigMgr->GetBoolDefault("DungeonFinder.SoloQueue.Enable", false));
 
     // DBC_ItemAttributes
     SetBoolConfig(WorldBoolConfigs::CONFIG_DBC_ENFORCE_ITEM_ATTRIBUTES, sConfigMgr->GetBoolDefault("DBC.EnforceItemAttributes", true));
