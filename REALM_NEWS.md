@@ -6,6 +6,10 @@ The launcher shows the newest entries in its "What's new" panel.
 Each change that reaches `Development` adds one line here, under the date it was
 merged: what players will notice, not how it was done.
 
+## 2026-11-27
+
+- Report bugs from inside the game: click the bug button on the minimap (or type **/bug**), pick a category and say what went wrong. Your location, target and quests are filled in for you, and you get a report number (like BUG-12) to quote.
+
 ## 2026-11-26
 
 - Dungeon Finder: a **Duo** checkbox next to Solo. Two players go in as a pair: a group of 2 (the leader ticks it), or two players queueing on their own, who are matched with each other.
