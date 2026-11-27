@@ -1371,6 +1371,17 @@ DungeonFinder.Dungeon.IgnoreRoles = 0
 DungeonFinder.SoloQueue.Enable = 0
 
 #
+#     DungeonFinder.RequireRoles
+#        Description: A dungeon or Raid Finder group only starts once it has at least one tank, one
+#                     healer and one damage player. Until then the queue waits for more players, even
+#                     past the MinPlayers options. Scenarios, flexible raids and solo queues are not
+#                     affected. Useful with lowered MinPlayers, so a short group still has every role.
+#        Default:     0 - (Disabled, blizzlike: a full group has 1 tank / 1 healer / 3 damage anyway)
+#                     1 - (Enabled)
+
+DungeonFinder.RequireRoles = 0
+
+#
 #   DBC.EnforceItemAttributes
 #        Description: Disallow overriding item attributes stored in DBC files with values from the
 #                     database.
