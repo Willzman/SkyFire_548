@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS `bug_reports` (
 -- there and sends it with uploads. Only a SHA-256 of each token is kept here.
 -- An account may have a few (one per PC it plays from).
 CREATE TABLE IF NOT EXISTS `account_feedback_token` (
-  `token_hash` CHAR(64) NOT NULL COMMENT 'lowercase hex SHA-256 of the token',
+  `token_hash` CHAR(64) NOT NULL COMMENT 'uppercase hex SHA-256 of the token (itself 64 uppercase hex)',
   `account_id` INT UNSIGNED NOT NULL,
   `created_at` INT UNSIGNED NOT NULL,
   `last_used` INT UNSIGNED NOT NULL DEFAULT 0,
