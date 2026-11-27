@@ -14,6 +14,7 @@
 #include "Guild.h"
 #include "GuildMgr.h"
 #include "Language.h"
+#include "LFGMgr.h"
 #include "Log.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
@@ -605,6 +606,32 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
 
     if (prefix.empty() || prefix.length() > 16)
         return;
+
+    // The SoloQueue addon (shipped with the launcher) whispers itself with this
+    // prefix: "PING" asks whether the realm has solo queue, "QUEUE" asks for the
+    // next dungeon finder join to be a solo one. The reply goes back the same way.
+    if (type == ChatMsg::CHAT_MSG_WHISPER && prefix == "SFSOLO")
+    {
+        std::string reply;
+        if (!sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE))
+            reply = "OFF";
+        else if (message == "PING")
+            reply = "ON";
+        else if (message == "QUEUE")
+        {
+            if (sender->GetGroup())
+                reply = "GROUP";
+            else
+            {
+                sLFGMgr->RequestSoloQueue(sender->GetGUID());
+                reply = "READY";
+            }
+        }
+
+        if (!reply.empty())
+            sender->WhisperAddon(reply, prefix, sender);
+        return;
+    }
 
     // Logging enabled?
     if (sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_CHATLOG_ADDON))

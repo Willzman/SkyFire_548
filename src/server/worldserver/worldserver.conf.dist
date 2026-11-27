@@ -1360,6 +1360,17 @@ DungeonFinder.RaidFinder.MinPlayers = 25
 DungeonFinder.Dungeon.IgnoreRoles = 0
 
 #
+#     DungeonFinder.SoloQueue.Enable
+#        Description: Let players queue into a dungeon finder instance alone with the "Solo" button
+#                     of the SoloQueue addon (installed by the launcher). A solo queue starts at
+#                     once and is never matched with other players; normal queues are unchanged.
+#                     Only for players not in a group. Instances are not scaled down.
+#        Default:     0 - (Disabled)
+#                     1 - (Enabled)
+
+DungeonFinder.SoloQueue.Enable = 0
+
+#
 #   DBC.EnforceItemAttributes
 #        Description: Disallow overriding item attributes stored in DBC files with values from the
 #                     database.
