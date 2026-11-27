@@ -14,7 +14,8 @@
 # Stable install's; this script configures authserver.conf for stable, or for
 # dev with --with-authserver (when running Development on its own).
 #
-# Creates <prefix>/etc/*.conf from *.conf.dist when missing, then sets only the
+# Creates <prefix>/etc/*.conf from *.conf.dist when missing (or adds the settings a
+# newer .dist has gained to an existing .conf), then sets only the
 # keys below, so it is safe to re-run after every install. Other settings you
 # changed by hand are kept.
 #
@@ -121,13 +122,48 @@ else
 fi
 DB_PREFIX="$DB_HOST;$DB_PORT;$DB_USER;$DB_PASS"
 
-# Copy <name>.conf.dist to <name>.conf if the .conf does not exist yet.
+# add_missing_keys CONF DIST: append to CONF every setting of DIST that CONF has
+# no active "Key = ..." line for, with the comment block above it in DIST, at
+# DIST's default value. Settings added in a newer build then show up in an
+# older .conf; values already in CONF are never touched.
+add_missing_keys() {
+    local conf=$1 dist=$2 missing count
+    missing=$(awk '
+        NR == FNR {
+            if (match($0, /^[ \t]*[A-Za-z0-9_.]+[ \t]*=/)) {
+                key = $0; sub(/^[ \t]+/, "", key); sub(/[ \t]*=.*/, "", key); have[key] = 1
+            }
+            next
+        }
+        { block = block $0 "\n" }
+        /^[A-Za-z0-9_.]+[ \t]*=/ {
+            key = $0; sub(/[ \t]*=.*/, "", key)
+            if (!(key in have)) out = out block
+            block = ""
+        }
+        END { printf "%s", out }' "$conf" "$dist")
+    [[ -n $missing ]] || return 0
+    count=$(grep -cE '^[A-Za-z0-9_.]+[[:space:]]*=' <<< "$missing")
+    {
+        printf '\n###################################################################################################\n'
+        printf '# Added by configure_realm.sh on %s: settings in %s that this file did not have yet.\n' \
+            "$(date +%F)" "$(basename "$dist")"
+        printf '###################################################################################################\n'
+        printf '%s' "$missing"
+    } >> "$conf"
+    echo "Added $count new setting(s) from $(basename "$dist") to $conf"
+}
+
+# Copy <name>.conf.dist to <name>.conf if the .conf does not exist yet;
+# otherwise add the settings the .dist has gained since.
 ensure_conf() {
     local conf="$ETC/$1.conf" dist="$ETC/$1.conf.dist"
     if [[ ! -f $conf ]]; then
         [[ -f $dist ]] || die "neither $conf nor $dist exists"
         cp "$dist" "$conf"
         echo "Created $conf"
+    elif [[ -f $dist ]]; then
+        add_missing_keys "$conf" "$dist"
     fi
 }
 
