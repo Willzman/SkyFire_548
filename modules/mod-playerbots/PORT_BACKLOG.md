@@ -77,6 +77,21 @@ independent review. Exercise them on the dev realm first and fix what turns up:
   or an item objective with a `spellid_1`; find the target from the spell's
   conditions / `conditions` table, then cast through the normal item-use path.
 
+### 1a. Quest credit that does not come from killing the objective creature
+
+* **Why**: on `world_dev`, 2,155 quests have a kill objective whose creature is
+  never spawned (a credit marker). Bots give up on them (`objective-no-spawn`,
+  `quest-stalled`), and some sit in starting-zone chains, so everything after
+  them is lost.
+* **Issues**: Willzman/SkyFire_548#272 (spell-practice quests: SmartAI spell
+  hit on a training dummy, 156 quests), #273 (starting-zone chains: death
+  proxies, quest items, vehicles, script markers), #274 (click, rescue and
+  talk-to objectives: gossip options, spells on friendly NPCs).
+* **Here**: index the SmartAI credit rows (`source_type` 0, `action_type` 33
+  KILLED_MONSTER) at startup in `BotSpawnIndex`, keyed by the credit entry:
+  `event_type` 8 SPELLHIT (target, spell), 6 DEATH (creatures to kill), 62
+  GOSSIP_SELECT (npc, menu, option). The quest-item part is item 1 above.
+
 ### 2. Battleground objectives
 
 * **Why**: bots only fight the nearest enemy today, so matches that are won by
@@ -183,3 +198,15 @@ Things to watch on the first live run, most likely first:
 * Bots in a battleground leave three minutes in if no real player is inside
   (`EMPTY_BG_GRACE_MS`), and have the deserter aura removed.
 * Directed test results are in memory only; failures persist as findings.
+* Holiday quests: bots take them, then log `ender-missing` / `ender-no-spawn`
+  because the enders only spawn during the event (Brewfest!, Spring
+  Collectors, A Season for Celebration, The Master of Summer Lore, Children's
+  Week). Mostly a DB bug (Willzman/SkyFire_548#271); bots could also skip
+  quests whose ender has only event spawns.
+* Pet-battle quests (Learning the Ropes 31591, Level Up! 31832) stall on a
+  pet-battle kill credit. Skip them until bots can pet battle.
+* Collect-item quests still stall on some drops and pick-ups (Give Gerard a
+  Drink 16, Zenn's Bidding 488, Gold Dust Exchange 47, Wing Nut 27031, The
+  King's Cider 26183 at 4/12). Check whether these are loot conditions the
+  bots miss (after the B15 fix) or items from objects, before treating them as
+  a new gap.
