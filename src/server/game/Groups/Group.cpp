@@ -2015,8 +2015,10 @@ void Group::SendUpdateToPlayer(uint64 playerGUID, MemberSlot* slot)
 
     //if (hasInstanceDifficulty)
     {
-        data << uint32(m_raidDifficulty);               // raid Difficulty
+        // Dungeon first, then raid (as LoA and pandaria_548). Swapped, the
+        // client showed the raid difficulty as "Dungeon Difficulty set to 10 Player".
         data << uint32(m_dungeonDifficulty);            // dungeon Difficulty
+        data << uint32(m_raidDifficulty);               // raid Difficulty
     }
 
     data.append(memberData);
