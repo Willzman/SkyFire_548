@@ -183,6 +183,28 @@ if [[ $AUTO_SETUP == 1 ]] && grep -qE '^WorldDatabase\.BaseSqlFile[[:space:]]*=[
 fi
 echo "Configured $W as the $REALM realm (RealmID $REALM_ID, port $WORLD_PORT, $WORLD_DB / $CHAR_DB${AUTO_SETUP:+, auto-setup $AUTO_SETUP})"
 
+# The realm's own gameplay settings, from tools/realms/<realm>.conf next to
+# this script, if there is one. A key this build's worldserver.conf lacks is
+# skipped with a warning, so an older install still configures.
+SETTINGS="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/$REALM.conf"
+if [[ -f $SETTINGS ]]; then
+    applied=0
+    while IFS= read -r line || [[ -n $line ]]; do
+        line="${line%$'\r'}"
+        [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+        [[ $line =~ ^[[:space:]]*([^=[:space:]]+)[[:space:]]*=[[:space:]]*(.*)$ ]] \
+            || die "bad line in $SETTINGS: $line"
+        key=${BASH_REMATCH[1]} value=${BASH_REMATCH[2]}
+        if grep -qE "^[[:space:]]*${key//./\\.}[[:space:]]*=" "$W"; then
+            set_key "$W" "$key" "$value"
+            applied=$((applied + 1))
+        else
+            echo "configure_realm: warning: $key is not in $W (older build?), skipped" >&2
+        fi
+    done < "$SETTINGS"
+    echo "Applied $applied setting(s) from $SETTINGS"
+fi
+
 if [[ $REALM == stable || $WITH_AUTH == 1 ]]; then
     ensure_conf authserver
     A="$ETC/authserver.conf"
