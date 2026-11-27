@@ -85,13 +85,14 @@ unset issues_token images_token
 echo "Saved both tokens in $config (dry_run = false)."
 
 unit=/etc/systemd/system/skyfire-feedback-worker.service
-read -rp "Turn the GitHub worker on now? [y/N] " answer </dev/tty
+read -rp "Start (or restart) the GitHub worker now, so it uses these tokens? [y/N] " answer </dev/tty
 if [[ "$answer" =~ ^[Yy] ]]; then
     [ -f "$unit" ] || sudo cp "$here/systemd/skyfire-feedback-worker.service" "$unit"
     sudo systemctl daemon-reload
-    sudo systemctl enable --now skyfire-feedback-worker
+    sudo systemctl enable skyfire-feedback-worker
+    sudo systemctl restart skyfire-feedback-worker
     sleep 5
     systemctl --no-pager --lines=5 status skyfire-feedback-worker || true
 else
-    echo "Later: sudo systemctl enable --now skyfire-feedback-worker"
+    echo "Later: sudo systemctl enable skyfire-feedback-worker && sudo systemctl restart skyfire-feedback-worker"
 fi
