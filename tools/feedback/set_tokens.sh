@@ -9,7 +9,8 @@
 #
 #   ssh -t william@<server> ~/skyfire/src-dev/tools/feedback/set_tokens.sh [config]
 #
-# Each token is checked with GitHub (one read-only request) before it's saved.
+# Each token is checked with GitHub (one read-only request) before it's saved;
+# when one is already saved, Enter keeps it (to replace just the other).
 # Then it offers to turn the worker on. See README.md, "GitHub setup".
 
 set -euo pipefail
@@ -27,10 +28,19 @@ images_repo="$(value images_repo)"
 
 # Asks for one token and checks it can read the repository. Prints it on stdout.
 ask() {
-    local what="$1" repo="$2" token status
+    local what="$1" repo="$2" saved="$3" token status
     while true; do
-        read -rsp "Paste the $what token (for $repo), then Enter: " token </dev/tty
+        if [ -n "$saved" ]; then
+            read -rsp "Paste the new $what token (for $repo), or just Enter to keep the saved one: " token </dev/tty
+        else
+            read -rsp "Paste the $what token (for $repo), then Enter: " token </dev/tty
+        fi
         echo >&2
+        if [ -z "$token" ] && [ -n "$saved" ]; then
+            echo "  Keeping the saved one." >&2
+            printf '%s' "$saved"
+            return
+        fi
         if [[ "$token" == ghp_* || "$token" == gho_* ]]; then
             echo "That's a classic token, which can reach every repository you can. Make a fine-grained one (github_pat_...)." >&2
             continue
@@ -52,8 +62,8 @@ url = \"https://api.github.com/repos/$repo\"")"
     done
 }
 
-issues_token="$(ask "Issues" "$issues_repo")"
-images_token="$(ask "Images" "$images_repo")"
+issues_token="$(ask "Issues" "$issues_repo" "$(value issues_token)")"
+images_token="$(ask "Images" "$images_repo" "$(value images_token)")"
 
 # Written by Python from stdin, so the tokens never appear in a command line.
 printf '%s\n%s\n' "$issues_token" "$images_token" | python3 -c '
