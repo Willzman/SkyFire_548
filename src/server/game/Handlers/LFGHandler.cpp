@@ -56,40 +56,6 @@ void BuildPartyLockDungeonBlock(WorldPacket& data, lfg::LfgLockPartyMap const& l
     }
 }
 
-void BuildQuestReward(WorldPacket& data, Quest const* quest, Player* player)
-{
-    uint8 rewCount = quest->GetRewItemsCount() + quest->GetRewCurrencyCount();
-
-    data << uint32(quest->GetRewMoney());
-    data << uint32(quest->XPValue(player));
-    data << uint8(rewCount);
-    if (rewCount)
-    {
-        for (uint8 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
-        {
-            if (uint32 currencyId = quest->RewardCurrencyId[i])
-            {
-                data << uint32(currencyId);
-                data << uint32(0);
-                data << uint32(quest->RewardCurrencyCount[i]);
-                data << uint8(1);                                           // Is currency
-            }
-        }
-
-        for (uint8 i = 0; i < QUEST_REWARDS_COUNT; ++i)
-        {
-            if (uint32 itemId = quest->RewardItemId[i])
-            {
-                ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId);
-                data << uint32(itemId);
-                data << uint32(item ? item->DisplayInfoID : 0);
-                data << uint32(quest->RewardItemIdCount[i]);
-                data << uint8(0);                                           // Is currency
-            }
-        }
-    }
-}
-
 void WorldSession::HandleLfgJoinOpcode(WorldPacket& recvData)
 {
     if (!sLFGMgr->isOptionEnabled(lfg::LFG_OPTION_ENABLE_DUNGEON_FINDER | lfg::LFG_OPTION_ENABLE_RAID_BROWSER))
@@ -965,12 +931,47 @@ void WorldSession::SendLfgPlayerReward(lfg::LfgPlayerRewardData const& rewardDat
     SF_LOG_DEBUG("lfg", "SMSG_LFG_PLAYER_REWARD %s rdungeonEntry: %u, sdungeonEntry: %u, done: %u",
         GetPlayerInfo().c_str(), rewardData.rdungeonEntry, rewardData.sdungeonEntry, rewardData.done);
 
-    uint8 itemNum = rewardData.quest->GetRewItemsCount() + rewardData.quest->GetRewCurrencyCount();
+    Quest const* quest = rewardData.quest;
+    uint32 itemNum = quest->GetRewItemsCount() + quest->GetRewCurrencyCount();
 
-    WorldPacket data(SMSG_LFG_PLAYER_REWARD, 4 + 4 + 1 + 4 + 4 + 4 + 4 + 4 + 1 + itemNum * (4 + 4 + 4));
+    // 5.4.8 layout (same as LoA and pandaria_548): money, random dungeon, XP,
+    // dungeon, then a 20-bit reward count with an "is currency" bit each, and
+    // the reward fields after the bits.
+    ByteBuffer rewards;
+    WorldPacket data(SMSG_LFG_PLAYER_REWARD, 4 + 4 + 4 + 4 + 3 + itemNum * (4 + 4 + 4 + 4));
+    data << uint32(quest->GetRewMoney(GetPlayer()));
     data << uint32(rewardData.rdungeonEntry);                               // Random Dungeon Finished
+    data << uint32(quest->XPValue(GetPlayer()));
     data << uint32(rewardData.sdungeonEntry);                               // Dungeon Finished
-    BuildQuestReward(data, rewardData.quest, GetPlayer());
+    data.WriteBits(itemNum, 20);
+
+    for (uint8 i = 0; i < QUEST_REWARD_CURRENCY_COUNT; ++i)
+    {
+        if (uint32 currencyId = quest->RewardCurrencyId[i])
+        {
+            data.WriteBit(true);                                            // Is currency
+            rewards << uint32(currencyId);
+            rewards << uint32(0);                                           // Currency flags
+            rewards << uint32(0);
+            rewards << uint32(quest->RewardCurrencyCount[i]);
+        }
+    }
+
+    for (uint8 i = 0; i < QUEST_REWARDS_COUNT; ++i)
+    {
+        if (uint32 itemId = quest->RewardItemId[i])
+        {
+            ItemTemplate const* item = sObjectMgr->GetItemTemplate(itemId);
+            data.WriteBit(false);                                           // Is currency
+            rewards << uint32(itemId);
+            rewards << uint32(0);
+            rewards << uint32(item ? item->DisplayInfoID : 0);
+            rewards << uint32(quest->RewardItemIdCount[i]);
+        }
+    }
+
+    data.FlushBits();
+    data.append(rewards);
     SendPacket(&data);
 }
 
