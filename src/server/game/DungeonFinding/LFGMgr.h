@@ -267,12 +267,15 @@ namespace lfg
     struct LFGDungeonData
     {
         LFGDungeonData() : id(0), name(""), map(0), type(0), expansion(0), group(0), minlevel(0),
-            maxlevel(0), difficulty(DIFFICULTY_NONE), category(0), requiredItemLevel(0), seasonal(false), x(0.0f), y(0.0f), z(0.0f), o(0.0f)
+            maxlevel(0), difficulty(DIFFICULTY_NONE), category(0), requiredItemLevel(0), seasonal(false),
+            countTank(0), countHealer(0), countDamage(0), x(0.0f), y(0.0f), z(0.0f), o(0.0f)
         { }
         LFGDungeonData(LFGDungeonEntry const* dbc) : id(dbc->m_ID), name(dbc->m_Name), map(dbc->m_ContinentID),
             type(dbc->m_Type), expansion(dbc->m_ExpansionLevel), group(dbc->m_GroupID),
             minlevel(dbc->m_MinLevel), maxlevel(dbc->m_MaxLevel), difficulty(DifficultyID(dbc->m_DifficultyID)),
-            category(uint8(dbc->m_SubType)), requiredItemLevel(0), seasonal(dbc->m_Flags& LFG_FLAG_SEASONAL), x(0.0f), y(0.0f), z(0.0f), o(0.0f)
+            category(uint8(dbc->m_SubType)), requiredItemLevel(0), seasonal(dbc->m_Flags& LFG_FLAG_SEASONAL),
+            countTank(uint8(dbc->m_CountTank)), countHealer(uint8(dbc->m_CountHealer)), countDamage(uint8(dbc->m_CountDamage)),
+            x(0.0f), y(0.0f), z(0.0f), o(0.0f)
         { }
 
         uint32 id;
@@ -287,6 +290,9 @@ namespace lfg
         uint8 category;
         uint32 requiredItemLevel;
         bool seasonal;
+        uint8 countTank;                                    // LfgDungeons.dbc role slots (Raid Finder: 2/6/17)
+        uint8 countHealer;
+        uint8 countDamage;
         float x, y, z, o;
 
         // Helpers
@@ -346,6 +352,9 @@ namespace lfg
         uint8 GetLFGDungeonCategory(uint32 id);
         /// Check whether the dungeon id belongs to a Raid Finder queue entry
         bool IsRaidFinderDungeon(uint32 dungeonId);
+        /// Raid Finder group size (from MapDifficulty, normally 25) and role slots (from LfgDungeons.dbc)
+        uint8 GetRaidFinderGroupSize(uint32 dungeonId);
+        void GetRaidFinderRoleCaps(uint32 dungeonId, uint8& tanks, uint8& healers, uint8& damage);
         /// Check whether the dungeon id belongs to a flexible raid queue entry
         bool IsFlexibleRaidDungeon(uint32 dungeonId);
         /// Return Lfg dungeon data for given dungeon id (or entry)
@@ -466,6 +475,8 @@ namespace lfg
         static bool CheckDpsOnlyRoles(LfgRolesMap& groles, uint8 neededDamage);
         /// Assigns queued players to their preferred combat role for flexible raid queues
         static bool CheckFlexibleRaidRoles(LfgRolesMap& groles, uint8 maxPlayers);
+        /// Assign roles within Raid Finder role slots (at most tanks/healers/damage of each)
+        static bool CheckRaidFinderRoles(LfgRolesMap& groles, uint8 tanks, uint8 healers, uint8 damage);
         /// Checks if given players are ignoring each other
         static bool HasIgnore(uint64 guid1, uint64 guid2);
         /// Sends queue status to player
