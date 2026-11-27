@@ -336,7 +336,8 @@ class Worker:
 
     def render_report(self, r, image_urls):
         desc = r["description"] or ""
-        first_line = " ".join(common.clean(desc).split())[:70] or "(no description)"
+        # Titles show as plain text; only @ (just in case) is broken up.
+        first_line = " ".join(common.clean(desc).split())[:70].replace("@", "@" + common.ZWSP) or "(no description)"
         title = f"[BUG-{r['id']}] {CATEGORIES.get(r['category'], r['category'])}: {first_line}"
 
         lines = [f"**Player bug report BUG-{r['id']}**, sent from the game by {table_cell(r['character_name'])}.", "",
