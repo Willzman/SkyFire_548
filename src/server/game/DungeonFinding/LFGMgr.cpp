@@ -724,11 +724,16 @@ namespace lfg
         {
             // Create new rolecheck
             LfgRoleCheck& roleCheck = RoleChecksStore[gguid];
+            roleCheck.closedSize = 0;
             roleCheck.cancelTime = time_t(time(NULL)) + LFG_TIME_ROLECHECK;
             roleCheck.state = grp->RoleCheckAllResponded() ? LFG_ROLECHECK_FINISHED : LFG_ROLECHECK_INITIALITING;
             roleCheck.leader = guid;
             roleCheck.dungeons = dungeons;
             roleCheck.rDungeonId = rDungeonId;
+            // Duo checkbox on a premade: only a group of exactly that size.
+            roleCheck.closedSize = ConsumeSoloQueueRequest(guid);
+            if (roleCheck.closedSize && grp->GetMembersCount() != roleCheck.closedSize)
+                roleCheck.closedSize = 0;
 
             if (rDungeonId)
             {
@@ -771,8 +776,8 @@ namespace lfg
             SetQueueTicketTime(guid, ticketTime);
             LFGQueue& queue = GetQueue(guid);
             queue.AddQueueData(guid, ticketTime, dungeons, rolesMap);
-            if (ConsumeSoloQueueRequest(guid))
-                queue.SetSoloQueue(guid);
+            if (uint8 closedSize = ConsumeSoloQueueRequest(guid))
+                queue.SetClosedSize(guid, closedSize);
 
             if (!isContinue)
             {
@@ -1056,6 +1061,8 @@ namespace lfg
                 ticketTime = time(NULL);
             LFGQueue& queue = GetQueue(gguid);
             queue.AddQueueData(gguid, ticketTime, roleCheck.dungeons, roleCheck.roles);
+            if (roleCheck.closedSize)
+                queue.SetClosedSize(gguid, roleCheck.closedSize);
         }
 
         for (LfgRolesMap::const_iterator it = roleCheck.roles.begin(); it != roleCheck.roles.end(); ++it)
@@ -2436,21 +2443,22 @@ namespace lfg
         return LfgType(dungeon->type);
     }
 
-    void LFGMgr::RequestSoloQueue(uint64 guid)
+    void LFGMgr::RequestSoloQueue(uint64 guid, uint8 size)
     {
-        m_soloQueueRequests[guid] = time(NULL);
+        m_soloQueueRequests[guid] = std::make_pair(time(NULL), size);
     }
 
-    bool LFGMgr::ConsumeSoloQueueRequest(uint64 guid)
+    uint8 LFGMgr::ConsumeSoloQueueRequest(uint64 guid)
     {
-        std::map<uint64, time_t>::iterator itr = m_soloQueueRequests.find(guid);
+        std::map<uint64, std::pair<time_t, uint8>>::iterator itr = m_soloQueueRequests.find(guid);
         if (itr == m_soloQueueRequests.end())
-            return false;
+            return 0;
 
-        // The addon joins right after the server's reply; an older request is stale.
-        bool const fresh = time(NULL) - itr->second <= 30;
+        // The addon sends it in the same click as the join; an older one is stale.
+        bool const fresh = time(NULL) - itr->second.first <= 30;
+        uint8 const size = itr->second.second;
         m_soloQueueRequests.erase(itr);
-        return fresh && sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE);
+        return fresh && sWorld->GetBoolConfig(WorldBoolConfigs::CONFIG_LFG_SOLO_QUEUE) ? size : 0;
     }
 
     bool LFGMgr::IsRaidFinderDungeon(uint32 dungeonId)

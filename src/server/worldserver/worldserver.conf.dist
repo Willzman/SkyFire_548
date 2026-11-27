@@ -1363,10 +1363,12 @@ DungeonFinder.Dungeon.IgnoreRoles = 0
 
 #
 #     DungeonFinder.SoloQueue.Enable
-#        Description: Let players queue into a dungeon finder instance alone with the "Solo" button
-#                     of the SoloQueue addon (installed by the launcher). A solo queue starts at
-#                     once and is never matched with other players; normal queues are unchanged.
-#                     Only for players not in a group. Instances are not scaled down.
+#        Description: Turn on the "Solo" and "Duo" checkboxes of the SoloQueue addon (installed by
+#                     the launcher). Solo: a player not in a group goes in alone, at once. Duo: two
+#                     players go in as a pair, either a group of 2 (the leader ticks it) or two
+#                     players queueing on their own, who are matched only with each other. Neither
+#                     is mixed with normal queues, which are unchanged. Instances are not scaled
+#                     down, and DungeonFinder.RequireRoles doesn't apply to them.
 #        Default:     0 - (Disabled)
 #                     1 - (Enabled)
 

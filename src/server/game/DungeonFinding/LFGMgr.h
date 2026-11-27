@@ -252,6 +252,7 @@ namespace lfg
         LfgDungeonSet dungeons;                                ///< Dungeons group is applying for (expanded random dungeons)
         uint32 rDungeonId;                                     ///< Random Dungeon Id.
         uint64 leader;                                         ///< Leader of the group
+        uint8 closedSize;                                      ///< Duo queue of a premade: 2 (0 = normal queue)
     };
 
     /// Stores information of a current vote to kick someone from a group
@@ -379,9 +380,10 @@ namespace lfg
         void SetDebugRequirementOverride(bool enabled) { m_debugRequirementOverride = enabled; }
         /// Gets the server-wide debug override for flexible raid minimum group size
         bool IsDebugFlexRaidMinimumOverrideEnabled() const { return m_debugFlexRaidMinimumOverride; }
-        /// Solo queue (DungeonFinder.SoloQueue.Enable): the player's next solo join goes in alone
-        void RequestSoloQueue(uint64 guid);
-        bool ConsumeSoloQueueRequest(uint64 guid);
+        /// Solo / Duo queue (DungeonFinder.SoloQueue.Enable): the player's next join
+        /// forms a group of exactly `size` (1 Solo, 2 Duo), with no strangers added
+        void RequestSoloQueue(uint64 guid, uint8 size);
+        uint8 ConsumeSoloQueueRequest(uint64 guid);
         /// Sets the server-wide debug override for flexible raid minimum group size
         void SetDebugFlexRaidMinimumOverride(bool enabled) { m_debugFlexRaidMinimumOverride = enabled; }
         /// Clears queue - Only for internal testing
@@ -539,7 +541,7 @@ namespace lfg
         uint32 m_options;                                  ///< Stores config options
         bool m_debugRequirementOverride;                   ///< bypasses LFG entry requirements for server-wide debugging
         bool m_debugFlexRaidMinimumOverride;               ///< allows flexible raid queues to form below normal minimum for debugging
-        std::map<uint64, time_t> m_soloQueueRequests;      ///< players whose next join is a solo queue, and when they asked
+        std::map<uint64, std::pair<time_t, uint8>> m_soloQueueRequests; ///< next join is Solo/Duo: when asked, and the size
 
         LfgQueueContainer QueuesStore;                     ///< Queues
         LfgCachedDungeonContainer CachedDungeonMapStore;   ///< Stores all dungeons by groupType
