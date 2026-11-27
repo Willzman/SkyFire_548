@@ -1,0 +1,60 @@
+; Feedback upload API and GitHub worker (tools/feedback, see README.md).
+; Copy to ~/skyfire/feedback/feedback.conf and chmod 600 it: it holds the
+; GitHub tokens. Never commit the copy.
+
+[api]
+; ufw lets only the LAN and ZeroTier reach this port (see README.md).
+bind = 0.0.0.0
+port = 8443
+cert = ~/skyfire/feedback/tls/cert.pem
+key = ~/skyfire/feedback/tls/key.pem
+; Screenshots, crash logs and dumps, one folder per account.
+storage = ~/skyfire/feedback/files
+max_screenshot_mb = 10
+max_crash_log_mb = 2
+max_dump_mb = 64
+max_lua_mb = 4
+; Per account, screenshots + crash logs + dumps in 24 hours.
+daily_quota_mb = 300
+; Refuse uploads when the disk has less free space than this.
+min_free_disk_mb = 2048
+; A screenshot belongs to a report saved at most this many seconds after it
+; was taken (before), or before it (after). Times from the PC are moved onto
+; the server's clock first.
+screenshot_window_before = 90
+screenshot_window_after = 30
+max_screenshots_per_report = 3
+requests_per_minute = 120
+
+[mysql]
+; The client settings file with the user and password (the [client] group).
+defaults_file = ~/.my.cnf
+auth_db = auth
+
+[realms]
+; realm id = name shown in issues, world database (for quest and NPC names)
+1 = Stable, world_stable
+2 = Development, world_dev
+
+[github]
+; true: write what would be posted to dryrun_dir, change nothing, one pass.
+dry_run = true
+dryrun_dir = ~/skyfire/feedback/dryrun
+; Where issues go. Fine-grained token, this repository only, permission
+; "Issues: Read and write" (Metadata: read is added by GitHub).
+repo = Willzman/SkyFire_548
+issues_token =
+; Where screenshots are committed (a separate public repository with a first
+; commit on images_branch). Fine-grained token, that repository only,
+; permission "Contents: Read and write". Empty: screenshots stay unposted.
+images_repo =
+images_branch = main
+images_token =
+poll_seconds = 60
+; Wait this long after a report before opening its issue, so a screenshot
+; uploaded during the session makes it into the first post.
+report_delay_seconds = 120
+; Lua errors are posted only from these sources (FrameXML, or an add-on
+; folder name; * wildcards). "*" posts every add-on's errors.
+lua_error_sources = FrameXML, Blizzard_*, BugReport, !ErrorCatcher, SoloQueue
+lua_error_min_occurrences = 1
