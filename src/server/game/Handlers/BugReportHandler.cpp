@@ -19,10 +19,10 @@
 //   ERR:<nonce>:<reason>              OFF, SHORT, RATE, BAD or DB
 //
 // An addon message carries at most 255 bytes, so the addon cuts a report into
-// pieces, all with the same nonce. Joined, they are "key=value" lines; values
-// have their newlines and backslashes escaped (\n, \\). "cat" and "desc" are
-// the category and description; every other line is kept as it is, as
-// client_context. The server adds what it knows itself: account, character,
+// pieces, all with the same nonce. Joined, they are "key=value" fields split
+// by ";", with no control characters: in values, a newline is sent as \n and
+// "\" and ";" as \\ and \;. "cat" and "desc" are the category and
+// description; every other field is kept, one per line, as client_context. The server adds what it knows itself: account, character,
 // map, position, target and time.
 //
 // The table is in auth so that all realms share one list (see
@@ -95,6 +95,26 @@ namespace
         }
         parts.push_back(text.substr(start));
         return parts;
+    }
+
+    // Splits the report at each ";" that isn't escaped. The fields keep their escapes.
+    std::vector<std::string> SplitFields(std::string const& payload)
+    {
+        std::vector<std::string> fields(1);
+        for (size_t i = 0; i < payload.size(); ++i)
+        {
+            char c = payload[i];
+            if (c == '\\' && i + 1 < payload.size())
+            {
+                fields.back() += c;
+                fields.back() += payload[++i];
+            }
+            else if (c == ';')
+                fields.emplace_back();
+            else
+                fields.back() += c;
+        }
+        return fields;
     }
 
     std::string Unescape(std::string const& value)
@@ -187,7 +207,7 @@ namespace
         std::string category;
         std::string description;
         std::string context;
-        for (std::string const& line : SplitFirst(payload, '\n', MaxPieces * 255))
+        for (std::string const& line : SplitFields(payload))
         {
             std::vector<std::string> keyValue = SplitFirst(line, '=', 1);
             if (keyValue.size() != 2)
