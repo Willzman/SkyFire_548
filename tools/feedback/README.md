@@ -16,6 +16,36 @@ add-on's Lua errors. This folder holds the two services for that:
   `player-report` issue is closed as completed, the report becomes `fixed` and
   the player is told at their next login.
 
+The whole chain is tested with [`END_TO_END.md`](END_TO_END.md).
+
+## The world server's part
+
+`BugReportHandler.cpp` takes the add-on's whispers to itself (prefix `SFBUG`;
+`ChatHandler` hands them over before the normal addon channel):
+
+| Add-on sends | Server answers |
+|---|---|
+| `PING` | `ON`, or `OFF` when `BugReport.Enable = 0` |
+| `TOKEN` | `TOKEN:<64 hex>`, a new upload token; only its SHA-256 is kept (5 newest per account) |
+| `R:<nonce>:<seq>:<total>:<data>` | once all pieces are in: `OK:<nonce>:<id>` (shown as BUG-id) or `ERR:<nonce>:SHORT\|RATE\|OFF\|BAD\|DB` |
+
+An addon whisper carries at most 255 bytes, so a report comes in up to 32
+pieces (dropped if not complete within 60 s). Joined, they are `key=value`
+fields split by `;` (`\n`, `\\` and `\;` escaped). `cat` and `desc` become
+the category and description; the rest is kept as `client_context`. The
+server adds what it knows itself: realm, account, character, map, zone, area,
+instance, position, target guid and entry, level, class, race, revision, time.
+
+`worldserver.conf`: `BugReport.Enable` (1), `BugReport.MinLength` (10
+characters), `BugReport.Cooldown` (60 s per character), `BugReport.MaxPerDay`
+(20 per character, counted since start-up). At login, `BugReport::NotifyFixed`
+tells the player about their reports the worker marked `fixed`, once each.
+
+Both SQL files must be in `auth` before a worldserver with this code starts:
+its login DB statements are prepared at start-up and fail without the tables.
+
+## The services
+
 Both are plain Python 3 with `python3-pymysql` (and `python3-pil` to turn TGA
 screenshots into PNG). Tables: `sql/pending_updates/auth/bug_reports.sql` and
 `feedback_uploads.sql`.

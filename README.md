@@ -340,6 +340,27 @@ Changes go `Development` → test on the Development realm → pull request into
 
 Upstream wiki guide: [Ubuntu 24.04](https://wiki.projectskyfire.org/index.php?title=Installation_(Ubuntu_24.04_LTS)).
 
+## In-game bug reports
+
+Players report bugs from inside the game with the launcher's **Bug Report**
+add-on (a bug button on the minimap, or `/bug`). The world server saves each
+report with where the player was, their target and their quests, in
+`auth.bug_reports`, and answers with its number (BUG-12). The launcher then
+uploads the report's screenshot, new crash logs and the **Error Catcher**
+add-on's Lua errors to a small HTTPS API on the server, and a worker turns it
+all into GitHub issues: one per report, one per crash or Lua error (later
+ones only raise its counts). When a report's issue is closed as completed,
+the player is told at their next login.
+
+- World server: `src/server/game/Handlers/BugReportHandler.cpp`; settings
+  `BugReport.*` in `worldserver.conf`; tables in
+  `sql/pending_updates/auth/bug_reports.sql` and `feedback_uploads.sql`
+  (renamed into `sql/updates/auth/` once merged).
+- Upload API and GitHub worker, with setup (GitHub tokens, certificate,
+  systemd): [`tools/feedback/README.md`](tools/feedback/README.md).
+- End-to-end test: [`tools/feedback/END_TO_END.md`](tools/feedback/END_TO_END.md).
+- Add-ons and launcher side: the [launcher's README](https://github.com/Willzman/MoP-5.4.8-Launcher#bug-reports).
+
 ## Reporting issues
 Please use the search function before you report issues.
 [SkyFire Issue Tracker](https://github.com/ProjectSkyfire/SkyFire_548/issues).
