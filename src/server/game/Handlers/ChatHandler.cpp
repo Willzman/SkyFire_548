@@ -609,7 +609,8 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
 
     // The SoloQueue addon (shipped with the launcher) whispers itself with this
     // prefix: "PING" asks whether the realm has solo queue, "QUEUE" asks for the
-    // next dungeon finder join to be a solo one. The reply goes back the same way.
+    // next dungeon finder join to be a solo one, "CANCEL" drops that request.
+    // The reply goes back the same way.
     if (type == ChatMsg::CHAT_MSG_WHISPER && prefix == "SFSOLO")
     {
         std::string reply;
@@ -617,6 +618,8 @@ void WorldSession::HandleAddonMessagechatOpcode(WorldPacket& recvData)
             reply = "OFF";
         else if (message == "PING")
             reply = "ON";
+        else if (message == "CANCEL")
+            sLFGMgr->ConsumeSoloQueueRequest(sender->GetGUID());
         else if (message == "QUEUE")
         {
             if (sender->GetGroup())
