@@ -26,7 +26,7 @@
 // map, position, target and time.
 //
 // The table is in auth so that all realms share one list (see
-// sql/pending_updates/auth/bug_reports.sql).
+// sql/updates/auth/2026_11_27_auth_custom_00.sql).
 
 #include "BugReportHandler.h"
 

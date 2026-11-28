@@ -47,8 +47,8 @@ its login DB statements are prepared at start-up and fail without the tables.
 ## The services
 
 Both are plain Python 3 with `python3-pymysql` (and `python3-pil` to turn TGA
-screenshots into PNG). Tables: `sql/pending_updates/auth/bug_reports.sql` and
-`feedback_uploads.sql`.
+screenshots into PNG). Tables: `sql/updates/auth/2026_11_27_auth_custom_00.sql`
+(reports, upload tokens) and `2026_11_27_auth_custom_01.sql` (uploads).
 
 ## What goes public
 
@@ -95,8 +95,8 @@ repository.
 
 ```bash
 sudo apt-get install -y python3-pymysql python3-pil
-mysql auth < ~/skyfire/src-dev/sql/pending_updates/auth/bug_reports.sql
-mysql auth < ~/skyfire/src-dev/sql/pending_updates/auth/feedback_uploads.sql
+mysql auth < ~/skyfire/src-dev/sql/updates/auth/2026_11_27_auth_custom_00.sql
+mysql auth < ~/skyfire/src-dev/sql/updates/auth/2026_11_27_auth_custom_01.sql
 
 mkdir -p ~/skyfire/feedback/app
 install -m 644 ~/skyfire/src-dev/tools/feedback/*.py ~/skyfire/feedback/app/

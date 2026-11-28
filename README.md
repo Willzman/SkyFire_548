@@ -354,8 +354,8 @@ the player is told at their next login.
 
 - World server: `src/server/game/Handlers/BugReportHandler.cpp`; settings
   `BugReport.*` in `worldserver.conf`; tables in
-  `sql/pending_updates/auth/bug_reports.sql` and `feedback_uploads.sql`
-  (renamed into `sql/updates/auth/` once merged).
+  `sql/updates/auth/2026_11_27_auth_custom_00.sql` (reports, upload tokens)
+  and `2026_11_27_auth_custom_01.sql` (uploads).
 - Upload API and GitHub worker, with setup (GitHub tokens, certificate,
   systemd): [`tools/feedback/README.md`](tools/feedback/README.md).
 - End-to-end test: [`tools/feedback/END_TO_END.md`](tools/feedback/END_TO_END.md).
