@@ -44,10 +44,16 @@ in, with what happened written under the box.
 
 ## 3. Crash logs and Lua errors
 
-- [ ] `/run error("e2e test")` twice, and an error from an add-on that isn't the launcher's (if you have one). Exit the game.
-- [ ] Within a few seconds the launcher says it sent "the add-on errors".
-- [ ] GitHub: one `[Lua error]` issue for the launcher add-on's error, count 2; none for the other add-on.
-- [ ] Play again, `/run error("e2e test")` once more, exit: the same issue's "Times seen" goes up (3); no second issue.
+Lua errors reach GitHub only from the sources in `lua_error_sources`
+(Blizzard's UI and the launcher's add-ons). An error from `/run` counts as
+typed code, not an add-on: it is kept on the server (`github_issue = 0`) but
+never posted. So `/run` checks the upload; the issue checks need the posting
+switched on for a moment.
+
+- [ ] `/run error("e2e test")` twice. Exit the game. Within a few seconds the launcher says it sent "the add-on errors", and `feedback.log` has "Lua errors -> Sent".
+- [ ] Server: `mysql auth -e "SELECT id, message, occurrences, github_issue FROM feedback_lua_error_group"` shows `[string "error("e2e test")"]:1: e2e test`, occurrences 2, `github_issue` 0, and GitHub has no issue for it.
+- [ ] Play again, `/run error("e2e test")` once more, exit: occurrences 3 (the launcher sends the whole list again; the count isn't added up twice).
+- [ ] To see the issue side: set `lua_error_sources = *` in `~/skyfire/feedback/feedback.conf`, `mysql auth -e "UPDATE feedback_lua_error_group SET github_issue = NULL WHERE github_issue = 0"` and `sudo systemctl restart skyfire-feedback-worker`. Within a minute: one `[Lua error]` issue, label `lua-error`, "Times seen" 3, the stack folded away. Another `/run error("e2e test")` and exit: the same issue's count goes to 4, no second issue. Then put `lua_error_sources` back and restart the worker.
 - [ ] If the game crashes during testing (or copy an old crash `.txt` into `Errors\` and make it new: `(Get-Item <file>).LastWriteTime = Get-Date`): after exit the launcher says it sent "a crash log". GitHub: one `[Crash]` issue with the error, exception and frames only; no Windows user name, real name, computer name or folder. A second crash of the same kind raises its counts instead of opening an issue.
 - [ ] With **Include crash dumps** ticked, the `.dmp` is on the server (`mysql auth -e "SELECT file_name, dump_path FROM feedback_crash"`), never on GitHub.
 
@@ -60,7 +66,7 @@ in, with what happened written under the box.
 ## 5. Turned off, and catching up
 
 - [ ] Untick the Settings box, play, send a report, exit: the report and its issue still appear, without a screenshot; nothing is uploaded.
-- [ ] Tick it again. Close the launcher, start the game yourself (`Wow-64.exe`), send a report, exit, start the launcher: it sends the screenshot then.
+- [ ] Tick it again. Start the game with **Play**, then close the launcher (the game can't log in without the launcher's patches, so this is how it goes unwatched). Send a report and stay in game. Open the launcher again: within a few seconds it sends the screenshot (`feedback.log`: "launcher start" or "launcher window"). After you exit and click on the launcher, crash logs and add-on errors go too.
 - [ ] Stop the API (`sudo systemctl stop skyfire-feedback-api`), play, send a report, exit: no error shown, nothing sent. Start the API, restart the launcher: the screenshot goes.
 
 ## 6. Secrets
