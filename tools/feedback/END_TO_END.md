@@ -66,7 +66,7 @@ switched on for a moment.
 ## 5. Turned off, and catching up
 
 - [ ] Untick the Settings box, play, send a report, exit: the report and its issue still appear, without a screenshot; nothing is uploaded.
-- [ ] Tick it again. Close the launcher, start the game yourself (`Wow-64.exe`), send a report, exit, start the launcher: it sends the screenshot then.
+- [ ] Tick it again. Start the game with **Play**, then close the launcher (the game can't log in without the launcher's patches, so this is how it goes unwatched). Send a report and stay in game. Open the launcher again: within a few seconds it sends the screenshot (`feedback.log`: "launcher start" or "launcher window"). After you exit and click on the launcher, crash logs and add-on errors go too.
 - [ ] Stop the API (`sudo systemctl stop skyfire-feedback-api`), play, send a report, exit: no error shown, nothing sent. Start the API, restart the launcher: the screenshot goes.
 
 ## 6. Secrets
